@@ -18,7 +18,7 @@
 package com.waz.zclient.preferences.dialogs
 
 import android.app.Dialog
-import android.content.DialogInterface.{BUTTON_NEUTRAL, BUTTON_POSITIVE}
+import android.content.DialogInterface.BUTTON_POSITIVE
 import android.os.Bundle
 import android.support.design.widget.TextInputLayout
 import android.support.v4.app.DialogFragment
@@ -26,21 +26,21 @@ import android.support.v7.app.AlertDialog
 import android.view.inputmethod.EditorInfo
 import android.view.{KeyEvent, LayoutInflater, View, WindowManager}
 import android.widget.{EditText, TextView}
+import com.waz.ZLog.ImplicitTag.implicitLogTag
+import com.waz.api.EmailCredentials
 import com.waz.model.AccountData.Password
+import com.waz.service.ZMessaging
+import com.waz.threading.Threading
 import com.waz.utils.events.{EventStream, Signal}
 import com.waz.utils.returning
 import com.waz.zclient.common.controllers.BrowserController
+import com.waz.zclient.utils.RichView
 import com.waz.zclient.{FragmentHelper, R}
-import com.waz.ZLog.ImplicitTag.implicitLogTag
-import com.waz.api.EmailCredentials
-import com.waz.service.ZMessaging
-import com.waz.threading.Threading
 
 import scala.util.Try
 
 class RemoveDeviceDialog extends DialogFragment with FragmentHelper {
   import RemoveDeviceDialog._
-
   import Threading.Implicits.Ui
 
   val onDelete = EventStream[Password]()
@@ -73,9 +73,14 @@ class RemoveDeviceDialog extends DialogFragment with FragmentHelper {
 
   private lazy val textInputLayout = findById[TextInputLayout](root, R.id.til__remove_otr_device)
 
+  private lazy val forgotPasswordButton = returning(findById[TextView](root, R.id.device_forgot_password)) {
+    _.onClick(inject[BrowserController].openUrl(getString(R.string.url_password_reset)))
+  }
+
   override def onCreateDialog(savedInstanceState: Bundle): Dialog = {
     passwordEditText
     textInputLayout
+    forgotPasswordButton
     Option(getArguments.getString(ErrorArg)).foreach(textInputLayout.setError)
     new AlertDialog.Builder(getActivity)
       .setView(root)
@@ -83,7 +88,6 @@ class RemoveDeviceDialog extends DialogFragment with FragmentHelper {
       .setMessage(R.string.otr__remove_device__message)
       .setPositiveButton(R.string.otr__remove_device__button_delete, null)
       .setNegativeButton(R.string.otr__remove_device__button_cancel, null)
-      .setNeutralButton(R.string.new_reg__password__forgot, null)
       .create
   }
 
@@ -92,10 +96,6 @@ class RemoveDeviceDialog extends DialogFragment with FragmentHelper {
     Try(getDialog.asInstanceOf[AlertDialog]).toOption.foreach { d =>
       d.getButton(BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
         def onClick(v: View) = providePassword(passwordEditText.getText.toString)
-      })
-
-      d.getButton(BUTTON_NEUTRAL).setOnClickListener(new View.OnClickListener {
-        def onClick(v: View): Unit = inject[BrowserController].openUrl(getString(R.string.url_password_reset))
       })
     }
   }
