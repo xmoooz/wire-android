@@ -256,11 +256,11 @@ object GiphySharingPreviewFragment {
   val ArgSearchTerm = "SEARCH_TERM"
   val GiphySearchDelayMinSec = 800
 
-  def newInstance: GiphySharingPreviewFragment = new GiphySharingPreviewFragment
-
-  def newInstance(searchTerm: String): GiphySharingPreviewFragment =
+  def newInstance(searchTerm: Option[String]): GiphySharingPreviewFragment =
     returning(new GiphySharingPreviewFragment) { fragment =>
-      fragment.setArguments(returning(new Bundle)(_.putString(ArgSearchTerm, searchTerm)))
+      searchTerm.foreach(term =>
+        fragment.setArguments(returning(new Bundle)(_.putString(ArgSearchTerm, term)))
+      )
     }
 
 
