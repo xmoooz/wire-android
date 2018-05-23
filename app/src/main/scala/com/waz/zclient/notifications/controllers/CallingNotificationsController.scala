@@ -17,27 +17,31 @@
   */
 package com.waz.zclient.notifications.controllers
 
-import android.app.{Notification, NotificationManager, PendingIntent}
+import android.app.{NotificationManager, PendingIntent}
 import android.graphics.{Bitmap, Color}
 import android.support.v4.app.NotificationCompat
 import com.waz.ZLog._
 import com.waz.bitmap.BitmapUtils
 import com.waz.model.{ConvId, UserId}
 import com.waz.service.assets.AssetService.BitmapResult.BitmapLoaded
+import com.waz.service.call.CallInfo
 import com.waz.service.call.CallInfo.CallState
 import com.waz.service.call.CallInfo.CallState._
-import com.waz.threading.Threading
+import com.waz.service.{AccountsService, ZMessaging}
 import com.waz.ui.MemoryImageCache.BitmapRequest.Regular
 import com.waz.utils.LoggedTry
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.utils.wrappers.{Context, Intent}
-import com.waz.zclient.Intents.OpenCallingScreen
+import com.waz.zclient.Intents.{CallIntent, OpenCallingScreen}
 import com.waz.zclient._
 import com.waz.zclient.calling.controllers.CallController
 import com.waz.zclient.common.views.ImageController
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.DeprecationUtils
 import com.waz.zms.CallWakeService
+import org.threeten.bp.Instant
+
+import scala.util.control.NonFatal
 
 class CallingNotificationsController(implicit cxt: WireContext, eventContext: EventContext, inj: Injector) extends Injectable {
 
@@ -50,115 +54,151 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
   val callCtrler = inject[CallController]
   import callCtrler._
 
-  isCallActive.on(Threading.Ui) {
-    case (false) =>
-      notificationManager.cancel(ZETA_CALL_ONGOING_NOTIFICATION_ID)
-      notificationManager.cancel(ZETA_CALL_INCOMING_NOTIFICATION_ID)
-    case _ => //
+  val notifications =
+    (for {
+      curCall   <- currentCall
+      zs        <- inject[AccountsService].zmsInstances
+      available <- Signal.sequence(zs.map(_.calling.availableCalls).toSeq:_*).map(_.flatten.toMap).map { calls =>
+        (calls - curCall.convId)
+          .values
+          .filter(_.state.contains(OtherCalling))
+          .toVector
+          .sortBy(_.convId.str)
+      }
+      withAllInfo <- {
+        Signal.sequence((curCall +: available).map { call =>
+          zs.find(_.selfUserId == call.account).fold {
+            warn(s"Couldn't find zms for call: conv: ${call.convId}, account: ${call.account}")
+            Signal(
+              Signal.const(call),
+              Signal.const(""),
+              Signal.const(""),
+              Signal.const(Option.empty[Bitmap]))
+          } { z =>
+            Signal(
+              Signal.const(call),
+              z.usersStorage.optSignal(call.caller).map(_.map(_.name).getOrElse("")),
+              z.convsStorage.optSignal(call.convId).map(_.map(_.displayName).getOrElse("")),
+              getBitmapSignal(z, call.caller))
+          }
+        }: _*)
+      }
+    } yield
+      withAllInfo.map {
+        case (call, callerName, convName, bitmap) =>
+          CallNotification(
+            call.convId.str.hashCode,
+            call.convId,
+            call.account,
+            call.startTime,
+            if (call.isGroup) getString(R.string.system_notification__group_call_title, callerName, convName) else convName,
+            getCallStateMessage(call),
+            bitmap,
+            call.convId == curCall.convId,
+            call.state
+          )
+      }).orElse(Signal.const(Seq.empty[CallNotification]))
+
+  private var currentNotifications = Set.empty[Int]
+
+  notifications.onUi { nots =>
+    verbose(s"${nots.size} call notifications")
+
+    val toCancel = currentNotifications -- nots.map(_.id).toSet
+    toCancel.foreach(notificationManager.cancel(CallNotificationTag, _))
+
+    nots.foreach { not =>
+      val builder = DeprecationUtils.getBuilder(cxt)
+        .setSmallIcon(R.drawable.call_notification_icon)
+        .setLargeIcon(not.bitmap.orNull)
+        .setContentTitle(not.title)
+        .setContentText(not.msg)
+        .setContentIntent(OpenCallingScreen())
+        .setStyle(new NotificationCompat.BigTextStyle()
+          .setBigContentTitle(not.title)
+          .bigText(not.msg))
+        .setCategory(NotificationCompat.CATEGORY_CALL)
+        .setPriority(if (not.isMainCall) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_MAX) //incoming calls go higher up in the list)
+        .setOnlyAlertOnce(true)
+        .setOngoing(true)
+
+      if (!not.isMainCall)
+        builder.setDefaults(NotificationCompat.DEFAULT_ALL) //used to make the notification drop down
+
+      not.state match {
+        case Some(OtherCalling) => //not in a call, decline or join
+          builder
+            .addAction(R.drawable.ic_menu_silence_call_w, getString(R.string.system_notification__silence_call), createEndIntent(not.accountId, not.convId))
+            .addAction(R.drawable.ic_menu_join_call_w, getString(R.string.system_notification__join_call), if (not.isMainCall) createJoinIntent(not.accountId, not.convId) else CallIntent(not.accountId, not.convId))
+
+        case Some(SelfConnected | SelfCalling | SelfJoining) => //in a call, leave
+          builder.addAction(R.drawable.ic_menu_end_call_w, getString(R.string.system_notification__leave_call), createEndIntent(not.accountId, not.convId))
+
+        case _ => //no available action
+      }
+
+      def showNotification() = {
+        currentNotifications += not.id
+        notificationManager.notify(CallNotificationTag, not.id, builder.build())
+      }
+
+      LoggedTry(showNotification()).recover {
+        case NonFatal(e) =>
+          error(s"Notify failed: try without bitmap", e)
+          builder.setLargeIcon(null)
+          try showNotification()
+          catch {
+            case NonFatal(e2) => error("second display attempt failed, aborting", e2)
+          }
+      }
+    }
   }
 
-  val bitmap =
+  private def getBitmapSignal(z: ZMessaging, caller: UserId) = {
     (for {
-      z        <- callingZms
-      Some(id) <- callerData.map(_.picture)
+      Some(id) <- z.usersStorage.optSignal(caller).map(_.flatMap(_.picture))
       bitmap   <- inject[ImageController].imageSignal(z, id, Regular(callImageSizePx))
     } yield
       bitmap match {
         case BitmapLoaded(bmp, _) => Option(BitmapUtils.createRoundBitmap(bmp, callImageSizePx, 0, Color.TRANSPARENT))
         case _ => None
       })
-    .orElse(Signal.const(Option.empty[Bitmap]))
-
-  (for {
-    z          <- callingZms
-    conv       <- conversation
-    callerName <- callerData.map(_.name)
-    state      <- callState
-    group      <- isGroupCall
-    video      <- isVideoCall
-    bmp        <- bitmap
-  } yield (z.selfUserId, conv, callerName, state, group, video, bmp)).on(Threading.Ui) {
-    case (account, conv, callerName, state, group, video, bmp) =>
-      val message = getCallStateMessage(state, video)
-      val title = if (group) getString(R.string.system_notification__group_call_title, callerName, conv.displayName) else conv.displayName
-
-      val builder = DeprecationUtils.getBuilder(cxt)
-        .setSmallIcon(R.drawable.call_notification_icon)
-        .setLargeIcon(bmp.orNull)
-        .setContentTitle(title)
-        .setContentText(message)
-        .setContentIntent(OpenCallingScreen())
-        .setStyle(new NotificationCompat.BigTextStyle()
-          .setBigContentTitle(title)
-          .bigText(message))
-        .setCategory(NotificationCompat.CATEGORY_CALL)
-        .setPriority(NotificationCompat.PRIORITY_MAX)
-
-      state match {
-        case OtherCalling => //not in a call, silence or join
-          val silence = silenceIntent(account, conv.id)
-          builder
-            .addAction(R.drawable.ic_menu_silence_call_w, getString(R.string.system_notification__silence_call), silence)
-            .addAction(R.drawable.ic_menu_join_call_w, getString(R.string.system_notification__join_call), if (group) joinGroupIntent(account, conv.id) else joinIntent(account, conv.id))
-            .setDeleteIntent(silence)
-
-        case SelfConnected |
-             SelfCalling |
-             SelfJoining => //in a call, leave
-          builder.addAction(R.drawable.ic_menu_end_call_w, getString(R.string.system_notification__leave_call), leaveIntent(account, conv.id))
-
-        case _ => //no available action
-      }
-
-      def buildNotification = {
-        val notification = builder.build
-        DeprecationUtils.setPriority(notification, DeprecationUtils.PRIORITY_MAX)
-        if (state != OtherCalling) notification.flags |= Notification.FLAG_NO_CLEAR
-        notification
-      }
-
-      def showNotification() = {
-        notificationManager.cancel(ZETA_CALL_INCOMING_NOTIFICATION_ID)
-        notificationManager.cancel(ZETA_CALL_ONGOING_NOTIFICATION_ID)
-        notificationManager.notify(if (OtherCalling == state) ZETA_CALL_INCOMING_NOTIFICATION_ID else ZETA_CALL_ONGOING_NOTIFICATION_ID, buildNotification)
-      }
-
-      LoggedTry(showNotification()).recover { case e =>
-        error(s"Notify failed: try without bitmap. Error: $e")
-        builder.setLargeIcon(null)
-        try showNotification()
-        catch {
-          case e: Throwable => error("second display attempt failed, aborting")
-        }
-      }
+      .orElse(Signal.const(Option.empty[Bitmap]))
   }
 
-  private def getCallStateMessage(state: CallState, isVideoCall: Boolean): String = state match {
-    case SelfCalling |
-         SelfJoining => if (isVideoCall) getString(R.string.system_notification__outgoing_video) else getString(R.string.system_notification__outgoing)
-    case OtherCalling => if (isVideoCall) getString(R.string.system_notification__incoming_video) else getString(R.string.system_notification__incoming)
-    case SelfConnected => getString(R.string.system_notification__ongoing)
-    case _ => ""
+  private def getCallStateMessage(call: CallInfo): String =
+    getString((call.state, call.prevState, call.isVideoCall) match {
+      case (Some(SelfCalling), _, true)   | (Some(SelfJoining), Some(SelfCalling), true)   => R.string.system_notification__outgoing_video
+      case (Some(SelfCalling), _, false)  | (Some(SelfJoining), Some(SelfCalling), false)  => R.string.system_notification__outgoing
+      case (Some(OtherCalling), _, true)  | (Some(SelfJoining), Some(OtherCalling), true)  => R.string.system_notification__incoming_video
+      case (Some(OtherCalling), _, false) | (Some(SelfJoining), Some(OtherCalling), false) => R.string.system_notification__incoming
+      case (Some(SelfConnected), _, _)                                                     => R.string.system_notification__ongoing
+      case _                                                                               => R.string.empty_string
+    })
 
-  }
-
-  private def silenceIntent(account: UserId, convId: ConvId) = pendingIntent(SilenceRequestCode, CallWakeService.silenceIntent(Context.wrap(cxt), account, convId))
-
-  private def leaveIntent(account: UserId, convId: ConvId) = pendingIntent(LeaveRequestCode, CallWakeService.leaveIntent(Context.wrap(cxt), account, convId))
-
-  private def joinIntent(account: UserId, convId: ConvId) = pendingIntent(JoinRequestCode, CallWakeService.joinIntent(Context.wrap(cxt), account, convId))
-  private def joinGroupIntent(account: UserId, convId: ConvId) = pendingIntent(JoinRequestCode, CallWakeService.joinGroupIntent(Context.wrap(cxt), account, convId))
+  private def createJoinIntent(account: UserId, convId: ConvId) = pendingIntent(JoinCallRequestCode, CallWakeService.joinIntent(Context.wrap(cxt), account, convId))
+  private def createEndIntent(account: UserId, convId: ConvId) = pendingIntent(EndCallRequestCode, CallWakeService.silenceIntent(Context.wrap(cxt), account, convId))
 
   private def pendingIntent(reqCode: Int, intent: Intent) = PendingIntent.getService(cxt, reqCode, Intent.unwrap(intent), PendingIntent.FLAG_UPDATE_CURRENT)
 }
 
 object CallingNotificationsController {
-  val ZETA_CALL_INCOMING_NOTIFICATION_ID: Int = 1339273
-  val ZETA_CALL_ONGOING_NOTIFICATION_ID: Int = 1339276
+
+  case class CallNotification(id:            Int,
+                              convId:        ConvId,
+                              accountId:     UserId,
+                              callStartTime: Instant,
+                              title:         String,
+                              msg:           String,
+                              bitmap:        Option[Bitmap],
+                              isMainCall:    Boolean,
+                              state:         Option[CallState])
+
+  val CallNotificationTag = "call_notification"
+
   val CallImageSizeDp = 64
 
-  val JoinRequestCode = 8912
-  val LeaveRequestCode = 8913
-  val SilenceRequestCode = 8914
+  val JoinCallRequestCode = 8912
+  val EndCallRequestCode = 8914
   private implicit val tag: LogTag = logTagFor[CallingNotificationsController]
 }

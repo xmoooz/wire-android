@@ -24,9 +24,10 @@ import com.waz.api.NetworkMode
 import com.waz.content.GlobalPreferences.AutoAnswerCallPrefKey
 import com.waz.model.{ConvId, UserId}
 import com.waz.permissions.PermissionsService
+import com.waz.service.ZMessaging
 import com.waz.service.call.CallInfo.CallState
 import com.waz.threading.Threading
-import com.waz.utils.events.EventContext
+import com.waz.utils.events.{EventContext, Signal}
 import com.waz.zclient._
 import com.waz.zclient.utils.ContextUtils.{getString, showConfirmationDialog, showErrorDialog, showPermissionsErrorDialog}
 import com.waz.zclient.utils.PhoneUtils
@@ -53,7 +54,7 @@ class CallStartController(implicit inj: Injector, cxt: WireContext, ec: EventCon
 
   def startCallInCurrentConv(withVideo: Boolean, forceOption: Boolean = false) = {
     (for {
-      Some(zms)  <- activeZmsOpt.head
+      Some(zms)  <- inject[Signal[Option[ZMessaging]]].head
       Some(conv) <- zms.convsStats.selectedConversationId.head
       _          <- startCall(zms.selfUserId, conv, withVideo, forceOption)
     } yield {})
