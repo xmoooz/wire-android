@@ -22,7 +22,7 @@ import android.os.{PowerManager, Vibrator}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
 import com.waz.api.Verification
-import com.waz.avs.{VideoPreview, VideoRenderer}
+import com.waz.avs.VideoPreview
 import com.waz.model.{AssetId, UserData, UserId}
 import com.waz.service.call.Avs.VideoState
 import com.waz.service.call.CallInfo
@@ -324,23 +324,11 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     userData <- otherUser
   } yield (rConvId, userData.map(_.id))
 
-  def setVideoPreview(view: Option[VideoPreview]): Unit = {
-    flowManager.on(Threading.Ui) { fm =>
+  def setVideoPreview(view: Option[VideoPreview]): Unit =
+    flowManager.head.foreach { fm =>
       verbose(s"Setting VideoPreview on Flowmanager, view: $view")
       fm.setVideoPreview(view.orNull)
     }
-  }
-
-  def setVideoView(view: Option[VideoRenderer]): Unit = {
-    (for {
-      fm <- flowManager
-      (rConvId, userId) <- flowId
-    } yield (fm, rConvId, userId)).on(Threading.Ui) {
-      case (fm, rConvId, userId) =>
-        verbose(s"Setting ViewRenderer on Flowmanager, rConvId: $rConvId, userId: $userId, view: $view")
-        fm.setVideoView(rConvId, userId, view.orNull)
-    }
-  }
 
   val callBannerText = Signal(isVideoCall, callState).map {
     case (_,     SelfCalling)   => R.string.call_banner_outgoing
