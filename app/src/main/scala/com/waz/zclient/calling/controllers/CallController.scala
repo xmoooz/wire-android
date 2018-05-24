@@ -196,6 +196,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   def setVideoPause(pause: Boolean): Unit = {
     verbose(s"setVideoPause: $pause")
     for {
+      true <- isVideoCall.head
       st  <- videoSendState.head
       cId <- callConvId.head
       cs  <- callingService.head
