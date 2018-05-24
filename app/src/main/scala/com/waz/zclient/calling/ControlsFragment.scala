@@ -18,7 +18,7 @@
 package com.waz.zclient.calling
 
 import android.app.AlertDialog
-import android.content.{Context, DialogInterface}
+import android.content.{Context, DialogInterface, Intent}
 import android.graphics.Color
 import android.os.Bundle
 import android.support.annotation.Nullable
@@ -34,7 +34,7 @@ import com.waz.utils.events.{ClockSignal, Signal, Subscription}
 import com.waz.zclient.calling.controllers.CallController
 import com.waz.zclient.calling.views.{CallingHeader, CallingMiddleLayout, ControlsView}
 import com.waz.zclient.utils.RichView
-import com.waz.zclient.{FragmentHelper, R}
+import com.waz.zclient.{FragmentHelper, MainActivity, R}
 import org.threeten.bp.Instant
 import com.waz.zclient.utils.ContextUtils._
 
@@ -46,7 +46,13 @@ class ControlsFragment extends FragmentHelper {
 
   private lazy val controller = inject[CallController]
 
-  private lazy val callingHeader   = view[CallingHeader](R.id.calling_header)
+  private lazy val callingHeader = returning(view[CallingHeader](R.id.calling_header)) { vh =>
+    vh.onClick { _ =>
+      controller.callControlsVisible ! false
+      getContext.startActivity(new Intent(getContext, classOf[MainActivity]))
+    }
+  }
+
   private lazy val callingMiddle   = view[CallingMiddleLayout](R.id.calling_middle)
   private lazy val callingControls = view[ControlsView](R.id.controls_grid)
   private var subs = Set[Subscription]()
@@ -131,6 +137,7 @@ class ControlsFragment extends FragmentHelper {
     }
 
     callingMiddle.foreach(vh => subs += vh.onShowAllClicked.onUi { _ =>
+      controller.callControlsVisible ! false
       getFragmentManager.beginTransaction
         .setCustomAnimations(
           R.anim.fragment_animation_second_page_slide_in_from_right_no_alpha,
@@ -143,15 +150,18 @@ class ControlsFragment extends FragmentHelper {
     })
   }
 
+
   override def onResume() = {
     super.onResume()
+    //WARNING! Samsung devices call onPause/onStop on the activity (and thus fragment) when the proximity sensor kicks in.
+    //We then can't call callControlsVisible ! false in either of those methods, or else the proximity sensor is disabled again.
+    //For this reason, we have to set it to false at all possible exists out of the fragment
     controller.callControlsVisible ! true
   }
 
-
-  override def onPause() = {
+  override def onBackPressed() = {
     controller.callControlsVisible ! false
-    super.onPause()
+    super.onBackPressed()
   }
 
   override def onStop(): Unit = {

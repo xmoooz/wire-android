@@ -17,15 +17,14 @@
  */
 package com.waz.zclient.calling.views
 
-import android.content.{Context, Intent}
+import android.content.Context
 import android.util.AttributeSet
 import android.widget.{LinearLayout, TextView}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.zclient.calling.controllers.CallController
 import com.waz.zclient.common.views.GlyphButton
 import com.waz.zclient.utils.ContextUtils.getString
-import com.waz.zclient.{MainActivity, R, ViewHelper}
-import com.waz.zclient.utils.RichView
+import com.waz.zclient.{R, ViewHelper}
 
 class CallingHeader(val context: Context, val attrs: AttributeSet, val defStyleAttr: Int) extends LinearLayout(context, attrs, defStyleAttr) with ViewHelper {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
@@ -43,8 +42,6 @@ class CallingHeader(val context: Context, val attrs: AttributeSet, val defStyleA
 
   controller.subtitleText.onUi(subtitleView.setText)
   controller.conversationName.onUi(nameView.setText)
-
-  closeButton.onClick(getContext.startActivity(new Intent(getContext, classOf[MainActivity])))
 
   controller.cbrEnabled.map {
     case true => getString(R.string.audio_message__constant_bit_rate)
