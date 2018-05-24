@@ -54,9 +54,6 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   val accounts               = inject[AccountsService]
   val themeController        = inject[ThemeController]
 
-  //The zms of the account that's currently active (if any)
-  val activeZmsOpt = inject[Signal[Option[ZMessaging]]]
-
   val callControlsVisible = Signal(false)
   //the zms of the account that currently has an active call (if any)
   val callingZmsOpt =
@@ -83,27 +80,21 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
 
   val callStateOpt      = currentCallOpt.map(_.flatMap(_.state))
   val callState         = callStateOpt.collect { case Some(s) => s }
-
-  val prevCallStateOpt = currentCallOpt.map(_.flatMap(_.prevState))
-
+  val prevCallStateOpt  = currentCallOpt.map(_.flatMap(_.prevState))
   val isCallEstablished = callStateOpt.map(_.contains(SelfConnected))
   val isCallOutgoing    = callStateOpt.map(_.contains(SelfCalling))
   val isCallIncoming    = callStateOpt.map(_.contains(OtherCalling))
 
-  val isMuted           = currentCall.map(_.muted)
-  val startedAsVideo    = currentCall.map(_.startedAsVideoCall)
-
-
-  val videoSendState    = currentCall.map(_.videoSendState)
-  val videoReceiveStates = currentCall.map(_.videoReceiveState)
-  val allVideoReceiveStates = Signal(callingZms.map(_.selfUserId), videoReceiveStates, videoSendState).map {
-    case (selfId, others, self) => others.updated(selfId, self)
-  }
-  val isVideoCall       = allVideoReceiveStates.map(_.exists(_._2 != VideoState.Stopped))
-  val isGroupCall       = currentCall.map(_.isGroup)
-  val cbrEnabled        = currentCall.map(_.isCbrEnabled)
-  val duration          = currentCall.flatMap(_.durationFormatted)
-  val otherUserId       = currentCall.map(_.others.headOption)
+  val isMuted               = currentCall.map(_.muted)
+  val startedAsVideo        = currentCall.map(_.startedAsVideoCall)
+  val isVideoCall           = currentCall.map(_.isVideoCall)
+  val videoSendState        = currentCall.map(_.videoSendState)
+  val videoReceiveStates    = currentCall.map(_.videoReceiveStates)
+  val allVideoReceiveStates = currentCall.map(_.allVideoReceiveStates)
+  val isGroupCall           = currentCall.map(_.isGroup)
+  val cbrEnabled            = currentCall.map(_.isCbrEnabled)
+  val duration              = currentCall.flatMap(_.durationFormatted)
+  val otherUserId           = currentCall.map(_.others.headOption)
 
   val participantIds = currentCall.map(_.others.toVector)
 
