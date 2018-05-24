@@ -69,7 +69,7 @@ android {
     dexOptions {
         preDexLibraries false
         javaMaxHeapSize '4g'
-        keepRuntimeAnnotatedClasses false // uncomment if you need to set minSdkVersion to < 21
+//        keepRuntimeAnnotatedClasses false // uncomment if you need to set minSdkVersion to < 21
     }
 
     buildTypes {
@@ -95,7 +95,7 @@ android {
 
     productFlavors {
         dev {
-//            minSdkVersion 21
+            minSdkVersion 21
             applicationId "com.waz.zclient.dev"
             versionName majorVersion + android.defaultConfig.versionCode + "-dev"
             manifestPlaceholders = [applicationLabel       : "Wire Dev",
