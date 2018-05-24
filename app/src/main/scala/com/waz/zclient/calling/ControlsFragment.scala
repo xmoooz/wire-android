@@ -53,7 +53,7 @@ class ControlsFragment extends FragmentHelper {
     }
   }
 
-  private lazy val callingMiddle   = view[CallingMiddleLayout](R.id.calling_middle)
+  private lazy val callingMiddle = view[CallingMiddleLayout](R.id.calling_middle)
   private lazy val callingControls = view[ControlsView](R.id.controls_grid)
   private var subs = Set[Subscription]()
 

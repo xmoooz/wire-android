@@ -37,6 +37,7 @@ class CallingMiddleLayout(val context: Context, val attrs: AttributeSet, val def
   inflate(R.layout.calling_middle_layout, this)
 
   private val controller = inject[CallController]
+  import controller._
 
   private lazy val chathead = findById[ChatheadView](R.id.call_chathead)
   private lazy val participants = findById[CallParticipantsView](R.id.call_participants)
@@ -61,11 +62,7 @@ class CallingMiddleLayout(val context: Context, val attrs: AttributeSet, val def
     participants.setVisible(display == CallDisplay.Participants)
   }
 
-  Signal(callState, controller.callerId, controller.otherUser.map(_.map(_.id))).onUi {
-    case (OtherCalling, callerId, _) => chathead.setUserId(callerId)
-    case (_, _, Some(userId))        => chathead.setUserId(userId)
-    case _ =>
-  }
+  callerId.onUi(chathead.setUserId)
 
 }
 
