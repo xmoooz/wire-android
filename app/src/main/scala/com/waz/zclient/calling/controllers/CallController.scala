@@ -328,7 +328,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     flowManager.head.foreach { fm =>
       verbose(s"Setting VideoPreview on Flowmanager, view: $view")
       fm.setVideoPreview(view.orNull)
-    }
+    } (Threading.Ui)
 
   val callBannerText = Signal(isVideoCall, callState).map {
     case (_,     SelfCalling)   => R.string.call_banner_outgoing
