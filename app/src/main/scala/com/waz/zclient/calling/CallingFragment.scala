@@ -18,17 +18,17 @@
 package com.waz.zclient.calling
 
 import android.content.Context
+import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.graphics.{Color, Matrix}
 import android.os.Bundle
 import android.support.v7.widget.{CardView, GridLayout}
 import android.view.{LayoutInflater, View, ViewGroup}
 import android.widget.{FrameLayout, ImageView, TextView}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
-import com.waz.service.call.Avs.VideoState
 import com.waz.avs.{VideoPreview, VideoRenderer}
 import com.waz.model.{Dim2, UserId}
+import com.waz.service.call.Avs.VideoState
 import com.waz.threading.SerialDispatchQueue
 import com.waz.utils.events.Signal
 import com.waz.utils.returning
@@ -39,41 +39,6 @@ import com.waz.zclient.common.views.ImageController.{ImageSource, WireImage}
 import com.waz.zclient.ui.utils.ColorUtils
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.{FragmentHelper, R, ViewHelper}
-
-class VideoPreview2(context: Context) extends VideoPreview(context) {
-
-  private val aspectRatio = 1.3333334F
-  private val orientation = 90
-
-  override def onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int): Unit = {
-    setMeasuredDimension(View.getDefaultSize(getSuggestedMinimumWidth, widthMeasureSpec),
-      View.getDefaultSize(getSuggestedMinimumHeight, heightMeasureSpec))
-  }
-
-  setOpaque(false)
-
-  override def onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int): Unit = {
-    super.onLayout(changed, l, t, r, b)
-    val m = new Matrix
-
-    val vWidth = (r - l).toFloat
-    val vHeight = (b - t).toFloat
-
-    val vAspRatio = vWidth.toFloat / vHeight.toFloat
-
-    val tAspRatio = if (orientation % 180 == 0) this.aspectRatio else 1.0F / this.aspectRatio
-
-    val scaleX = Math.max(1f, tAspRatio / vAspRatio)
-    val scaleY = Math.max(1f, vAspRatio / tAspRatio)
-
-    val dx = - (scaleX * vWidth - vWidth) / 2
-    val dy = - (scaleY * vHeight - vHeight) / 2
-
-    m.postTranslate(dx, dy)
-    m.setScale(scaleX, scaleY)
-    setTransform(m)
-  }
-}
 
 abstract class UserVideoView(context: Context, val userId: UserId) extends FrameLayout(context, null, 0) with ViewHelper {
   protected lazy val controller: CallController = inject[CallController]
@@ -109,7 +74,7 @@ abstract class UserVideoView(context: Context, val userId: UserId) extends Frame
 
 class SelfVideoView(context: Context, userId: UserId) extends UserVideoView(context, userId) {
   pausedText.setText(R.string.empty_string)
-  override lazy val videoView: View = returning(new VideoPreview2(getContext)) { v =>
+  override lazy val videoView: View = returning(new VideoPreview(getContext)) { v =>
     controller.setVideoPreview(Some(v))
   }
 }
