@@ -35,8 +35,7 @@ import com.waz.utils.returning
 import com.waz.zclient.ui.views.OnDoubleClickListener
 import com.waz.zclient.utils.ContextUtils._
 
-import scala.concurrent.duration._
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{FiniteDuration, _}
 
 package object utils {
 
@@ -140,6 +139,22 @@ package object utils {
           })
           .start()
       }
+
+    def dispatchSetEnabled(enabled: Boolean): Unit = {
+      def dispatchSetEnabledAux(enabled: Boolean, viewGroup: ViewGroup): Unit = {
+        (0 until viewGroup.getChildCount).map(viewGroup.getChildAt(_)).foreach { v =>
+          v.setEnabled(enabled)
+          v match {
+            case vg: ViewGroup => dispatchSetEnabledAux(enabled, vg)
+            case _ =>
+          }
+        }
+      }
+      view match {
+        case vg: ViewGroup => dispatchSetEnabledAux(enabled, vg)
+        case _ =>
+      }
+    }
   }
 
   implicit class RichTextView(val textView: TextView) extends AnyVal {

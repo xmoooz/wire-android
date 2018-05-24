@@ -100,6 +100,7 @@ class ThemeControllingFrameLayout(context: Context, attrs: AttributeSet, defStyl
 
 trait ThemedView extends View {
 
+  //TODO: Replace with a signal
   var currentTheme: Option[Theme] = None
 
   def setTheme(theme: Theme): Unit

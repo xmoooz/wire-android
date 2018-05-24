@@ -18,7 +18,6 @@
 package com.waz.zclient.calling.views
 
 import android.content.Context
-import android.content.res.Resources
 import android.util.AttributeSet
 import android.view.Gravity
 import android.widget.{FrameLayout, LinearLayout}
@@ -28,12 +27,15 @@ import com.waz.zclient.common.controllers.{ThemeController, ThemedView}
 import com.waz.zclient.paintcode.GenericStyleKitView
 import com.waz.zclient.paintcode.StyleKitView.StyleKitDrawMethod
 import com.waz.zclient.ui.text.TypefaceTextView
-import com.waz.zclient.utils.ContextUtils._
+import com.waz.zclient.utils.ContextUtils.{getStyledDrawable, _}
 import com.waz.zclient.utils.RichView
 import com.waz.zclient.{R, ViewHelper}
 import com.waz.ZLog.ImplicitTag._
+import com.waz.threading.Threading
+import com.waz.utils.events.{EventStream, RefreshingSignal, Signal}
 import com.waz.zclient.common.controllers.ThemeController.Theme
 
+import scala.concurrent.Future
 import scala.util.Try
 
 class CallControlButtonView(val context: Context, val attrs: AttributeSet, val defStyleAttr: Int) extends LinearLayout(context, attrs, defStyleAttr) with ViewHelper with ThemedView {
@@ -42,7 +44,15 @@ class CallControlButtonView(val context: Context, val attrs: AttributeSet, val d
 
   val themeController = inject[ThemeController]
 
-  private var otherColor = Option.empty[ButtonColor]
+  private val otherColor = Signal(Option.empty[ButtonColor])
+
+  private val enabledChanged = EventStream[Boolean]()
+  private val enabledSignal = RefreshingSignal(Future{ isEnabled }(Threading.Ui), enabledChanged)
+
+  private val activatedChanged = EventStream[Boolean]()
+  private val activatedSignal = RefreshingSignal(Future{ isActivated }(Threading.Ui), activatedChanged)
+
+  private val theme = Signal[Theme]()
 
   inflate(R.layout.call_button_view)
 
@@ -62,40 +72,53 @@ class CallControlButtonView(val context: Context, val attrs: AttributeSet, val d
   }
   private val buttonLabelView = findById[TypefaceTextView](R.id.text)
 
-  override def setTheme(theme: Theme): Unit = {
-    val resTheme = themeController.getTheme(theme)
-    otherColor.fold {
-      updateIconColor(resTheme)
-      getStyledDrawable(R.attr.callButtonBackground, resTheme).foreach(buttonBackground.setBackground(_))
-    } { color =>
-      import ButtonColor._
-      val (drawable, textColor) = color match {
-        case Green       => (R.drawable.selector__icon_button__background__green,   R.color.selector__icon_button__text_color__dark)
-        case Red         => (R.drawable.selector__icon_button__background__red,     R.color.selector__icon_button__text_color__dark)
-      }
-      iconView.setColor(getColorStateList(textColor).getDefaultColor)
-      buttonBackground.setBackground(getDrawable(drawable))
+  //background
+  (for {
+    otherColor <- otherColor
+    theme <- theme
+  } yield {
+    import ButtonColor._
+    otherColor match {
+      case Some(Green) => getDrawable(R.drawable.selector__icon_button__background__green)
+      case Some(Red) => getDrawable(R.drawable.selector__icon_button__background__red)
+      case _ => getStyledDrawable(R.attr.callButtonBackground, themeController.getTheme(theme)).getOrElse(getDrawable(R.drawable.selector__icon_button__background__calling))
     }
+  }).onUi { drawable =>
+    buttonBackground.setBackground(drawable)
+    buttonBackground.refreshDrawableState()
+    buttonBackground.invalidate()
   }
 
+  //icon
+  (for {
+    otherColor <- otherColor
+    theme <- theme
+    enabled <- enabledSignal
+    activated <- activatedSignal
+  } yield (otherColor, theme, enabled, activated)).onUi {
+    case (Some(_), _, _, _) =>
+      iconView.setColor(getColor(R.color.white))
+    case (None, th, enabled, activated) =>
+      val resTheme = themeController.getTheme(th)
+      val iconColor =
+        if (!enabled) getStyledColor(R.attr.callIconDisabledColor, resTheme)
+        else if (activated) getStyledColor(R.attr.wirePrimaryTextColorReverted, resTheme)
+        else getStyledColor(R.attr.wirePrimaryTextColor, resTheme)
+      iconView.setColor(iconColor)
+    buttonBackground.refreshDrawableState()
+  }
+
+  override def setTheme(theme: Theme): Unit = this.theme ! theme
+
   override def setEnabled(enabled: Boolean): Unit = {
-    (0 until getChildCount).map(getChildAt(_)).foreach(_.setEnabled(enabled))
     super.setEnabled(enabled)
-    updateIconColor(themeController.getTheme(currentTheme.getOrElse(Theme.Dark)))
+    this.dispatchSetEnabled(enabled)
+    enabledChanged ! enabled
   }
 
   override def setActivated(activated: Boolean): Unit = {
     super.setActivated(activated)
-    updateIconColor(themeController.getTheme(currentTheme.getOrElse(Theme.Dark)))
-  }
-
-  private def updateIconColor(theme: Resources#Theme): Unit = {
-    val iconColor =
-      if (otherColor.isDefined) getColor(R.color.white)
-      else if (!isEnabled) getStyledColor(R.attr.callIconDisabledColor, theme)
-      else if (isActivated) getStyledColor(R.attr.wirePrimaryTextColorReverted, theme)
-      else getStyledColor(R.attr.wirePrimaryTextColor, theme)
-    iconView.setColor(iconColor)
+    activatedChanged ! activated
   }
 
   def setText(stringId: Int): Unit = buttonLabelView.setText(getResources.getText(stringId))
@@ -103,8 +126,7 @@ class CallControlButtonView(val context: Context, val attrs: AttributeSet, val d
   def set(icon: StyleKitDrawMethod, labelStringId: Int, onClick: () => Unit, forceColor: Option[ButtonColor] = None): Unit = {
     iconView.setOnDraw(icon)
     setText(labelStringId)
-    otherColor = forceColor
-    setTheme(currentTheme.getOrElse(Theme.Dark))
+    otherColor ! forceColor
     this.onClick { onClick() }
   }
 
