@@ -87,8 +87,6 @@ class ControlsFragment extends FragmentHelper {
       case _ =>
     }
 
-    controller.callConvId.onChanged.onUi(_ => restart())
-
     (for {
       state <- controller.callState
       incoming = state == CallState.SelfJoining || state == CallState.OtherCalling
@@ -162,14 +160,6 @@ class ControlsFragment extends FragmentHelper {
     subs = Set.empty
     super.onStop()
   }
-
-  private def restart() = {
-    verbose("restart")
-    getActivity.finish()
-    CallingActivity.start(ctx)
-    getActivity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-  }
-
 }
 
 object ControlsFragment {
