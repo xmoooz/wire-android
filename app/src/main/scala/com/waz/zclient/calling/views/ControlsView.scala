@@ -121,11 +121,15 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
   private def accept(): Future[Unit] = async {
       onButtonClick ! {}
       val sendingVideo = await(controller.videoSendState.head) == VideoState.Started
-      val hasPerms = await(permissions.requestAllPermissions(if (sendingVideo) Set(CAMERA, RECORD_AUDIO) else Set(RECORD_AUDIO)))
+      val perms = await(permissions.requestPermissions(if (sendingVideo) Set(CAMERA, RECORD_AUDIO) else Set(RECORD_AUDIO)))
+      val cameraGranted = perms.exists(p => p.key.equals(CAMERA) && p.granted)
+      val audioGranted = perms.exists(p => p.key.equals(RECORD_AUDIO) && p.granted)
       val callingConvId = await(controller.callConvId.head)
       val callingZms = await(controller.callingZms.head)
 
-      if (hasPerms) callingZms.calling.startCall(callingConvId, await(controller.isVideoCall.head))
+      if (sendingVideo && !cameraGranted) controller.toggleVideo()
+
+      if (audioGranted) callingZms.calling.startCall(callingConvId, await(controller.isVideoCall.head))
       else
         showPermissionsErrorDialog(R.string.calling__cannot_start__title,
           if (sendingVideo) R.string.calling__cannot_start__no_video_permission__message else R.string.calling__cannot_start__no_permission__message
@@ -148,11 +152,9 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
   }
 
   private def video(): Future[Unit] = async {
+    onButtonClick ! {}
     if (await(permissions.requestAllPermissions(Set(CAMERA))))
-      Future.successful {
-        onButtonClick ! {}
-        controller.toggleVideo()
-      }
+      controller.toggleVideo()
     else
       showPermissionsErrorDialog(R.string.calling__cannot_start__title,
         R.string.calling__cannot_start__no_video_permission__message
