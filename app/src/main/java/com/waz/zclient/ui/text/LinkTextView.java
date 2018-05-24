@@ -70,7 +70,7 @@ public class LinkTextView extends TypefaceTextView {
     public void setTextLink(String text) {
         setTransformedText(text);
         try {
-            if (Linkify.addLinks(this, Linkify.ALL)) {
+            if (Linkify.addLinks(this, Linkify.WEB_URLS | Linkify.EMAIL_ADDRESSES | Linkify.PHONE_NUMBERS)) {
                 stripUnderlines();
             }
         } catch (Throwable t) {
