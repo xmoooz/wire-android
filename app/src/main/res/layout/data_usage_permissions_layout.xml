@@ -45,6 +45,7 @@
 
             <com.waz.zclient.preferences.views.SwitchPreference
                 android:id="@+id/preferences_receive_news_and_offers"
+                android:layout_marginTop="@dimen/wire__padding__20"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:title="@string/pref_advanced_receive_news_and_offers_title"
