@@ -114,7 +114,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
         CallParticipantInfo(
           u.id,
           u.picture,
-          u.displayName,
+          u.getDisplayName,
           u.isGuest(teamId),
           u.isVerified,
           videoStates.get(u.id).contains(VideoState.Started))
