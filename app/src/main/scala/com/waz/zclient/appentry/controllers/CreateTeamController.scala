@@ -19,7 +19,6 @@ package com.waz.zclient.appentry.controllers
 
 import com.waz.utils.events.EventContext
 import com.waz.zclient.{Injectable, Injector}
-import com.waz.znet.ZNetClient.ErrorOr
 
 class CreateTeamController(implicit inj: Injector, eventContext: EventContext) extends Injectable {
 
@@ -29,20 +28,5 @@ class CreateTeamController(implicit inj: Injector, eventContext: EventContext) e
   var teamUserName = ""
   var teamUserUsername = ""
   var password = ""
-
-  def clearCredentials(): Unit = {
-    teamName = ""
-    teamEmail = ""
-    code = ""
-    teamUserName = ""
-    teamUserUsername = ""
-    password = ""
-  }
-
-  def goTo(): Unit = {
-
-  }
-
-  def setUsername(username: String): ErrorOr[Unit] =
-    throw new NotImplementedError("")
+  var receiveNewsAndOffers = Option.empty[Boolean]
 }

@@ -21,8 +21,11 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.v4.app.FragmentManager
 import android.view.{LayoutInflater, View, ViewGroup}
+import com.waz.ZLog.ImplicitTag._
+import com.waz.content.{GlobalPreferences, UserPreferences}
+import com.waz.content.UserPreferences.CrashesAndAnalyticsRequestShown
 import com.waz.model.{ErrorData, Uid}
-import com.waz.service.ZMessaging
+import com.waz.service.{AccountManager, GlobalModule, ZMessaging}
 import com.waz.threading.Threading
 import com.waz.utils.events.Signal
 import com.waz.utils.returning
@@ -40,6 +43,8 @@ import com.waz.zclient.giphy.GiphySharingPreviewFragment
 import com.waz.zclient.messages.UsersController
 import com.waz.zclient.pages.main.conversationlist.ConfirmationFragment
 import com.waz.zclient.pages.main.conversationpager.ConversationPagerFragment
+import com.waz.zclient.tracking.GlobalTrackingController.analyticsPrefKey
+import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.views.menus.ConfirmationMenu
 import com.waz.zclient.{ErrorsController, FragmentHelper, OnBackPressedListener, R}
 import net.hockeyapp.android.ExceptionHandler
@@ -59,6 +64,7 @@ class MainPhoneFragment extends FragmentHelper
   import Threading.Implicits.Ui
 
   private lazy val zms = inject[Signal[ZMessaging]]
+  private lazy val am  = inject[Signal[AccountManager]]
 
   private lazy val usersController        = inject[UsersController]
   private lazy val conversationController = inject[ConversationController]
@@ -97,6 +103,38 @@ class MainPhoneFragment extends FragmentHelper
     giphyController.addObserver(this)
     confirmationController.addConfirmationObserver(this)
     collectionController.addObserver(this)
+
+    for {
+      true <- inject[GlobalModule].prefs(GlobalPreferences.ShowMarketingConsentDialog).apply()
+      am   <- am.head
+      analyticsShown <- am.userPrefs(CrashesAndAnalyticsRequestShown).apply()
+      _ <- if (analyticsShown) Future.successful({}) else
+        showConfirmationDialog(
+          getString(R.string.crashes_and_analytics_request_title),
+          getString(R.string.crashes_and_analytics_request_body),
+          R.string.app_entry_dialog_accept,
+          R.string.app_entry_dialog_not_now
+        ).flatMap { resp =>
+          zms.head.flatMap { zms =>
+            for {
+              _ <- zms.userPrefs(CrashesAndAnalyticsRequestShown) := true
+              _ <- zms.prefs(analyticsPrefKey) := resp //we override whatever the global value is on asking the user again
+            } yield {}
+          }
+        }
+      askMarketingConsentAgain <- am.userPrefs(UserPreferences.AskMarketingConsentAgain).apply()
+      _ <- if (!askMarketingConsentAgain) Future.successful({}) else
+        showConfirmationDialogWithNeutralButton(
+          R.string.receive_news_and_offers_request_title,
+          R.string.receive_news_and_offers_request_body,
+          R.string.app_entry_dialog_privacy_policy,
+          R.string.app_entry_dialog_accept,
+          R.string.app_entry_dialog_not_now
+        ).map { confirmed =>
+          am.setMarketingConsent(confirmed)
+          if (confirmed.isEmpty) inject[BrowserController].openUrl(getString(R.string.url_privacy_policy))
+        }
+    } yield {}
   }
 
   override def onStop(): Unit = {

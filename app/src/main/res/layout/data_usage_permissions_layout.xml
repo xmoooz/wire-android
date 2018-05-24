@@ -19,36 +19,37 @@
 
 -->
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              android:orientation="vertical"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent">
+       xmlns:app="http://schemas.android.com/apk/res-auto"
+       android:orientation="vertical"
+       android:layout_width="match_parent"
+       android:layout_height="match_parent">
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        >
+    >
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            >
+        >
 
-            <com.waz.zclient.preferences.views.TextButton
-                android:id="@+id/preferences_debug_report"
+            <com.waz.zclient.preferences.views.SwitchPreference
+                android:id="@+id/preferences_send_anonymous_data"
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/preference_button_height"
-                app:subtitle="@string/pref_advanced_debug_report_summary"
-                app:title="@string/pref_advanced_debug_report_title"
-                />
+                android:layout_height="wrap_content"
+                app:title="@string/pref_advanced_send_anonymous_data_title"
+                app:subtitle="@string/pref_advanced_send_anonymous_data_summary"
+            />
 
-            <com.waz.zclient.preferences.views.TextButton
-                android:id="@+id/preferences_reset_push"
+            <com.waz.zclient.preferences.views.SwitchPreference
+                android:id="@+id/preferences_receive_news_and_offers"
+                android:layout_marginTop="@dimen/wire__padding__20"
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/preference_button_height"
-                app:subtitle="@string/pref_advanced_reset_push_summary"
-                app:title="@string/pref_advanced_reset_push_title"
+                android:layout_height="wrap_content"
+                app:title="@string/pref_advanced_receive_news_and_offers_title"
+                app:subtitle="@string/pref_advanced_receive_news_and_offers_summary"
             />
 
         </LinearLayout>

@@ -23,9 +23,10 @@ import android.text.{Editable, TextWatcher}
 import android.view.{LayoutInflater, View, ViewGroup}
 import android.widget.TextView
 import com.waz.api.EmailCredentials
+import com.waz.content.GlobalPreferences
 import com.waz.model.AccountData.Password
 import com.waz.model.{ConfirmationCode, EmailAddress}
-import com.waz.service.AccountsService
+import com.waz.service.{AccountsService, GlobalModule}
 import com.waz.service.tracking.TrackingService.track
 import com.waz.threading.Threading
 import com.waz.utils.returning
@@ -34,15 +35,18 @@ import com.waz.zclient.appentry.AppEntryActivity
 import com.waz.zclient.appentry.DialogErrorMessage.EmailError
 import com.waz.zclient.appentry.fragments.SignInFragment.{Email, Register, SignInMethod}
 import com.waz.zclient.appentry.fragments.VerifyEmailWithCodeFragment._
+import com.waz.zclient.common.controllers.BrowserController
 import com.waz.zclient.controllers.globallayout.IGlobalLayoutController
 import com.waz.zclient.controllers.navigation.Page
 import com.waz.zclient.newreg.views.PhoneConfirmationButton
-import com.waz.zclient.tracking.{EnteredCodeEvent, RegistrationSuccessfulEvent}
 import com.waz.zclient.tracking.GlobalTrackingController._
+import com.waz.zclient.tracking.{EnteredCodeEvent, RegistrationSuccessfulEvent}
 import com.waz.zclient.ui.text.TypefaceEditText
 import com.waz.zclient.ui.utils.KeyboardUtils
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.DeprecationUtils
+
+import scala.concurrent.Future
 
 object VerifyEmailWithCodeFragment {
   val Tag: String = classOf[VerifyEmailWithCodeFragment].getName
@@ -171,9 +175,28 @@ class VerifyEmailWithCodeFragment extends FragmentHelper with View.OnClickListen
   private def confirmCode(): Unit = {
     activity.enableProgress(true)
     KeyboardUtils.hideKeyboard(getActivity)
-    accountService.register(EmailCredentials(emailAddress, password, Some(confirmationCode)), name).foreach { response =>
-      track(EnteredCodeEvent(SignInMethod(Register, Email), responseToErrorPair(response)))
-      response match {
+
+    for {
+      resp <- accountService.register(EmailCredentials(emailAddress, password, Some(confirmationCode)), name)
+      askMarketingConsent <- inject[GlobalModule].prefs(GlobalPreferences.ShowMarketingConsentDialog).apply()
+      _    <- resp match {
+        case Right(Some(am)) =>
+          (if (!askMarketingConsent) Future.successful(Some(false)) else
+            showConfirmationDialogWithNeutralButton(
+              R.string.receive_news_and_offers_request_title,
+              R.string.receive_news_and_offers_request_body,
+              R.string.app_entry_dialog_privacy_policy,
+              R.string.app_entry_dialog_accept,
+              R.string.app_entry_dialog_not_now
+            )).map { consent =>
+            am.setMarketingConsent(consent)
+            if (consent.isEmpty) inject[BrowserController].openUrl(getString(R.string.url_privacy_policy))
+          }
+        case _ => Future.successful({})
+      }
+    } yield {
+      track(EnteredCodeEvent(SignInMethod(Register, Email), responseToErrorPair(resp)))
+      resp match {
         case Left(error) =>
           activity.enableProgress(false)
           showErrorDialog(EmailError(error)).map { _ =>
@@ -184,7 +207,7 @@ class VerifyEmailWithCodeFragment extends FragmentHelper with View.OnClickListen
         case _ =>
           track(RegistrationSuccessfulEvent(SignInFragment.Email))
           activity.enableProgress(false)
-          activity.onEnterApplication(false)
+          activity.onEnterApplication(openSettings = false)
       }
     }
   }

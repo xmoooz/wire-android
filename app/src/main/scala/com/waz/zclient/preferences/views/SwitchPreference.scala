@@ -27,11 +27,12 @@ import com.waz.service.ZMessaging
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventStream, Signal}
 import com.waz.zclient.{R, ViewHelper}
+import com.waz.zclient.utils.RichView
 import com.waz.ZLog.ImplicitTag._
 
 trait Switchable {
   val onCheckedChange: EventStream[Boolean]
-  def setChecked(checked: Boolean): Unit
+  def setChecked(checked: Boolean, disableListener: Boolean = false): Unit
 }
 
 class SwitchPreference(context: Context, attrs: AttributeSet, style: Int) extends TextButton(context, attrs, style) with Switchable with ViewHelper {
@@ -43,12 +44,15 @@ class SwitchPreference(context: Context, attrs: AttributeSet, style: Int) extend
   private val attributesArray: TypedArray =
     context.getTheme.obtainStyledAttributes(attrs, R.styleable.SwitchPreference, 0, 0)
 
-  val keyAttr = Option(attributesArray.getString(R.styleable.SwitchPreference_key))
-  val switch = findById[Switch](R.id.preference_switch)
-  val prefInfo = Signal[PrefInfo]()
   lazy val zms = inject[Signal[ZMessaging]]
+
+  val prefInfo = Signal[PrefInfo]()
+  override val onCheckedChange = EventStream[Boolean]()
+
+  val switch = findById[Switch](R.id.preference_switch)
+
   lazy val pref = for {
-    z <- zms
+    z        <- zms
     prefInfo <- prefInfo
   } yield {
     if (prefInfo.global)
@@ -57,22 +61,25 @@ class SwitchPreference(context: Context, attrs: AttributeSet, style: Int) extend
       z.userPrefs.preference(prefInfo.key)
   }
 
-  override val onCheckedChange = EventStream[Boolean]()
-
-  pref.flatMap(_.signal).on(Threading.Ui) { setChecked }
-  onCheckedChange.on(Threading.Ui) { value =>
-    pref.head.map(_.update(value))(Threading.Ui)
-  }
-  keyAttr.foreach{ key =>
+  Option(attributesArray.getString(R.styleable.SwitchPreference_key)).foreach { key =>
     prefInfo ! PrefInfo(PrefKey[Boolean](key, customDefault = false), global = false)
   }
 
-  switch.setOnCheckedChangeListener(new OnCheckedChangeListener {
+  pref.flatMap(_.signal).onUi(setChecked(_))
+
+  onCheckedChange.onUi { value =>
+    pref.head.map(_.update(value))(Threading.Ui)
+  }
+
+  val checkChangeListener = new OnCheckedChangeListener {
     override def onCheckedChanged(buttonView: CompoundButton, isChecked: Boolean) = {
       pref.head.map(_.update(isChecked))(Threading.Ui)
       onCheckedChange ! isChecked
     }
-  })
+  }
+
+  switch.setOnCheckedChangeListener(checkChangeListener)
+  this.onClick(setChecked(!switch.isChecked))
 
   def setDisabled(disabled: Boolean) = {
     setEnabled(!disabled)
@@ -80,8 +87,10 @@ class SwitchPreference(context: Context, attrs: AttributeSet, style: Int) extend
     title.foreach(_.setAlpha(if (disabled) 0.5f else 1f))
   }
 
-  override def setChecked(checked: Boolean): Unit = {
+  override def setChecked(checked: Boolean, disableListener: Boolean = false): Unit = {
+    if (disableListener) switch.setOnCheckedChangeListener(null)
     switch.setChecked(checked)
+    if (disableListener) switch.setOnCheckedChangeListener(checkChangeListener)
   }
 
   def setPreference(prefKey: PrefKey[Boolean], global: Boolean = false): Unit = {

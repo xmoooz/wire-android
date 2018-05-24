@@ -76,10 +76,10 @@ ext {
     playServicesVersion = '11.0.0'
 
     audioVersion = System.getenv("AUDIO_VERSION") ?: '1.209.0@aar'
-    zMessagingDevVersionBase = '122.1996'
+    zMessagingDevVersionBase = '122.5.454'
     zMessagingDevVersion = "${zMessagingDevVersionBase}@aar"
     // Release version number must be like this X.0(.Y)
-    zMessagingReleaseVersion = System.getenv("ZMESSAGING_VERSION") ?: '122.1.448@aar'
+    zMessagingReleaseVersion = System.getenv("ZMESSAGING_VERSION") ?: '122.5.454@aar'
 
     avsVersion = '4.1.133@aar'
     avsInternalVersion = avsVersion //leave this here in case we want to test specific AVS versions on internal
@@ -87,7 +87,7 @@ ext {
     avsGroup = 'com.wire'
 
     // proprietary avs artifact configuration
-    customAvsVersion = '4.2.28@aar'
+    customAvsVersion = '4.3.52@aar'
     customAvsInternalVersion = customAvsVersion
     customAvsName = 'avs'
     customAvsGroup = 'com.wearezeta.avs'

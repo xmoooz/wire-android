@@ -40,13 +40,14 @@ import scala.concurrent.Future
 
 case class SetTeamPasswordFragment() extends CreateTeamFragment {
 
+  import Threading.Implicits.Ui
+
   override val layoutId: Int = R.layout.set_password_scene
   private lazy val tracking = inject[TrackingService]
 
   private lazy val inputField = view[InputBox](R.id.input_field)
 
   override def onViewCreated(view: View, savedInstanceState: Bundle): Unit = {
-    import Threading.Implicits.Ui
     inputField.foreach { inputField =>
       inputField.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD)
       inputField.setValidator(PasswordValidator)
@@ -59,12 +60,15 @@ case class SetTeamPasswordFragment() extends CreateTeamFragment {
           case true =>
             tracking.track(TeamAcceptedTerms(TeamAcceptedTerms.AfterPassword))
             val credentials = EmailCredentials(EmailAddress(createTeamController.teamEmail), Password(text), Some(ConfirmationCode(createTeamController.code)))
-            accountsService.register(credentials, createTeamController.teamUserName, Some(createTeamController.teamName)).map {
+
+            accountsService.register(credentials, createTeamController.teamUserName, Some(createTeamController.teamName)).flatMap {
               case Left(error) =>
-                Some(getString(EmailError(error).bodyResource))
-              case _ =>
-                showFragment(InviteToTeamFragment(), InviteToTeamFragment.Tag)
-                None
+                Future.successful(Some(getString(EmailError(error).bodyResource)))
+              case Right(am) =>
+                am.fold(Future.successful({}))(_.setMarketingConsent(createTeamController.receiveNewsAndOffers).map(_ => {})).map { _ =>
+                    showFragment(InviteToTeamFragment(), InviteToTeamFragment.Tag)
+                    None
+                }
             }
           case false =>
             Future.successful(None)
