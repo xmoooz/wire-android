@@ -122,6 +122,7 @@
             android:drawablePadding="@dimen/wire__padding__6"
             app:w_font="@string/wire__typeface__light"
             style="?startUiUserRowLabel"
+            app:themedColor="Primary"
             />
 
         <com.waz.zclient.ui.text.TypefaceTextView
@@ -135,6 +136,7 @@
             android:textSize="@dimen/wire__text_size__small"
             app:w_font="@string/wire__typeface__light"
             style="?startUiUserRowSubLabel"
+            app:themedColor="Secondary"
             />
 
     </LinearLayout>

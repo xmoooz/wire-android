@@ -34,18 +34,13 @@
 package com.waz.zclient.ui.text
 
 import android.content.Context
-import android.content.res.{Resources, TypedArray}
-import android.support.v7.widget.AppCompatTextView
+import android.content.res.TypedArray
 import android.text.TextUtils
 import android.util.AttributeSet
-import com.waz.zclient.common.controllers.ThemeController.Theme
-import com.waz.zclient.common.controllers.{ThemeController, ThemedView}
-import com.waz.zclient.ui.text.TypefaceTextView._
+import com.waz.zclient.R
 import com.waz.zclient.ui.utils.TypefaceUtils
-import com.waz.zclient.utils.ContextUtils._
-import com.waz.zclient.{R, ViewHelper}
 
-class TypefaceTextView(val context: Context, val attrs: AttributeSet, val defStyle: Int) extends AppCompatTextView(context, attrs, defStyle) with ViewHelper with ThemedView {
+class TypefaceTextView(context: Context, attrs: AttributeSet, defStyle: Int) extends ThemedTextView(context, attrs, defStyle) {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null)
 
@@ -53,31 +48,11 @@ class TypefaceTextView(val context: Context, val attrs: AttributeSet, val defSty
 
   val a: TypedArray = context.getTheme.obtainStyledAttributes(attrs, R.styleable.TypefaceTextView, 0, 0)
   val font: String = a.getString(R.styleable.TypefaceTextView_w_font)
-  val themedColor: Option[Int] = Option(a.getInt(R.styleable.TypefaceTextView_themedColor, 0)).filter(_ != 0)
   if (!TextUtils.isEmpty(font)) setTypeface(font)
   transform = a.getString(R.styleable.TypefaceTextView_transform)
   if (!TextUtils.isEmpty(transform) && getText != null) setTransformedText(getText.toString, transform)
   a.recycle()
   setSoundEffectsEnabled(false)
-
-  private var forcedTheme = Option.empty[Resources#Theme]
-
-  private def setTheme(theme: Resources#Theme): Unit = {
-    val t = forcedTheme.getOrElse(theme)
-    val colorId = themedColor.collect {
-      case PrimaryColorIndex => R.attr.wirePrimaryTextColor
-      case SecondaryColorIndex => R.attr.wireSecondaryTextColor
-    }.getOrElse(R.attr.wirePrimaryTextColor)
-
-    setTextColor(getStyledColor(colorId, t, getCurrentTextColor)(context))
-  }
-
-  override def setTheme(theme: Theme): Unit = setTheme(inject[ThemeController].getTheme(theme))
-
-  def forceTheme(theme: Option[Resources#Theme]): Unit = {
-    forcedTheme = theme
-    setTheme(currentTheme.getOrElse(Theme.Light))
-  }
 
   def setTypeface(font: String): Unit = setTypeface(TypefaceUtils.getTypeface(font))
 
@@ -92,9 +67,4 @@ class TypefaceTextView(val context: Context, val attrs: AttributeSet, val defSty
     val transformer = TextTransform.get(this.transform)
     this.setText(transformer.transform(text))
   }
-}
-
-object TypefaceTextView {
-  val PrimaryColorIndex = 1
-  val SecondaryColorIndex = 2
 }

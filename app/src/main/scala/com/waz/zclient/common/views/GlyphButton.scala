@@ -38,12 +38,10 @@ object GlyphButton {
   private val DARKEN_FACTOR: Float = 0.1f
 }
 
-class GlyphButton(val context: Context, val attrs: AttributeSet, val defStyleAttr: Int) extends GlyphTextView(context, attrs, defStyleAttr) {
+class GlyphButton(context: Context, attrs: AttributeSet, defStyleAttr: Int) extends GlyphTextView(context, attrs, defStyleAttr) {
   import GlyphButton._
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null)
-
-  implicit val ctx = context
 
   private var alphaPressed: Float = 0
 

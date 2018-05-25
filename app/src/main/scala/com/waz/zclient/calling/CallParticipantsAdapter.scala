@@ -68,10 +68,7 @@ class CallParticipantsAdapter(implicit context: Context, eventContext: EventCont
     notifyDataSetChanged()
   }
 
-  callController.theme.map(_ == themeController.darkTheme).map {
-    case true => Theme.Dark
-    case _    => Theme.Light
-  }.onUi { theme =>
+  callController.theme.onUi { theme =>
     this.theme = theme
     notifyDataSetChanged()
   }

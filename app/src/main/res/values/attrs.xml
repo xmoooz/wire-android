@@ -184,14 +184,17 @@
         <attr name="positionThreshold" format="dimension" />
     </declare-styleable>
 
-    <declare-styleable name="TypefaceTextView">
-        <attr name="w_font" format="string" />
-        <attr name="transform" format="string" />
+    <declare-styleable name="ThemedTextView">
         <attr name="themedColor" format="enum" >
             <enum name="None" value="0"/>
             <enum name="Primary" value="1"/>
             <enum name="Secondary" value="2"/>
         </attr>
+    </declare-styleable>
+
+    <declare-styleable name="TypefaceTextView">
+        <attr name="w_font" format="string" />
+        <attr name="transform" format="string" />
     </declare-styleable>
 
     <declare-styleable name="ShieldView">
