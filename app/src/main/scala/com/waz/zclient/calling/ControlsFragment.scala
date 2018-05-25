@@ -26,19 +26,15 @@ import android.support.v4.app.Fragment
 import android.view._
 import com.waz.ZLog.ImplicitTag.implicitLogTag
 import com.waz.ZLog.verbose
-import com.waz.service.ZMessaging.clock
-import com.waz.service.call.CallInfo.CallState
 import com.waz.service.call.Avs.VideoState
-import com.waz.utils._
-import com.waz.utils.events.{ClockSignal, Signal, Subscription}
+import com.waz.service.call.CallInfo.CallState
+import com.waz.utils.events.Subscription
+import com.waz.utils.returning
 import com.waz.zclient.calling.controllers.CallController
 import com.waz.zclient.calling.views.{CallingHeader, CallingMiddleLayout, ControlsView}
+import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.RichView
 import com.waz.zclient.{FragmentHelper, MainActivity, R}
-import org.threeten.bp.Instant
-import com.waz.zclient.utils.ContextUtils._
-
-import scala.concurrent.duration._
 
 class ControlsFragment extends FragmentHelper {
 
@@ -56,17 +52,6 @@ class ControlsFragment extends FragmentHelper {
   private lazy val callingMiddle = view[CallingMiddleLayout](R.id.calling_middle)
   private lazy val callingControls = view[ControlsView](R.id.controls_grid)
   private var subs = Set[Subscription]()
-
-  private lazy val lastControlsClick = Signal[(Boolean, Instant)]() //true = show controls and set timer, false = hide controls
-
-  private lazy val controlsVisible =
-    (for {
-      true         <- controller.isVideoCall
-      Some(est)    <- controller.currentCall.map(_.estabTime)
-      (show, last) <- lastControlsClick.orElse(Signal.const((true, clock.instant())))
-      display <- if (show) ClockSignal(3.seconds).map(c => last.max(est).until(c).asScala <= 3.seconds) else Signal.const(false)
-    } yield display).orElse(Signal.const(true))
-
 
   override def onCreate(savedInstanceState: Bundle): Unit = {
     super.onCreate(savedInstanceState)
@@ -117,9 +102,9 @@ class ControlsFragment extends FragmentHelper {
   override def onStart(): Unit = {
     super.onStart()
 
-    lastControlsClick ! (true, clock.instant()) //reset timer after coming back from participants
+    controller.controlsClick(true) //reset timer after coming back from participants
 
-    subs += controlsVisible.onUi {
+    subs += controller.controlsVisible.onUi {
       case true  => getView.fadeIn()
       case false => getView.fadeOut()
     }
@@ -127,13 +112,13 @@ class ControlsFragment extends FragmentHelper {
     callingControls.foreach(controls =>
       subs += controls.onButtonClick.onUi { _ =>
         verbose("button clicked")
-        lastControlsClick ! (true, clock.instant())
+        controller.controlsClick(true)
       }
     )
 
     //we need to listen to clicks on the outer layout, so that we can set this.getView to gone.
     getView.getParent.asInstanceOf[View].onClick {
-      Option(getView).map(_.getVisibility != View.VISIBLE).foreach(lastControlsClick ! (_, clock.instant()))
+      Option(getView).map(_.getVisibility != View.VISIBLE).foreach(controller.controlsClick)
     }
 
     callingMiddle.foreach(vh => subs += vh.onShowAllClicked.onUi { _ =>
