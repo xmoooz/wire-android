@@ -22,7 +22,6 @@ import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.RecyclerView.ViewHolder
 import android.view.{LayoutInflater, View, ViewGroup}
 import android.widget.ImageView
-import com.waz.ZLog.ImplicitTag.implicitLogTag
 import com.waz.utils.events._
 import com.waz.zclient.ViewHelper.inflate
 import com.waz.zclient.calling.controllers.CallController
@@ -35,6 +34,7 @@ import com.waz.zclient.ui.text.TypefaceTextView
 import com.waz.zclient.utils.ContextUtils.{getColor, getDrawable, getString, getStyledColor}
 import com.waz.zclient.utils.RichView
 import com.waz.zclient.{Injectable, Injector, R}
+import com.waz.ZLog.ImplicitTag.implicitLogTag
 
 class CallParticipantsAdapter(implicit context: Context, eventContext: EventContext, inj: Injector) extends RecyclerView.Adapter[ViewHolder] with Injectable {
 
@@ -74,16 +74,16 @@ class CallParticipantsAdapter(implicit context: Context, eventContext: EventCont
   }
 
   override def getItemViewType(position: Int): Int =
-    if (position == items.size || maxRows.contains(position)) ShowAll
+    if (maxRows.contains(position + 1)) ShowAll
     else UserRow
 
   override def getItemCount: Int = maxRows match {
-    case Some(mr) if mr < numOfParticipants => mr + 1
+    case Some(mr) if mr < numOfParticipants => mr
     case _                                  => items.size
   }
 
   override def getItemId(position: Int): Long =
-    if (position == items.size) 0
+    if (maxRows.contains(position + 1)) 0
     else items(position).userId.hashCode()
 
   setHasStableIds(true)
@@ -128,7 +128,6 @@ case class ShowAllButtonViewHolder(view: View) extends ViewHolder(view) {
     nameView.setText(getString(R.string.show_all_participants, numOfParticipants.toString))
     setTheme(theme)
   }
-
 
   private def setTheme(theme: Theme): Unit = {
     val color = if (theme == Theme.Light) R.color.wire__text_color_primary_light_selector else R.color.wire__text_color_primary_dark_selector

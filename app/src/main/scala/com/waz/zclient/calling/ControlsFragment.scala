@@ -68,8 +68,9 @@ class ControlsFragment extends FragmentHelper {
     super.onViewCreated(v, savedInstanceState)
 
     callingHeader
-    callingMiddle
     callingControls
+
+    callingMiddle // initializing it later than header and controls to reduce the number of height recalculations
 
     controller.isCallActive.onUi {
       case false =>
@@ -155,6 +156,7 @@ class ControlsFragment extends FragmentHelper {
     subs = Set.empty
     super.onStop()
   }
+
 }
 
 object ControlsFragment {

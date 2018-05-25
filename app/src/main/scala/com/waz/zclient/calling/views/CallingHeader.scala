@@ -47,4 +47,6 @@ class CallingHeader(val context: Context, val attrs: AttributeSet, val defStyleA
     case true => getString(R.string.audio_message__constant_bit_rate)
     case false => ""
   }.onUi(bitRateModeView.setText)
+
+
 }

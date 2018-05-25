@@ -20,11 +20,13 @@ package com.waz.zclient.calling.views
 import android.content.Context
 import android.util.AttributeSet
 import android.widget.FrameLayout
+import com.waz.ZLog.ImplicitTag.implicitLogTag
 import com.waz.service.call.CallInfo
 import com.waz.service.call.CallInfo.CallState.{OtherCalling, SelfCalling, SelfConnected, SelfJoining}
 import com.waz.utils.events.Signal
 import com.waz.zclient.calling.controllers.CallController
 import com.waz.zclient.common.views.ChatheadView
+import com.waz.zclient.utils.ContextUtils.getDimenPx
 import com.waz.zclient.utils.RichView
 import com.waz.zclient.{R, ViewHelper}
 
@@ -37,7 +39,6 @@ class CallingMiddleLayout(val context: Context, val attrs: AttributeSet, val def
   inflate(R.layout.calling_middle_layout, this)
 
   private val controller = inject[CallController]
-  import controller._
 
   private lazy val chathead = findById[ChatheadView](R.id.call_chathead)
   private lazy val participants = findById[CallParticipantsView](R.id.call_participants)
@@ -62,7 +63,12 @@ class CallingMiddleLayout(val context: Context, val attrs: AttributeSet, val def
     participants.setVisible(display == CallDisplay.Participants)
   }
 
-  callerId.onUi(chathead.setUserId)
+  controller.callerId.onUi(chathead.setUserId)
+
+  override def onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int): Unit = {
+    super.onLayout(changed, l, t, r, b)
+    participants.setMaxRows((b - t) / getDimenPx(R.dimen.user_row_height))
+  }
 
 }
 

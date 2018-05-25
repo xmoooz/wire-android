@@ -47,6 +47,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top|start"
         android:visibility="gone"
+        app:isScrollable="false"
         />
 </merge>
 

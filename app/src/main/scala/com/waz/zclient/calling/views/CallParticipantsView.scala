@@ -21,9 +21,8 @@ import android.content.Context
 import android.support.v7.widget.LinearLayoutManager.VERTICAL
 import android.support.v7.widget.{LinearLayoutManager, RecyclerView}
 import android.util.AttributeSet
-import com.waz.zclient.{R, ViewHelper}
 import com.waz.zclient.calling.CallParticipantsAdapter
-import com.waz.zclient.utils.ContextUtils.getDimenPx
+import com.waz.zclient.{R, ViewHelper}
 
 class CallParticipantsView(val context: Context, val attrs: AttributeSet, val defStyleAttr: Int) extends RecyclerView(context, attrs, defStyleAttr) with ViewHelper {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
@@ -32,11 +31,22 @@ class CallParticipantsView(val context: Context, val attrs: AttributeSet, val de
   private val adapter = new CallParticipantsAdapter()
   val onShowAllClicked = adapter.onShowAllClicked
 
-  setLayoutManager(new LinearLayoutManager(context, VERTICAL, false))
+  private val isScrollable =
+    context.getTheme
+      .obtainStyledAttributes(attrs, R.styleable.CallParticipantsView, 0, 0)
+      .getBoolean(R.styleable.CallParticipantsView_isScrollable, true)
+
+  private val layoutManager =
+    if (isScrollable) {
+      new LinearLayoutManager(context, VERTICAL, false)
+    } else {
+      new LinearLayoutManager(context, VERTICAL, false) {
+        override def canScrollVertically: Boolean = false
+      }
+    }
+
+  setLayoutManager(layoutManager)
   setAdapter(adapter)
 
-  override def onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int): Unit = {
-    super.onLayout(changed, l, t, r, b)
-    adapter.setMaxRows((b - t) / getDimenPx(R.dimen.user_row_height))
-  }
+  def setMaxRows(maxRows: Int) = adapter.setMaxRows(maxRows)
 }

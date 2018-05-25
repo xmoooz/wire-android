@@ -266,4 +266,7 @@
         <attr name="drawableColor" format="color"/>
     </declare-styleable>
 
+    <declare-styleable name="CallParticipantsView">
+        <attr name="isScrollable" format="boolean" default="true" />
+    </declare-styleable>
 </resources>
