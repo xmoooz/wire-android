@@ -140,7 +140,7 @@ class ParticipantsAdapter(numOfColumns: Int)(implicit context: Context, injector
 
   override def onBindViewHolder(holder: ViewHolder, position: Int): Unit = (items(position), holder) match {
     case (Left(userData), h: ParticipantRowViewHolder)            => h.bind(userData, teamId, items.lift(position + 1).forall(_.isRight))
-    case (Right(ConversationName), h: ConversationNameViewHolder) => for (id <- convId; name <- convName) h.bind(id, name, convVerified)
+    case (Right(ConversationName), h: ConversationNameViewHolder) => for (id <- convId; name <- convName) h.bind(id, name, convVerified, teamId.isDefined)
     case (Right(sepType), h: SeparatorViewHolder) if Set(PeopleSeparator, BotsSeparator).contains(sepType) =>
       val count = items.count {
         case Left(a)
@@ -216,6 +216,7 @@ object ParticipantsAdapter {
   }
 
   case class ConversationNameViewHolder(view: View, zms: Signal[ZMessaging]) extends ViewHolder(view) {
+    private val callInfo = view.findViewById[TextView](R.id.call_info)
     private val editText = view.findViewById[TypefaceEditText](R.id.conversation_name_edit_text)
     private val penGlyph = view.findViewById[GlyphTextView](R.id.conversation_name_edit_glyph)
     private val verifiedShield = view.findViewById[ImageView](R.id.conversation_verified_shield)
@@ -253,7 +254,7 @@ object ParticipantsAdapter {
       }
     })
 
-    def bind(id: ConvId, displayName: String, verified: Boolean): Unit = {
+    def bind(id: ConvId, displayName: String, verified: Boolean, isTeam: Boolean): Unit = {
       if (!convId.contains(id)) convId = Some(id)
       if (verifiedShield.isVisible != verified) verifiedShield.setVisible(verified)
       if (!convName.contains(displayName)) {
@@ -261,6 +262,7 @@ object ParticipantsAdapter {
         editText.setText(displayName)
         Selection.removeSelection(editText.getText)
       }
+      callInfo.setVisible(isTeam)
     }
 
     def onBackPressed(): Boolean =

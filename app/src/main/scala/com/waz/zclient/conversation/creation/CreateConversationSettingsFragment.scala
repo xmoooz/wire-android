@@ -22,7 +22,7 @@ import android.support.v4.app.Fragment
 import android.support.v7.widget.SwitchCompat
 import android.text.InputFilter.LengthFilter
 import android.view.{LayoutInflater, View, ViewGroup}
-import android.widget.CompoundButton
+import android.widget.{CompoundButton, TextView}
 import android.widget.CompoundButton.OnCheckedChangeListener
 import com.waz.ZLog
 import com.waz.ZLog.ImplicitTag._
@@ -41,6 +41,10 @@ class CreateConversationSettingsFragment extends Fragment with FragmentHelper {
 
   private lazy val guestsToggle    = view[SwitchCompat](R.id.guest_toggle)
 
+  private lazy val callInfo = returning(view[TextView](R.id.call_info)){ vh =>
+    userAccountsController.isTeam.onUi(vis => vh.foreach(_.setVisible(vis)))
+  }
+
   private lazy val guestsToggleRow = returning(view[View](R.id.guest_toggle_row)) { vh =>
     userAccountsController.isTeam.onUi(vis => vh.foreach(_.setVisible(vis)))
   }
@@ -54,6 +58,7 @@ class CreateConversationSettingsFragment extends Fragment with FragmentHelper {
 
   override def onViewCreated(v: View, savedInstanceState: Bundle): Unit = {
 
+    callInfo
     guestsToggleRow
     guestsToggleDesc
 
