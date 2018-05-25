@@ -309,11 +309,11 @@
     <string name="calling__self_preview_unavailable">VIDEO OFF</string>
     <string name="calling__self_preview_unavailable_long">CAMERA NOT AVAILABLE</string>
 
-    <string name="calling__header__joining">joining</string>
-    <string name="calling__header__outgoing_subtitle">ringing</string>
-    <string name="calling__header__outgoing_video_subtitle">ringing</string>
-    <string name="calling__header__incoming_subtitle">calling…</string>
-    <string name="calling__header__incoming_subtitle__video">calling…</string>
+    <string name="calling__header__joining">Joining</string>
+    <string name="calling__header__outgoing_subtitle">Ringing</string>
+    <string name="calling__header__outgoing_video_subtitle">Ringing</string>
+    <string name="calling__header__incoming_subtitle">Calling…</string>
+    <string name="calling__header__incoming_subtitle__video">Calling…</string>
 
     <string name="call_banner_joining">JOINING</string>
     <string name="call_banner_outgoing">RINGING</string>
