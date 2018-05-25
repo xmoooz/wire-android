@@ -93,6 +93,7 @@
     <attr name="wireSecondaryTextColor" format="color" />
     <attr name="wirePrimaryTextColorReverted" format="color" />
     <attr name="thinDividerColor" format="color" />
+    <attr name="backNavigationIcon" format="color" />
 
     <!-- StartUI error labels -->
     <attr name="startUiErrorLabel" format="reference" />

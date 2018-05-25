@@ -17,19 +17,35 @@
  */
 package com.waz.zclient.calling
 
+import android.graphics.Color
 import android.os.Bundle
 import android.support.v7.widget.Toolbar
 import android.view.{LayoutInflater, View, ViewGroup}
 import com.waz.ZLog.ImplicitTag._
+import com.waz.utils.returning
 import com.waz.zclient.calling.controllers.CallController
 import com.waz.zclient.calling.views.CallParticipantsView
+import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.{FragmentHelper, R}
 
 class CallParticipantsFragment extends FragmentHelper {
-  private lazy val toolbar = view[Toolbar](R.id.toolbar)
+  private lazy val toolbar = returning(view[Toolbar](R.id.toolbar)) { vh =>
+    controller.theme.map(controller.themeController.getTheme).onUi { theme =>
+      vh.foreach(v => getStyledDrawable(R.attr.backNavigationIcon, theme).foreach(v.setNavigationIcon))
+    }
+  }
   private lazy val participantsView = view[CallParticipantsView](R.id.full_call_participants)
 
   private lazy val controller = inject[CallController]
+
+  override def onCreate(savedInstanceState: Bundle): Unit = {
+    super.onCreate(savedInstanceState)
+
+    controller.isVideoCall.onUi {
+      case true => getView.setBackgroundColor(getColor(R.color.calling_video_overlay))
+      case false => getView.setBackgroundColor(Color.TRANSPARENT)
+    }
+  }
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle) =
     inflater.inflate(R.layout.fragment_calling_participants, container, false)

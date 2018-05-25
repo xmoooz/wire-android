@@ -26,7 +26,7 @@ import com.waz.ZLog.ImplicitTag._
 import com.waz.content.UserPreferences.DarkTheme
 import com.waz.service.AccountManager
 import com.waz.threading.Threading
-import com.waz.utils.events.{EventContext, Signal, SourceSignal, Subscription}
+import com.waz.utils.events.{EventContext, Signal, SourceSignal}
 import com.waz.utils.returning
 import com.waz.zclient.common.controllers.ThemeController.Theme
 import com.waz.zclient.ui.theme.{OptionsDarkTheme, OptionsLightTheme, OptionsTheme}
@@ -94,18 +94,9 @@ trait ThemedView extends View with ViewHelper {
 
   val currentTheme: SourceSignal[Option[Theme]] = Signal(None)
 
-  private var parentSubscription = Option.empty[Subscription]
-
   override def onAttachedToWindow(): Unit = {
     super.onAttachedToWindow()
-    parentSubscription = Some(getThemeFromParent(this)(currentTheme ! _))
-  }
-
-
-  override def onDetachedFromWindow(): Unit = {
-    super.onDetachedFromWindow()
-    parentSubscription.foreach(_.destroy())
-    parentSubscription = None
+    getThemeFromParent(this)(currentTheme ! _)
   }
 
   private def getThemeFromParent(view: View): Signal[Option[Theme]] = {
