@@ -52,8 +52,6 @@ class CallControlButtonView(val context: Context, val attrs: AttributeSet, val d
   private val activatedChanged = EventStream[Boolean]()
   private val activatedSignal = RefreshingSignal(Future{ isActivated }(Threading.Ui), activatedChanged)
 
-  private val theme = Signal[Theme]()
-
   inflate(R.layout.call_button_view)
 
   setOrientation(LinearLayout.VERTICAL)
@@ -74,7 +72,7 @@ class CallControlButtonView(val context: Context, val attrs: AttributeSet, val d
 
   (for {
     otherColor <- otherColor
-    theme <- theme
+    theme <- currentTheme.map(_.getOrElse(Theme.Light))
   } yield {
     import ButtonColor._
     otherColor match {
@@ -86,7 +84,7 @@ class CallControlButtonView(val context: Context, val attrs: AttributeSet, val d
 
   (for {
     otherColor <- otherColor
-    theme <- theme
+    theme <- currentTheme.map(_.getOrElse(Theme.Light))
     enabled <- enabledSignal
     activated <- activatedSignal
   } yield (otherColor, theme, enabled, activated)).onUi {
@@ -100,8 +98,6 @@ class CallControlButtonView(val context: Context, val attrs: AttributeSet, val d
         else getStyledColor(R.attr.wirePrimaryTextColor, resTheme)
       iconView.setColor(iconColor)
   }
-
-  override def setTheme(theme: Theme): Unit = this.theme ! theme
 
   override def setEnabled(enabled: Boolean): Unit = {
     super.setEnabled(enabled)

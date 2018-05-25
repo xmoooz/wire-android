@@ -26,6 +26,7 @@ import com.waz.zclient.common.controllers.{ThemeController, ThemedView}
 import com.waz.zclient.ui.text.ThemedTextView._
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.{R, ViewHelper}
+import com.waz.ZLog.ImplicitTag._
 
 class ThemedTextView(val context: Context, val attrs: AttributeSet, val defStyle: Int) extends AppCompatTextView(context, attrs, defStyle) with ViewHelper with ThemedView {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
@@ -37,9 +38,10 @@ class ThemedTextView(val context: Context, val attrs: AttributeSet, val defStyle
 
   private var forcedTheme = Option.empty[Theme]
 
-  override def setTheme(theme: Theme): Unit = {
-    val finalTheme = forcedTheme.getOrElse(theme)
+  currentTheme.collect{ case Some(t) => t }.onUi(setTheme)
 
+  private def setTheme(theme: Theme): Unit = {
+    val finalTheme = forcedTheme.getOrElse(theme)
     themedColor.collect {
       case PrimaryColorIndex => R.attr.wirePrimaryTextColor
       case SecondaryColorIndex => R.attr.wireSecondaryTextColor
@@ -50,7 +52,7 @@ class ThemedTextView(val context: Context, val attrs: AttributeSet, val defStyle
 
   def forceTheme(theme: Option[Theme]): Unit = {
     forcedTheme = theme
-    forcedTheme.orElse(currentTheme).foreach(setTheme)
+    forcedTheme.orElse(currentTheme.currentValue.flatten).foreach(setTheme)
   }
 }
 

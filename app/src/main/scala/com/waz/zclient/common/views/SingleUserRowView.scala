@@ -68,6 +68,8 @@ class SingleUserRowView(context: Context, attrs: AttributeSet, style: Int) exten
     override def onClick(v: View): Unit = setChecked(!checkbox.isChecked)
   })
 
+  currentTheme.collect{ case Some(t) => t }.onUi { theme => setTheme(theme, solidBackground) }
+
   def setTitle(text: String): Unit = {
     nameView.setText(text)
   }
@@ -114,9 +116,6 @@ class SingleUserRowView(context: Context, attrs: AttributeSet, style: Int) exten
   def setIsGuest(guest: Boolean): Unit = guestIndicator.setVisibility(if (guest) View.VISIBLE else View.GONE)
 
   def showCheckbox(show: Boolean): Unit = checkbox.setVisibility(if (show) View.VISIBLE else View.GONE)
-
-
-  override def setTheme(theme: ThemeController.Theme): Unit = setTheme(theme, solidBackground)
 
   def setTheme(theme: ThemeController.Theme, background: Boolean): Unit = {
     val (backgroundDrawable, checkboxDrawable) = (theme, background) match {

@@ -20,13 +20,13 @@ package com.waz.zclient.common.controllers
 import android.content.Context
 import android.content.res.Resources
 import android.util.AttributeSet
-import android.view.{View, ViewGroup}
+import android.view.View
 import android.widget.FrameLayout
 import com.waz.ZLog.ImplicitTag._
 import com.waz.content.UserPreferences.DarkTheme
 import com.waz.service.AccountManager
 import com.waz.threading.Threading
-import com.waz.utils.events.{EventContext, Signal, SourceSignal}
+import com.waz.utils.events.{EventContext, Signal, SourceSignal, Subscription}
 import com.waz.utils.returning
 import com.waz.zclient.common.controllers.ThemeController.Theme
 import com.waz.zclient.ui.theme.{OptionsDarkTheme, OptionsLightTheme, OptionsTheme}
@@ -83,14 +83,6 @@ class ThemeController(implicit injector: Injector, context: Context, ec: EventCo
 
 trait ThemeControllingView extends View with ViewHelper {
   val theme: SourceSignal[Option[Theme]] = Signal(None)
-
-  theme.onUi{ theme =>
-    (this, theme) match {
-      case (vg: ViewGroup, Some(t)) => ThemedView.dispatchSetTheme(vg, t)
-      case _ =>
-    }
-
-  }
 }
 
 class ThemeControllingFrameLayout(context: Context, attrs: AttributeSet, defStyle: Int) extends FrameLayout(context, attrs, defStyle) with ThemeControllingView {
@@ -98,47 +90,31 @@ class ThemeControllingFrameLayout(context: Context, attrs: AttributeSet, defStyl
   def this(context: Context) = this(context, null, 0)
 }
 
-trait ThemedView extends View {
+trait ThemedView extends View with ViewHelper {
 
-  //TODO: Replace with a signal
-  var currentTheme: Option[Theme] = None
+  val currentTheme: SourceSignal[Option[Theme]] = Signal(None)
 
-  def setTheme(theme: Theme): Unit
+  private var parentSubscription = Option.empty[Subscription]
 
   override def onAttachedToWindow(): Unit = {
     super.onAttachedToWindow()
-    currentTheme = getThemeFromParent(this)
-    currentTheme.foreach(setTheme)
+    parentSubscription = Some(getThemeFromParent(this)(currentTheme ! _))
   }
 
-  private def getThemeFromParent(view: View): Option[Theme] = {
+
+  override def onDetachedFromWindow(): Unit = {
+    super.onDetachedFromWindow()
+    parentSubscription.foreach(_.destroy())
+    parentSubscription = None
+  }
+
+  private def getThemeFromParent(view: View): Signal[Option[Theme]] = {
     view.getParent match {
-      case v: ThemeControllingView => v.theme.currentValue.flatten
-      case v: ThemedView if v.currentTheme.isDefined => v.currentTheme
+      case v: ThemeControllingView => v.theme
+      case v: ThemedView => v.currentTheme
       case v: View => getThemeFromParent(v)
-      case _ => None
+      case _ => Signal.const(None)
     }
-  }
-}
-
-object ThemedView {
-  def dispatchSetTheme(viewGroup: ViewGroup, theme: Theme): Unit = {
-
-    def applyTheme(view: View) = view match {
-      case tv: ThemedView =>
-        tv.currentTheme = Some(theme)
-        tv.setTheme(theme)
-      case _ =>
-    }
-
-    (0 until viewGroup.getChildCount).map(viewGroup.getChildAt(_)).foreach { view =>
-      applyTheme(view)
-      view match {
-        case vg: ViewGroup => dispatchSetTheme(vg, theme)
-        case _ =>
-      }
-    }
-    applyTheme(viewGroup)
   }
 }
 
