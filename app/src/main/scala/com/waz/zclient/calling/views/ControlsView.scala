@@ -85,13 +85,12 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
   }
 
   returning(findById[CallControlButtonView](R.id.speaker_flip_call)) { button =>
+    button.setEnabled(true)
     isVideoBeingSent.onUi {
       case true =>
         button.set(WireStyleKit.drawFlip, R.string.incoming__controls__ongoing__flip, flip)
-        button.setEnabled(true)
       case false =>
         button.set(WireStyleKit.drawSpeaker, R.string.incoming__controls__ongoing__speaker, speaker)
-        button.setEnabled(true)
     }
     Signal(controller.speakerButton.buttonState, isVideoBeingSent).onUi {
       case (buttonState, false) => button.setActivated(buttonState)

@@ -42,7 +42,7 @@ class CallControlButtonView(val context: Context, val attrs: AttributeSet, val d
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null)
 
-  val themeController = inject[ThemeController]
+  private val themeController = inject[ThemeController]
 
   private val otherColor = Signal(Option.empty[ButtonColor])
 
@@ -72,7 +72,6 @@ class CallControlButtonView(val context: Context, val attrs: AttributeSet, val d
   }
   private val buttonLabelView = findById[TypefaceTextView](R.id.text)
 
-  //background
   (for {
     otherColor <- otherColor
     theme <- theme
@@ -83,13 +82,8 @@ class CallControlButtonView(val context: Context, val attrs: AttributeSet, val d
       case Some(Red) => getDrawable(R.drawable.selector__icon_button__background__red)
       case _ => getStyledDrawable(R.attr.callButtonBackground, themeController.getTheme(theme)).getOrElse(getDrawable(R.drawable.selector__icon_button__background__calling))
     }
-  }).onUi { drawable =>
-    buttonBackground.setBackground(drawable)
-    buttonBackground.refreshDrawableState()
-    buttonBackground.invalidate()
-  }
+  }).onUi(buttonBackground.setBackground(_))
 
-  //icon
   (for {
     otherColor <- otherColor
     theme <- theme
@@ -105,7 +99,6 @@ class CallControlButtonView(val context: Context, val attrs: AttributeSet, val d
         else if (activated) getStyledColor(R.attr.wirePrimaryTextColorReverted, resTheme)
         else getStyledColor(R.attr.wirePrimaryTextColor, resTheme)
       iconView.setColor(iconColor)
-    buttonBackground.refreshDrawableState()
   }
 
   override def setTheme(theme: Theme): Unit = this.theme ! theme
