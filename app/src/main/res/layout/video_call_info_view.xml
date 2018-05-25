@@ -42,6 +42,7 @@
             android:layout_height="@dimen/call_control_icon_size"
             android:layout_gravity="center"
             android:gravity="center"
+            android:visibility="gone"
             />
 
         <com.waz.zclient.ui.text.TypefaceTextView
