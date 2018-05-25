@@ -28,15 +28,34 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
-    <com.waz.zclient.ui.text.TypefaceTextView
-        android:id="@+id/paused_text_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <FrameLayout
+        android:id="@+id/video_call_info"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_gravity="center"
         android:gravity="center"
-        android:text=""
-        android:textColor="@color/text__primary_dark"
-        android:textSize="@dimen/wire__text_size__small"
-        app:w_font="@string/wire__typeface__medium"/>
+        >
+
+        <com.waz.zclient.paintcode.GenericStyleKitView
+            android:id="@+id/mute_icon"
+            android:layout_width="@dimen/call_control_icon_size"
+            android:layout_height="@dimen/call_control_icon_size"
+            android:layout_gravity="center"
+            android:gravity="center"
+            />
+
+        <com.waz.zclient.ui.text.TypefaceTextView
+            android:id="@+id/paused_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:text=""
+            android:textColor="@color/text__primary_dark"
+            android:textSize="@dimen/wire__text_size__small"
+            app:w_font="@string/wire__typeface__medium"
+            />
+
+    </FrameLayout>
 
 </merge>

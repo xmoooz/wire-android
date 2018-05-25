@@ -23,6 +23,7 @@ import com.waz.ZLog._
 import com.waz.api.Verification
 import com.waz.avs.VideoPreview
 import com.waz.model.{AssetId, UserData, UserId}
+import com.waz.service.ZMessaging.clock
 import com.waz.service.call.Avs.VideoState
 import com.waz.service.call.CallInfo
 import com.waz.service.call.CallInfo.CallState.{SelfJoining, _}
@@ -37,7 +38,9 @@ import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.{ConversationMembersSignal, DeprecationUtils, UiStorage, UserSignal}
 import com.waz.zclient.{Injectable, Injector, R, WireContext}
+import org.threeten.bp.Instant
 
+import com.waz.utils._
 import scala.concurrent.duration._
 
 class CallController(implicit inj: Injector, cxt: WireContext, eventContext: EventContext) extends Injectable {
@@ -168,6 +171,22 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
       usersStorage.optSignal(UserId(convId.str)) // one-to-one conversation has the same id as the other user, so we can access it directly
     case _ => Signal.const[Option[UserData]](None) //Need a none signal to help with further signals
   }
+
+  private lazy val lastControlsClick = Signal[(Boolean, Instant)]() //true = show controls and set timer, false = hide controls
+
+  import com.waz.ZLog.verbose
+  import com.waz.ZLog.ImplicitTag.implicitLogTag
+
+  lazy val controlsVisible =
+    (for {
+      true         <- isVideoCall
+      Some(est)    <- currentCall.map(_.estabTime)
+      (show, last) <- lastControlsClick.orElse(Signal.const((true, clock.instant())))
+      display      <- if (show) ClockSignal(3.seconds).map(c => last.max(est).until(c).asScala <= 3.seconds)
+                      else Signal.const(false)
+    } yield display).orElse(Signal.const(true))
+
+  def controlsClick(show: Boolean): Unit = lastControlsClick ! (show, clock.instant())
 
   def leaveCall(): Unit = {
     verbose(s"leaveCall")

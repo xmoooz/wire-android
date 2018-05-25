@@ -36,8 +36,10 @@ import com.waz.zclient.calling.controllers.CallController
 import com.waz.zclient.common.controllers.{ThemeController, ThemeControllingFrameLayout}
 import com.waz.zclient.common.views.BackgroundDrawable
 import com.waz.zclient.common.views.ImageController.{ImageSource, WireImage}
+import com.waz.zclient.paintcode.{GenericStyleKitView, WireStyleKit}
 import com.waz.zclient.ui.utils.ColorUtils
 import com.waz.zclient.utils.ContextUtils._
+import com.waz.zclient.utils.RichView
 import com.waz.zclient.{FragmentHelper, R, ViewHelper}
 
 abstract class UserVideoView(context: Context, val userId: UserId) extends FrameLayout(context, null, 0) with ViewHelper {
@@ -47,22 +49,35 @@ abstract class UserVideoView(context: Context, val userId: UserId) extends Frame
 
   private val blackLevel = 0.58f
 
-  inflate(R.layout.video_call_paused_view)
+  inflate(R.layout.video_call_info_view)
 
   private val pictureId: Signal[ImageSource] = for {
-    z <- controller.callingZms
+    z             <- controller.callingZms
     Some(picture) <- z.users.userSignal(userId).map(_.picture)
   } yield WireImage(picture)
 
-  protected val imageView = findById[ImageView](R.id.image_view)
-  imageView.setBackground(new BackgroundDrawable(pictureId, getContext, Dim2(getWidth, getHeight)))
-  imageView.setImageDrawable(new ColorDrawable(ColorUtils.injectAlpha(blackLevel, Color.BLACK)))
+  protected val imageView = returning(findById[ImageView](R.id.image_view)) { view =>
+    view.setBackground(new BackgroundDrawable(pictureId, getContext, Dim2(getWidth, getHeight)))
+    view.setImageDrawable(new ColorDrawable(ColorUtils.injectAlpha(blackLevel, Color.BLACK)))
+  }
 
   protected val pausedText = findById[TextView](R.id.paused_text_view)
 
-  addView(returning(videoView)(_.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))))
+  addView(returning(videoView)(_.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))), 1)
 
-  controller.stateMessageText(userId).onUi(msg => pausedText.setText(msg.getOrElse("")))
+  protected val stateMessageText = controller.stateMessageText(userId)
+  stateMessageText.onUi(msg => pausedText.setText(msg.getOrElse("")))
+  protected val pausedTextVisible = stateMessageText.map(_.exists(_.nonEmpty))
+  pausedTextVisible.onUi(pausedText.setVisible)
+
+  protected val videoCallInfo = returning(findById[View](R.id.video_call_info)) {
+    _.setBackgroundColor(ColorUtils.injectAlpha(blackLevel, Color.BLACK))
+  }
+
+  Signal(controller.controlsVisible, shouldShowInfo).onUi {
+    case (false, true)  => videoCallInfo.fadeIn()
+    case _              => videoCallInfo.fadeOut()
+  }
 
   override def onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int): Unit = {
     super.onLayout(changed, left, top, right, bottom)
@@ -70,17 +85,31 @@ abstract class UserVideoView(context: Context, val userId: UserId) extends Frame
   }
 
   val videoView: View
+  val shouldShowInfo: Signal[Boolean]
 }
 
 class SelfVideoView(context: Context, userId: UserId) extends UserVideoView(context, userId) {
-  pausedText.setText(R.string.empty_string)
+  protected val muteIcon = returning(findById[GenericStyleKitView](R.id.mute_icon)) { icon =>
+    icon.setOnDraw(WireStyleKit.drawMute)
+  }
+
+  controller.isMuted.onUi {
+    case true  => muteIcon.fadeIn()
+    case false => muteIcon.fadeOut()
+  }
+
   override lazy val videoView: View = returning(new VideoPreview(getContext)) { v =>
     controller.setVideoPreview(Some(v))
+  }
+
+  override lazy val shouldShowInfo = Signal(pausedTextVisible, controller.isMuted).map {
+    case (paused, muted) => paused || muted
   }
 }
 
 class OtherVideoView(context: Context, userId: UserId) extends UserVideoView(context, userId) {
   override lazy val videoView: View = new VideoRenderer(getContext, userId.str, false)
+  override lazy val shouldShowInfo = pausedTextVisible
 }
 
 class CallingFragment extends FragmentHelper {
