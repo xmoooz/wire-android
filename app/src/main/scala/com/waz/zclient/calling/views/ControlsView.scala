@@ -157,7 +157,7 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
     val hasCameraPermissions = await(permissions.requestAllPermissions(Set(CAMERA)))
 
     if (memberCount >= CallController.VideoCallMaxMembers)
-      showErrorDialog(R.string.video_on_error_dialog_title, R.string.video_on_error_dialog_message)
+      showToast(R.string.too_many_people_video_toast)
     else if (!hasCameraPermissions)
       showPermissionsErrorDialog(R.string.calling__cannot_start__title,
         R.string.calling__cannot_start__no_video_permission__message)
