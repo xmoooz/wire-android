@@ -71,8 +71,8 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   }
   val currentCall = currentCallOpt.collect { case Some(c) => c }
 
-  val callConvIdOpt     = currentCallOpt.map(_.map(_.convId))
-  val callConvId        = callConvIdOpt.collect { case Some(c) => c }
+  val callConvIdOpt = currentCallOpt.map(_.map(_.convId))
+  val callConvId    = callConvIdOpt.collect { case Some(c) => c }
 
   val isCallActive      = currentCallOpt.map(_.isDefined)
   val isCallActiveDelay = isCallActive.flatMap {
@@ -80,9 +80,10 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     case false => Signal.const(false)
   }
 
-  val callStateOpt      = currentCallOpt.map(_.flatMap(_.state))
-  val callState         = callStateOpt.collect { case Some(s) => s }
-  val prevCallStateOpt  = currentCallOpt.map(_.flatMap(_.prevState))
+  val callStateOpt          = currentCallOpt.map(_.flatMap(_.state))
+  val callState             = callStateOpt.collect { case Some(s) => s }
+  val callStateCollapseJoin = currentCall.map(_.stateCollapseJoin)
+
   val isCallEstablished = callStateOpt.map(_.contains(SelfConnected))
   val isCallOutgoing    = callStateOpt.map(_.contains(SelfCalling))
   val isCallIncoming    = callStateOpt.map(_.contains(OtherCalling))
