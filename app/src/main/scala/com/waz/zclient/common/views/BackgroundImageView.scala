@@ -13,29 +13,27 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 package com.waz.zclient.common.views
 
 import android.content.Context
-import android.graphics._
 import android.graphics.drawable.ColorDrawable
 import android.util.AttributeSet
 import android.widget.ImageView
 import com.waz.model.Dim2
 import com.waz.service.ZMessaging
 import com.waz.utils.events.Signal
-import com.waz.zclient.ViewHelper
-import com.waz.zclient.ui.utils.ColorUtils
 import com.waz.zclient.common.views.ImageController.{ImageSource, WireImage}
+import com.waz.zclient.utils.ContextUtils.getColor
 import com.waz.zclient.utils.ViewUtils
+import com.waz.zclient.{R, ViewHelper}
 
 class BackgroundImageView(val context: Context, val attrs: AttributeSet, val defStyleAttr: Int) extends ImageView(context, attrs, defStyleAttr) with ViewHelper {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null)
 
-  val zms = inject[Signal[ZMessaging]]
-  val blackLevel = 0.58f
+  private val zms = inject[Signal[ZMessaging]]
 
   val pictureId: Signal[ImageSource] = for {
     z <- zms
@@ -44,5 +42,5 @@ class BackgroundImageView(val context: Context, val attrs: AttributeSet, val def
 
   private val configuration = context.getResources.getConfiguration
   setBackground(new BackgroundDrawable(pictureId, getContext, Dim2(ViewUtils.toPx(context, configuration.screenWidthDp), ViewUtils.toPx(context, configuration.screenHeightDp))))
-  setImageDrawable(new ColorDrawable(ColorUtils.injectAlpha(blackLevel, Color.BLACK)))
+  setImageDrawable(new ColorDrawable(getColor(R.color.black_58)))
 }

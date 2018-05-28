@@ -20,17 +20,17 @@ package com.waz.zclient.calling.views
 import android.Manifest.permission.{CAMERA, RECORD_AUDIO}
 import android.content.Context
 import android.util.AttributeSet
+import android.view.View
 import android.widget.GridLayout
+import com.waz.ZLog
 import com.waz.ZLog.ImplicitTag.implicitLogTag
-import com.waz.ZLog._
 import com.waz.permissions.PermissionsService
 import com.waz.service.call.Avs.VideoState
 import com.waz.threading.Threading.Implicits.Ui
-import com.waz.utils.events.{EventStream, Signal}
+import com.waz.utils.events.{EventStream, Signal, SourceStream}
 import com.waz.utils.returning
 import com.waz.zclient.calling.controllers.CallController
 import com.waz.zclient.calling.views.CallControlButtonView.ButtonColor
-import com.waz.zclient.common.controllers.UserAccountsController
 import com.waz.zclient.paintcode._
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.RichView
@@ -48,18 +48,16 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
   setRowCount(2)
 
   private lazy val controller = inject[CallController]
-  private lazy val accountsController = inject[UserAccountsController]
   private lazy val permissions = inject[PermissionsService]
 
-  val onButtonClick = EventStream[Unit]
+  val onButtonClick: SourceStream[Unit] = EventStream[Unit]
+
+  controller.callStateOpt.onUi { state =>
+    ZLog.verbose(s"callStateOpt: $state")
+  }
 
   private val isVideoBeingSent = controller.videoSendState.map(_ != VideoState.Stopped)
 
-  private val incomingNotEstablished = Signal(controller.isCallIncoming, controller.isCallEstablished).map {
-    case (in, est) =>
-      verbose(s"incoming not established ($in, $est) => ${in && !est}")
-      in && !est
-  }
   // first row
   returning(findById[CallControlButtonView](R.id.mute_call)) { button =>
     button.set(WireStyleKit.drawMute, R.string.incoming__controls__ongoing__mute, mute)
@@ -101,19 +99,21 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
   returning(findById[CallControlButtonView](R.id.reject_call)) { button =>
     button.setEnabled(true)
     button.set(WireStyleKit.drawHangUpCall, R.string.empty_string, leave, Some(ButtonColor.Red))
-    incomingNotEstablished.onUi(button.setVisible)
+    controller.isCallIncoming.onUi(button.setVisible)
   }
 
   returning(findById[CallControlButtonView](R.id.end_call)) { button =>
     button.set(WireStyleKit.drawHangUpCall, R.string.empty_string, leave, Some(ButtonColor.Red))
-    button.setEnabled(true)
-    incomingNotEstablished.map(!_).onUi(button.setVisible)
+    Signal(controller.isCallEstablished, controller.isCallOutgoing).map { case (e, o) => e || o }.onUi { visible =>
+      button.setVisibility(if(visible) View.VISIBLE else View.INVISIBLE)
+      button.setEnabled(visible)
+    }
   }
 
   returning(findById[CallControlButtonView](R.id.accept_call)) { button =>
     button.set(WireStyleKit.drawAcceptCall, R.string.empty_string, accept, Some(ButtonColor.Green))
     button.setEnabled(true)
-    incomingNotEstablished.onUi(button.setVisible)
+    controller.isCallIncoming.onUi(button.setVisible)
   }
 
   private def accept(): Future[Unit] = async {

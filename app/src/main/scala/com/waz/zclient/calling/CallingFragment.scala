@@ -18,7 +18,6 @@
 package com.waz.zclient.calling
 
 import android.content.Context
-import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.support.v7.widget.{CardView, GridLayout}
@@ -37,7 +36,6 @@ import com.waz.zclient.common.controllers.{ThemeController, ThemeControllingFram
 import com.waz.zclient.common.views.BackgroundDrawable
 import com.waz.zclient.common.views.ImageController.{ImageSource, WireImage}
 import com.waz.zclient.paintcode.{GenericStyleKitView, WireStyleKit}
-import com.waz.zclient.ui.utils.ColorUtils
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.RichView
 import com.waz.zclient.{FragmentHelper, R, ViewHelper}
@@ -46,8 +44,6 @@ abstract class UserVideoView(context: Context, val userId: UserId) extends Frame
   protected lazy val controller: CallController = inject[CallController]
 
   private implicit val dispatcher = new SerialDispatchQueue(name = s"UserVideoView-$userId")
-
-  private val blackLevel = 0.58f
 
   inflate(R.layout.video_call_info_view)
 
@@ -58,7 +54,7 @@ abstract class UserVideoView(context: Context, val userId: UserId) extends Frame
 
   protected val imageView = returning(findById[ImageView](R.id.image_view)) { view =>
     view.setBackground(new BackgroundDrawable(pictureId, getContext, Dim2(getWidth, getHeight)))
-    view.setImageDrawable(new ColorDrawable(ColorUtils.injectAlpha(blackLevel, Color.BLACK)))
+    view.setImageDrawable(new ColorDrawable(getColor(R.color.black_58)))
   }
 
   protected val pausedText = findById[TextView](R.id.paused_text_view)
@@ -71,7 +67,7 @@ abstract class UserVideoView(context: Context, val userId: UserId) extends Frame
   pausedTextVisible.onUi(pausedText.setVisible)
 
   protected val videoCallInfo = returning(findById[View](R.id.video_call_info)) {
-    _.setBackgroundColor(ColorUtils.injectAlpha(blackLevel, Color.BLACK))
+    _.setBackgroundColor(getColor(R.color.black_58))
   }
 
   Signal(controller.controlsVisible, shouldShowInfo).onUi {
