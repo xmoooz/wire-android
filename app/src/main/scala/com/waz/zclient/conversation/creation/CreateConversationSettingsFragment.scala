@@ -67,6 +67,7 @@ class CreateConversationSettingsFragment extends Fragment with FragmentHelper {
       box.editText.setFilters(Array(new LengthFilter(64)))
       box.setValidator(GroupNameValidator)
       convController.name.currentValue.foreach(text => box.editText.setText(text))
+      box.errorLayout.setVisible(false)
     }
 
     guestsToggle.foreach { toggle =>

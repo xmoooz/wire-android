@@ -101,6 +101,7 @@
     </LinearLayout>
 
     <FrameLayout
+        android:id="@+id/error_layout"
         android:layout_width="match_parent"
         android:layout_height="@dimen/app_entry_input_box_aux_height">
 
