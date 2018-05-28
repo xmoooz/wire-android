@@ -26,6 +26,8 @@ import com.waz.ZLog
 import com.waz.ZLog.ImplicitTag.implicitLogTag
 import com.waz.permissions.PermissionsService
 import com.waz.service.call.Avs.VideoState
+import com.waz.service.call.CallInfo
+import com.waz.service.call.CallInfo.CallState.{SelfCalling, SelfConnected, SelfJoining}
 import com.waz.threading.Threading.Implicits.Ui
 import com.waz.utils.events.{EventStream, Signal, SourceStream}
 import com.waz.utils.returning
@@ -104,7 +106,7 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
 
   returning(findById[CallControlButtonView](R.id.end_call)) { button =>
     button.set(WireStyleKit.drawHangUpCall, R.string.empty_string, leave, Some(ButtonColor.Red))
-    Signal(controller.isCallEstablished, controller.isCallOutgoing).map { case (e, o) => e || o }.onUi { visible =>
+    controller.callStateOpt.map(_.exists(state => Set[CallInfo.CallState](SelfJoining, SelfCalling, SelfConnected).contains(state))).onUi { visible =>
       button.setVisibility(if(visible) View.VISIBLE else View.INVISIBLE)
       button.setEnabled(visible)
     }
