@@ -72,16 +72,15 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
 
     isVideoBeingSent.onUi(button.setActivated)
 
-    Signal(
-      controller.isCallIncoming,
-      controller.isCallEstablished,
-      controller.conversationMembers,
-      controller.showVideoView,
-      accountsController.isTeam
-    ).map {
-      case (in, est, members, show, team) =>
-        (est || in) && (show || team || members.size == 2) && members.size <= CallController.VideoCallMaxMembers
-    }.onUi(button.setEnabled)
+    (for {
+      zms <- controller.callingZms
+      conv <- controller.conversation
+      isTeam = zms.teamId.isDefined
+      incoming <- controller.isCallIncoming
+      established <- controller.isCallEstablished
+      showVideo <- controller.showVideoView
+      isGroup <- zms.conversations.isGroupConversation(conv.id)
+    } yield (established || incoming) && (showVideo || isTeam || !isGroup)).onUi(button.setEnabled)
   }
 
   returning(findById[CallControlButtonView](R.id.speaker_flip_call)) { button =>
@@ -152,12 +151,16 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
 
   private def video(): Future[Unit] = async {
     onButtonClick ! {}
-    if (await(permissions.requestAllPermissions(Set(CAMERA))))
-      controller.toggleVideo()
-    else
+    val memberCount = await(controller.conversationMembers.map(_.size).head)
+    val hasCameraPermissions = await(permissions.requestAllPermissions(Set(CAMERA)))
+
+    if (memberCount >= CallController.VideoCallMaxMembers)
+      showErrorDialog(R.string.video_on_error_dialog_title, R.string.video_on_error_dialog_message)
+    else if (!hasCameraPermissions)
       showPermissionsErrorDialog(R.string.calling__cannot_start__title,
-        R.string.calling__cannot_start__no_video_permission__message
-      )
+        R.string.calling__cannot_start__no_video_permission__message)
+    else
+      controller.toggleVideo()
   }
 
   private def mute(): Unit = {
