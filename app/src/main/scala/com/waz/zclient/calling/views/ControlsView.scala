@@ -153,16 +153,17 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
 
   private def video(): Future[Unit] = async {
     onButtonClick ! {}
+    val isVideoOn = await(controller.showVideoView.head)
     val memberCount = await(controller.conversationMembers.map(_.size).head)
     val hasCameraPermissions = await(permissions.requestAllPermissions(Set(CAMERA)))
-
-    if (memberCount >= CallController.VideoCallMaxMembers)
-      showToast(R.string.too_many_people_video_toast)
+    if (!isVideoOn && memberCount > CallController.VideoCallMaxMembers)
+        showToast(R.string.too_many_people_video_toast)
     else if (!hasCameraPermissions)
-      showPermissionsErrorDialog(R.string.calling__cannot_start__title,
-        R.string.calling__cannot_start__no_video_permission__message)
-    else
-      controller.toggleVideo()
+      showPermissionsErrorDialog(
+        R.string.calling__cannot_start__title,
+        R.string.calling__cannot_start__no_video_permission__message
+      )
+    else controller.toggleVideo()
   }
 
   private def mute(): Unit = {
