@@ -167,13 +167,13 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
   }
 
   private def getCallStateMessage(call: CallInfo): String =
-    getString((call.state, call.prevState, call.isVideoCall) match {
-      case (Some(SelfCalling), _, true)   | (Some(SelfJoining), Some(SelfCalling), true)   => R.string.system_notification__outgoing_video
-      case (Some(SelfCalling), _, false)  | (Some(SelfJoining), Some(SelfCalling), false)  => R.string.system_notification__outgoing
-      case (Some(OtherCalling), _, true)  | (Some(SelfJoining), Some(OtherCalling), true)  => R.string.system_notification__incoming_video
-      case (Some(OtherCalling), _, false) | (Some(SelfJoining), Some(OtherCalling), false) => R.string.system_notification__incoming
-      case (Some(SelfConnected), _, _)                                                     => R.string.system_notification__ongoing
-      case _                                                                               => R.string.empty_string
+    getString((call.stateCollapseJoin, call.isVideoCall) match {
+      case (Some(SelfCalling),   true)  => R.string.system_notification__outgoing_video
+      case (Some(SelfCalling),   false) => R.string.system_notification__outgoing
+      case (Some(OtherCalling),  true)  => R.string.system_notification__incoming_video
+      case (Some(OtherCalling),  false) => R.string.system_notification__incoming
+      case (Some(SelfConnected), _)     => R.string.system_notification__ongoing
+      case _                            => R.string.empty_string
     })
 
   private def createJoinIntent(account: UserId, convId: ConvId) = pendingIntent(JoinCallRequestCode, CallWakeService.joinIntent(Context.wrap(cxt), account, convId))
