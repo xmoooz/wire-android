@@ -75,11 +75,11 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
     (for {
       zms <- controller.callingZms
       conv <- controller.conversation
+      isGroup <- Signal.future(zms.conversations.isGroupConversation(conv.id))
       isTeam = zms.teamId.isDefined
       incoming <- controller.isCallIncoming
       established <- controller.isCallEstablished
       showVideo <- controller.showVideoView
-      isGroup <- zms.conversations.isGroupConversation(conv.id)
     } yield (established || incoming) && (showVideo || isTeam || !isGroup)).onUi(button.setEnabled)
   }
 
