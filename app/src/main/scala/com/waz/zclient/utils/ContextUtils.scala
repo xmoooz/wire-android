@@ -221,6 +221,8 @@ object ContextUtils {
         override def onDismiss(dialog: DialogInterface) = p.complete(Success({}))
       })
       .create
+    dialog.show()
+    p.future
   }
 
   //TODO come up with a tidier way of doing this.
