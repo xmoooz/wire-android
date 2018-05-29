@@ -184,6 +184,14 @@
         <attr name="positionThreshold" format="dimension" />
     </declare-styleable>
 
+    <declare-styleable name="ThemedTextView">
+        <attr name="themedColor" format="enum" >
+            <enum name="None" value="0"/>
+            <enum name="Primary" value="1"/>
+            <enum name="Secondary" value="2"/>
+        </attr>
+    </declare-styleable>
+
     <declare-styleable name="TypefaceTextView">
         <attr name="w_font" format="string" />
         <attr name="transform" format="string" />
@@ -198,10 +206,7 @@
     </declare-styleable>
 
     <declare-styleable name="CallControlButtonView">
-        <attr name="circleIconDimension" format="dimension" />
-        <attr name="labelWidth" format="dimension" />
-        <attr name="labelTextSize" format="dimension" />
-        <attr name="labelFont" format="string" />
+        <attr name="iconDimension" format="dimension" />
     </declare-styleable>
 
     <declare-styleable name="BoundLayout">
@@ -261,4 +266,7 @@
         <attr name="drawableColor" format="color"/>
     </declare-styleable>
 
+    <declare-styleable name="CallParticipantsView">
+        <attr name="isScrollable" format="boolean" default="true" />
+    </declare-styleable>
 </resources>

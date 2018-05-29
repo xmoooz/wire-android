@@ -27,20 +27,18 @@ import com.waz.model.Dim2
 import com.waz.service.assets.AssetService.BitmapResult.BitmapLoaded
 import com.waz.ui.MemoryImageCache.BitmapRequest
 import com.waz.utils.events.{EventContext, Signal}
-import com.waz.zclient.utils.ViewUtils
 import com.waz.zclient.common.views.ImageAssetDrawable.ScaleType
 import com.waz.zclient.common.views.ImageController.ImageSource
 import com.waz.zclient.{Injectable, Injector}
 
 class BackgroundDrawable(src: Signal[ImageSource],
-                         context: Context)(implicit inj: Injector, eventContext: EventContext) extends Drawable with Injectable {
+                         context: Context,
+                         screenSize: Dim2)(implicit inj: Injector, eventContext: EventContext) extends Drawable with Injectable {
   import BackgroundDrawable._
 
   private val images = inject[ImageController]
 
   private val bitmapPaint = new Paint(Paint.ANTI_ALIAS_FLAG)
-  private val configuration = context.getResources.getConfiguration
-  private val screenSize = Dim2(ViewUtils.toPx(context, configuration.screenWidthDp), ViewUtils.toPx(context, configuration.screenHeightDp))
 
   private var currentBmp = Option.empty[Bitmap]
   private var prevBmp = Option.empty[Bitmap]

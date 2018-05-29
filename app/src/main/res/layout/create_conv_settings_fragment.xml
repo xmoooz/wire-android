@@ -33,6 +33,19 @@
         app:hint="@string/group_name_hint"
         android:layout_marginTop="@dimen/create_conv_input_margin_top"/>
 
+    <com.waz.zclient.ui.text.TypefaceTextView
+        android:id="@+id/call_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="?wireSecondaryTextColor"
+        android:textSize="@dimen/wire__text_size__small"
+        app:w_font="@string/wire__typeface__regular"
+        android:layout_marginTop="@dimen/wire__padding__regular"
+        android:layout_marginStart="@dimen/wire__padding__regular"
+        android:layout_marginEnd="@dimen/wire__padding__regular"
+        android:layout_marginBottom="@dimen/wire__padding__regular"
+        android:text="@string/call_info_text"/>
+
     <FrameLayout
         android:id="@+id/guest_toggle_row"
         style="?wireBackground"

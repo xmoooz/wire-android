@@ -50,13 +50,13 @@ public class ProgressView extends GlyphTextView {
     }
 
     @Override
-    protected void onAttachedToWindow() {
+    public void onAttachedToWindow() {
         super.onAttachedToWindow();
         onVisibilityHasChanged();
     }
 
     @Override
-    protected void onDetachedFromWindow() {
+    public void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         stopAnimation();
     }

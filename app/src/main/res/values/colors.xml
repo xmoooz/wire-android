@@ -44,6 +44,7 @@
     <color name="black_96">#F5000000</color>
     <color name="black_90">#E6000000</color>
     <color name="black_80">#CC000000</color>
+    <color name="black_58">#94000000</color>
     <color name="black_48">#7B000000</color>
     <color name="black_32">#52000000</color>
     <color name="black_24">#3D000000</color>
@@ -63,8 +64,8 @@
 
     <color name="graphite">#FF33373A</color>
     <color name="graphite_64">#A233373A</color>
-    <color name="graphite_40">#6633373A</color>
     <color name="graphite_48">#7B33373A</color>
+    <color name="graphite_40">#6633373A</color>
     <color name="graphite_24">#3D33373A</color>
     <color name="graphite_16">#2833373A</color>
     <color name="graphite_8">#1433373A</color>
@@ -189,7 +190,7 @@
 
     <!-- Calling-->
     <color name="calling_background">@color/graphite_48</color>
-    <color name="calling_video_overlay">@color/black_48</color>
+    <color name="calling_video_overlay">@color/black_58</color>
 
     <!-- Cursor-->
     <color name="cursor_menu_button__text_color">@color/graphite</color>

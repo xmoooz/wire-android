@@ -72,7 +72,7 @@ class MissedCallPartView(context: Context, attrs: AttributeSet, style: Int) exte
 
     opts.foreach { o =>
       gtvIcon.setText(if (o.isSelf) R.string.glyph__call else R.string.glyph__end_call)
-      gtvIcon.setTextColor(getColor(if (o.isSelf) R.color.accent_green else R.color.accent_red))
+      gtvIcon.setTextColor(if (o.isSelf) getColor(R.color.accent_green) else getStyledColor(R.attr.wirePrimaryTextColor))
     }
   }
 }

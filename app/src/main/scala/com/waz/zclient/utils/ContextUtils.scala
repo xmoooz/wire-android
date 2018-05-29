@@ -102,6 +102,20 @@ object ContextUtils {
     color
   }
 
+  def getStyledColor(resId: Int, theme: Resources#Theme, defaultColor: Int = 0)(implicit context: Context): Int = {
+    val typedValue  = new TypedValue
+    val a  = theme.obtainStyledAttributes(typedValue.data, Array[Int](resId))
+    val color = a.getColor(0, defaultColor)
+    a.recycle()
+    color
+  }
+
+  def getStyledDrawable(resId: Int, theme: Resources#Theme)(implicit context: Context): Option[Drawable] = {
+    val typedValue  = new TypedValue
+    val a  = theme.obtainStyledAttributes(typedValue.data, Array[Int](resId))
+    returning(Option(a.getDrawable(0)))(_ => a.recycle())
+  }
+
   /**
     * @return the amount of pixels of the horizontal axis of the phone
     */
