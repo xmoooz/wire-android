@@ -24,7 +24,7 @@
               android:layout_width="match_parent"
               android:layout_height="@dimen/menu_item_height"
               style="?wireBackground"
-              android:layout_marginTop="@dimen/participants_options_button_margin_top"
+              android:layout_marginTop="@dimen/wire__padding__8"
     >
 
     <ImageView

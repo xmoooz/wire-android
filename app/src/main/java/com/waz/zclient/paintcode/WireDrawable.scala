@@ -132,3 +132,8 @@ case class VideoIcon(colorRes: Int)(implicit context: Context) extends WireDrawa
   setColor(getColor(colorRes))
   override def draw(canvas: Canvas) = drawCamera(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
 }
+
+case class ConversationIcon(colorRes: Int)(implicit context: Context) extends WireDrawable {
+  setColor(getColor(colorRes))
+  override def draw(canvas: Canvas) = drawConversation(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
+}

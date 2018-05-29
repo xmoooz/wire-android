@@ -45,9 +45,8 @@
         android:layout_gravity="center_horizontal"
         android:textSize="@dimen/wire__text_size__small"
         android:layout_marginTop="@dimen/calling__controls__button__label__margin_top"
-        app:w_font="@string/wire__typeface__light"
-        android:textColor="@color/text__primary_dark"
-        app:themedColor="Primary"/>
+        app:w_font="@string/wire__typeface__medium"
+        android:textColor="@color/text__primary_dark"/>
 
 
 </merge>

@@ -88,14 +88,19 @@ class CallControlButtonView(val context: Context, val attrs: AttributeSet, val d
     enabled <- enabledSignal
     activated <- activatedSignal
   } yield (otherColor, theme, enabled, activated)).onUi {
-    case (Some(_), _, _, _) =>
+    case (Some(_), th, _, _) =>
       iconView.setColor(getColor(R.color.white))
+      buttonLabelView.setTextColor(getStyledColor(R.attr.wirePrimaryTextColor, themeController.getTheme(th)))
     case (None, th, enabled, activated) =>
       val resTheme = themeController.getTheme(th)
       val iconColor =
-        if (!enabled) getStyledColor(R.attr.callIconDisabledColor, resTheme)
+        if (!enabled && activated) getStyledColor(R.attr.callIconDisabledActivatedColor, resTheme)
+        else if (!enabled) getStyledColor(R.attr.callIconDisabledColor, resTheme)
         else if (activated) getStyledColor(R.attr.wirePrimaryTextColorReverted, resTheme)
         else getStyledColor(R.attr.wirePrimaryTextColor, resTheme)
+      val textColor = if (!enabled) getStyledColor(R.attr.callTextDisabledColor, resTheme)
+        else getStyledColor(R.attr.wirePrimaryTextColor, resTheme)
+      buttonLabelView.setTextColor(textColor)
       iconView.setColor(iconColor)
   }
 
