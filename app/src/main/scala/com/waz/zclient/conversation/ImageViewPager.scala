@@ -163,7 +163,7 @@ class ImageSwipeAdapter(context: Context)(implicit injector: Injector, ev: Event
     val imageView = if (discardedImages.nonEmpty) discardedImages.dequeue() else new SwipeImageView(context)
     imageView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
     imageView.setImageDrawable(new ColorDrawable(Color.TRANSPARENT))
-    getItem(position).foreach{ messageData => imageView.setMessageData(messageData) }
+    getItem(position).foreach { messageData => imageView.setMessageData(messageData) }
     imageView.setTag(position)
     container.addView(imageView)
     imageView
@@ -181,9 +181,9 @@ class ImageSwipeAdapter(context: Context)(implicit injector: Injector, ev: Event
   override def getCount: Int = recyclerCursor.fold(0)(_.count)
 }
 
-class SwipeImageView(context: Context, attrs: AttributeSet, style: Int)(implicit injector: Injector, ev: EventContext) extends TouchImageView(context, attrs, style) with Injectable {
-  def this(context: Context, attrs: AttributeSet)(implicit injector: Injector, ev: EventContext) = this(context, attrs, 0)
-  def this(context: Context)(implicit injector: Injector, ev: EventContext) = this(context, null, 0)
+class SwipeImageView(context: Context, attrs: AttributeSet, style: Int) extends TouchImageView(context, attrs, style) with ViewHelper {
+  def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
+  def this(context: Context) = this(context, null, 0)
 
   lazy val zms = inject[Signal[ZMessaging]]
   lazy val messageActions = inject[MessageActionsController]
@@ -213,8 +213,10 @@ class SwipeImageView(context: Context, attrs: AttributeSet, style: Int)(implicit
     }
   })
 
-  private def setAsset(assetId: AssetId): Unit =
-    setImageDrawable(new ImageAssetDrawable(Signal(WireImage(assetId)), scaleType = ImageAssetDrawable.ScaleType.CenterInside))
+  private def setAsset(assetId: AssetId): Unit = {
+    val assetDrawable = new ImageAssetDrawable(Signal(WireImage(assetId)), scaleType = ImageAssetDrawable.ScaleType.CenterInside)
+    setImageDrawable(assetDrawable)
+  }
 
   override def onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int): Unit = {
     super.onLayout(changed, left, top, right, bottom)
@@ -224,5 +226,6 @@ class SwipeImageView(context: Context, attrs: AttributeSet, style: Int)(implicit
   def setMessageData(messageData: MessageData): Unit = {
     this.messageData ! messageData
   }
+
 }
 
