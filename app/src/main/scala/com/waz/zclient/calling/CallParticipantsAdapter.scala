@@ -22,6 +22,7 @@ import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.RecyclerView.ViewHolder
 import android.view.{LayoutInflater, View, ViewGroup}
 import android.widget.ImageView
+import com.waz.ZLog.ImplicitTag.implicitLogTag
 import com.waz.utils.events._
 import com.waz.zclient.ViewHelper.inflate
 import com.waz.zclient.calling.controllers.CallController
@@ -34,7 +35,6 @@ import com.waz.zclient.ui.text.TypefaceTextView
 import com.waz.zclient.utils.ContextUtils.{getColor, getDrawable, getString, getStyledColor}
 import com.waz.zclient.utils.RichView
 import com.waz.zclient.{Injectable, Injector, R}
-import com.waz.ZLog.ImplicitTag.implicitLogTag
 
 class CallParticipantsAdapter(implicit context: Context, eventContext: EventContext, inj: Injector) extends RecyclerView.Adapter[ViewHolder] with Injectable {
 
@@ -58,7 +58,9 @@ class CallParticipantsAdapter(implicit context: Context, eventContext: EventCont
     notifyDataSetChanged()
   }
 
-  callController.participantInfos(maxRows.map(_ - 1)).onUi { v =>
+  callController.participantInfos(
+    if (maxRows.exists(_ < numOfParticipants)) maxRows.map(_ - 1) else maxRows
+  ).onUi { v =>
     items = v
     notifyDataSetChanged()
   }
@@ -74,7 +76,7 @@ class CallParticipantsAdapter(implicit context: Context, eventContext: EventCont
   }
 
   override def getItemViewType(position: Int): Int =
-    if (maxRows.contains(position + 1)) ShowAll
+    if (maxRows.contains(position + 1) && maxRows.exists(_ < numOfParticipants)) ShowAll
     else UserRow
 
   override def getItemCount: Int = maxRows match {
@@ -83,7 +85,7 @@ class CallParticipantsAdapter(implicit context: Context, eventContext: EventCont
   }
 
   override def getItemId(position: Int): Long =
-    if (maxRows.contains(position + 1)) 0
+    if (maxRows.contains(position) && maxRows.exists(_ < numOfParticipants)) 0
     else items(position).userId.hashCode()
 
   setHasStableIds(true)

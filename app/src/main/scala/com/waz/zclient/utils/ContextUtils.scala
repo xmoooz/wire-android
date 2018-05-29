@@ -207,9 +207,9 @@ object ContextUtils {
     p.future
   }
 
-  def showPermissionsErrorDialog(titleRes: Int, msgRes: Int, ackRes: Int = android.R.string.ok)(implicit cxt: Context) = {
+  def showPermissionsErrorDialog(titleRes: Int, msgRes: Int, ackRes: Int = android.R.string.ok)(implicit cxt: Context): Future[Unit] = {
     val p = Promise[Unit]()
-    val dialog = new AlertDialog.Builder(cxt)
+    new AlertDialog.Builder(cxt)
       .setTitle(titleRes)
       .setMessage(msgRes)
       .setPositiveButton(ackRes, null)
@@ -221,7 +221,7 @@ object ContextUtils {
         override def onDismiss(dialog: DialogInterface) = p.complete(Success({}))
       })
       .create
-    dialog.show()
+      .show()
     p.future
   }
 
