@@ -346,7 +346,7 @@
         <item name="dialogTheme">@style/PreferenceTheme.Dialog</item>
 
         <item name="android:windowNoTitle">true</item>
-        <item name="android:windowBackground">@color/graphite</item>
+        <item name="android:windowBackground">@color/black</item>
         <item name="windowActionModeOverlay">true</item>
 
         <item name="wirePrimaryTextColor">@color/text__primary_dark</item>
