@@ -20,22 +20,27 @@
 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item android:state_pressed="true">
+    <item android:state_enabled="false">
         <shape android:shape="oval">
-            <solid android:color="@color/white_48" />
-            <stroke android:color="@color/white_48" />
+            <solid android:color="@color/white_8"/>
         </shape>
     </item>
 
-    <item android:state_selected="true">
+    <item android:state_pressed="true">
         <shape android:shape="oval">
-            <solid android:color="@color/white" />
-            <stroke android:color="@color/white" />
+            <solid android:color="@color/white_80" />
         </shape>
     </item>
+
+    <item android:state_activated="true">
+        <shape android:shape="oval">
+            <solid android:color="@color/white" />
+        </shape>
+    </item>
+
     <item>
         <shape android:shape="oval">
-            <stroke android:color="@color/white_48" android:width="@dimen/wire__stroke" />
+            <solid android:color="@color/white_32"/>
         </shape>
     </item>
 </selector>

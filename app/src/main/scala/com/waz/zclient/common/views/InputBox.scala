@@ -22,7 +22,7 @@ import android.content.res.{ColorStateList, TypedArray}
 import android.graphics.Color
 import android.os.Build
 import android.util.AttributeSet
-import android.view.KeyEvent
+import android.view.{KeyEvent, ViewGroup}
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView.OnEditorActionListener
 import android.widget.{LinearLayout, ProgressBar, TextView}
@@ -58,6 +58,7 @@ class InputBox(context: Context, attrs: AttributeSet, style: Int) extends Linear
   val errorText = findById[TypefaceTextView](R.id.empty_search_message)
   val progressBar = findById[ProgressBar](R.id.progress_bar)
   val startText = findById[TypefaceTextView](R.id.start_text)
+  val errorLayout = findById[ViewGroup](R.id.error_layout)
 
   private var validator = Option.empty[Validator]
   private var onClick = (_: String) => Future.successful(Option.empty[String])

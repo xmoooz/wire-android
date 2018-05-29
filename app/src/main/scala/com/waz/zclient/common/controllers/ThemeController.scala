@@ -18,13 +18,19 @@
 package com.waz.zclient.common.controllers
 
 import android.content.Context
+import android.content.res.Resources
+import android.util.AttributeSet
+import android.view.View
+import android.widget.FrameLayout
 import com.waz.ZLog.ImplicitTag._
 import com.waz.content.UserPreferences.DarkTheme
 import com.waz.service.AccountManager
 import com.waz.threading.Threading
-import com.waz.utils.events.{EventContext, Signal}
+import com.waz.utils.events.{EventContext, Signal, SourceSignal}
+import com.waz.utils.returning
+import com.waz.zclient.common.controllers.ThemeController.Theme
 import com.waz.zclient.ui.theme.{OptionsDarkTheme, OptionsLightTheme, OptionsTheme}
-import com.waz.zclient.{Injectable, Injector, R}
+import com.waz.zclient.{Injectable, Injector, R, ViewHelper}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -61,4 +67,51 @@ class ThemeController(implicit injector: Injector, context: Context, ec: EventCo
   def getTheme: Int = if (isDarkTheme) R.style.Theme_Dark else R.style.Theme_Light
 
   def getThemeDependentOptionsTheme: OptionsTheme = if (isDarkTheme) optionsDarkTheme else optionsLightTheme
+
+  lazy val darkTheme = returning(context.getResources.newTheme())(_.applyStyle(R.style.Theme_Dark, true))
+  lazy val lightTheme = returning(context.getResources.newTheme())(_.applyStyle(R.style.Theme_Light, true))
+
+  val currentTheme = darkThemeSet.map{ dt => if(dt) Theme.Dark else Theme.Light }
+
+  def getTheme(theme: Theme): Resources#Theme = {
+    theme match {
+      case Theme.Light => lightTheme
+      case Theme.Dark => darkTheme
+    }
+  }
+}
+
+trait ThemeControllingView extends View with ViewHelper {
+  val theme: SourceSignal[Option[Theme]] = Signal(None)
+}
+
+class ThemeControllingFrameLayout(context: Context, attrs: AttributeSet, defStyle: Int) extends FrameLayout(context, attrs, defStyle) with ThemeControllingView {
+  def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
+  def this(context: Context) = this(context, null, 0)
+}
+
+trait ThemedView extends View with ViewHelper {
+
+  val currentTheme: SourceSignal[Option[Theme]] = Signal(None)
+
+  override def onAttachedToWindow(): Unit = {
+    super.onAttachedToWindow()
+    getThemeFromParent(this)(currentTheme ! _)
+  }
+
+  private def getThemeFromParent(view: View): Signal[Option[Theme]] = {
+    view.getParent match {
+      case v: ThemeControllingView => v.theme
+      case v: ThemedView => v.currentTheme
+      case v: View => getThemeFromParent(v)
+      case _ => Signal.const(None)
+    }
+  }
+}
+
+object ThemeController {
+  object Theme extends Enumeration {
+    val Light, Dark = Value
+  }
+  type Theme = Theme.Value
 }

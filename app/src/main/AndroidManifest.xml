@@ -109,7 +109,7 @@
             android:screenOrientation="portrait"
             android:showOnLockScreen="true"
             android:taskAffinity=""
-            android:theme="@style/Theme.Light"
+            android:theme="@style/Theme.Calling"
             android:windowSoftInputMode="stateHidden"
             />
 

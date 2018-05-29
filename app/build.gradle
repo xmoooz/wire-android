@@ -69,6 +69,7 @@ android {
     dexOptions {
         preDexLibraries false
         javaMaxHeapSize '4g'
+//        keepRuntimeAnnotatedClasses false // uncomment if you need to set minSdkVersion to < 21
     }
 
     buildTypes {
@@ -245,6 +246,7 @@ dependencies {
     compile(deps.supportpreferences) {
         exclude group: 'com.android.support', module: 'appcompat-v7'
     }
+    compile deps.gridlayout
 
     //noinspection GradleDynamicVersion
     compile deps.psBase

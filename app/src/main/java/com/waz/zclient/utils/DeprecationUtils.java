@@ -92,10 +92,6 @@ public class DeprecationUtils {
         return new NotificationCompat.Builder(context);
     }
 
-    public static void setPriority(Notification not, int priority) {
-        not.priority = priority;
-    }
-
     //maybe we can get rid of this one?
     public static void vibrate(Vibrator v, long[] pattern, int repeat) {
         v.vibrate(pattern, repeat);

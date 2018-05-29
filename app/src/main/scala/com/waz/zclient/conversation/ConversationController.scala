@@ -105,11 +105,11 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
   def isGroup(id: ConvId): Future[Boolean] =
     zms.map(_.conversations).head.flatMap(_.isGroupConversation(id))
 
-  def hasOtherParticipants(conv: ConvId): Future[Boolean] =
+  def participantsIds(conv: ConvId): Future[Seq[UserId]] =
     for {
       z  <- zms.head
       ms <- z.membersStorage.getActiveUsers(conv)
-    } yield ms.size > 1
+    } yield ms
 
   def setEphemeralExpiration(expiration: EphemeralExpiration): Future[Unit] = for {
     z <- zms.head

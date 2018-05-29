@@ -98,6 +98,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
   private lazy val errorsController       = inject[ErrorsController]
   private lazy val callController         = inject[CallController]
   private lazy val callStartController    = inject[CallStartController]
+  private lazy val accountsController     = inject[UserAccountsController]
 
   private val previewShown = Signal(false)
   private lazy val convChange = convController.convChanged.filter { _.to.isDefined }
@@ -242,15 +243,20 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       case conv if conv.isActive =>
         inflateCollectionIcon()
         (for {
-          acc  <- zms.map(_.selfUserId).head
-          call <- callController.currentCallOpt.head
-        } yield (acc, call)).flatMap {
-          case (acc, Some(call)) if call.convId == conv.id && call.account == acc => Future.successful(None)
-          case _ => convController.hasOtherParticipants(conv.id).flatMap {
-            case true  => convController.isGroup(conv.id).map(isGroup => Some(if (isGroup) R.menu.conversation_header_menu_audio else R.menu.conversation_header_menu_video))
-            case false => Future.successful(None)
-          }
-        }.foreach { id =>
+          acc                <- zms.map(_.selfUserId).head
+          call               <- callController.currentCallOpt.head
+          isCallActive       = call.exists(_.convId == conv.id) && call.exists(_.account == acc)
+          participantsNumber <- convController.participantsIds(conv.id).map(_.size)
+          isTeam             <- accountsController.isTeam.head
+          isGroup            <- convController.isGroup(conv.id)
+        } yield {
+          if (isCallActive)
+            Option.empty[Int]
+          else if (!isGroup || (isTeam && participantsNumber <= CallController.VideoCallMaxMembers))
+            Some(R.menu.conversation_header_menu_video)
+          else
+            Some(R.menu.conversation_header_menu_audio)
+        }).foreach { id =>
           toolbar.getMenu.clear()
           id.foreach(toolbar.inflateMenu)
         }
@@ -285,7 +291,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       override def onMenuItemClick(item: MenuItem): Boolean =
         item.getItemId match {
           case R.id.action_audio_call | R.id.action_video_call =>
-            callStartController.startCallInCurrentConv(withVideo = item.getItemId == R.id.action_video_call)
+            callStartController.startCallInCurrentConv(withVideo = item.getItemId == R.id.action_video_call, forceOption = true)
             cursorView.closeEditMessage(false)
             true
           case _ => false
