@@ -29,7 +29,6 @@ import com.waz.ZLog.verbose
 import com.waz.service.call.Avs.VideoState
 import com.waz.service.call.CallInfo.CallState
 import com.waz.utils.events.Subscription
-import com.waz.utils.returning
 import com.waz.zclient.calling.controllers.CallController
 import com.waz.zclient.calling.views.{CallingHeader, CallingMiddleLayout, ControlsView}
 import com.waz.zclient.utils.ContextUtils._
@@ -42,12 +41,7 @@ class ControlsFragment extends FragmentHelper {
 
   private lazy val controller = inject[CallController]
 
-  private lazy val callingHeader = returning(view[CallingHeader](R.id.calling_header)) { vh =>
-    vh.onClick { _ =>
-      controller.callControlsVisible ! false
-      getContext.startActivity(new Intent(getContext, classOf[MainActivity]))
-    }
-  }
+  private lazy val callingHeader = view[CallingHeader](R.id.calling_header)
 
   private lazy val callingMiddle = view[CallingMiddleLayout](R.id.calling_middle)
   private lazy val callingControls = view[ControlsView](R.id.controls_grid)
@@ -67,7 +61,6 @@ class ControlsFragment extends FragmentHelper {
   override def onViewCreated(v: View, @Nullable savedInstanceState: Bundle): Unit = {
     super.onViewCreated(v, savedInstanceState)
 
-    callingHeader
     callingControls
 
     callingMiddle // initializing it later than header and controls to reduce the number of height recalculations
@@ -97,6 +90,13 @@ class ControlsFragment extends FragmentHelper {
         })
 
       builder.create().show()
+    }
+
+    callingHeader.foreach {
+      _.closeButton.onClick {
+        controller.callControlsVisible ! false
+        getContext.startActivity(new Intent(getContext, classOf[MainActivity]))
+      }
     }
   }
 
