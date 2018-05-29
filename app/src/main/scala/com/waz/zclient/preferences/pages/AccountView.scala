@@ -58,6 +58,7 @@ trait AccountView {
   val onLogoutClick:        EventStream[Unit]
   val onDeleteClick:        EventStream[Unit]
   val onBackupClick:        EventStream[Unit]
+  val onDataUsageClick:     EventStream[Unit]
 
   def setName(name: String): Unit
   def setHandle(handle: String): Unit
@@ -85,6 +86,7 @@ class AccountViewImpl(context: Context, attrs: AttributeSet, style: Int) extends
   val logoutButton        = findById[TextButton](R.id.preferences_account_logout)
   val deleteAccountButton = findById[TextButton](R.id.preferences_account_delete)
   val backupButton        = findById[TextButton](R.id.preferences_backup)
+  val dataUsageButton     = findById[TextButton](R.id.preferences_data_usage_permissions)
 
   override val onNameClick          = nameButton.onClickEvent.map(_ => ())
   override val onHandleClick        = handleButton.onClickEvent.map(_ => ())
@@ -96,6 +98,7 @@ class AccountViewImpl(context: Context, attrs: AttributeSet, style: Int) extends
   override val onLogoutClick        = logoutButton.onClickEvent.map(_ => ())
   override val onDeleteClick        = deleteAccountButton.onClickEvent.map(_ => ())
   override val onBackupClick        = backupButton.onClickEvent.map(_ => ())
+  override val onDataUsageClick     = dataUsageButton.onClickEvent.map(_ => ())
 
   override def setName(name: String) = nameButton.setTitle(name)
 
@@ -313,6 +316,10 @@ class AccountViewController(view: AccountView)(implicit inj: Injector, ec: Event
             def onClick(dialog: DialogInterface, which: Int) = dialog.dismiss()
           }, true)
     }(Threading.Ui)
+  }
+
+  view.onDataUsageClick.onUi { _ =>
+    navigator.goTo(DataUsagePermissionsKey())
   }
 
   private def showPrefDialog(f: Fragment, tag: String) = {

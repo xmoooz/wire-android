@@ -134,6 +134,12 @@
     <string name="people_picker__search_people">PEOPLE</string>
     <string name="people_picker__search_services">SERVICES</string>
 
+    <string name="receive_news_and_offers_request_title">Newsletter</string>
+    <string name="receive_news_and_offers_request_body">Do you want to receive news and product updates from Wire via email? You can unsubscribe at any time.</string>
+
+    <string name="crashes_and_analytics_request_title">Help us make Wire better</string>
+    <string name="crashes_and_analytics_request_body">Sending anonymous usage and crash reports helps us to improve our products and services. We do not use this information for anything else.</string>
+
     <!-- Bots / Integrations / Services -->
     <string name="integrations_picker__section_title">Services</string>
     <string name="integrations_picker__add">Add Service</string>
@@ -477,7 +483,6 @@
     <string name="pref_developer_screen_title">Developer Settings</string>
     <string name="pref_dev_avs_screen_title">AVS Settings</string>
     <string name="pref_profile_screen_title">Profile</string>
-    <string name="pref_backup_screen_title">Back Up Conversations</string>
 
     <!-- Account -->
     <string name="pref_account_screen_title">Account</string>
@@ -488,6 +493,7 @@
     <string name="pref_account_actions_category_title">Actions</string>
     <string name="pref_account_personal_category_title">Personal</string>
     <string name="pref_account_appearance_category_title">Appearance</string>
+    <string name="pref_account_personal_information_category_title">Personal Information</string>
     <string name="pref_account_conversations_category_title">History</string>
     <string name="pref_account_details_category_summary">People can find you with these details.</string>
     <string name="pref_account_personal_category_summary">The information is not visible to anyone else</string>
@@ -512,6 +518,15 @@
     <string name="pref_account_password_title">Reset Password</string>
     <string name="pref_account_edit_name_empty_warning">Name must have 2 or more characters</string>
     <string name="pref_account_edit_name_empty_verify">OK</string>
+    <string name="pref_account_data_usage_permissions">Data Usage Permissions</string>
+    <string name="pref_backup_screen_title">Back Up Conversations</string>
+
+    <!-- Data Usage Permissions -->
+
+    <string name="pref_advanced_send_anonymous_data_title">Send Anonymous Data</string>
+    <string name="pref_advanced_send_anonymous_data_summary">Help make Wire better by sending anonymous usage and crash reports.</string>
+    <string name="pref_advanced_receive_news_and_offers_title">Receive Newsletter</string>
+    <string name="pref_advanced_receive_news_and_offers_summary">Receive news and product updates from Wire via email.</string>
 
     <!-- Options -->
     <string name="pref_options_dark_theme_title">Dark theme</string>
@@ -1268,7 +1283,9 @@
 
     <string name="app_entry_dialog_accept">ACCEPT</string>
     <string name="app_entry_dialog_cancel">CANCEL</string>
+    <string name="app_entry_dialog_not_now">NOT NOW</string>
     <string name="app_entry_dialog_view">VIEW</string>
+    <string name="app_entry_dialog_privacy_policy">PRIVACY POLICY</string>
 
     <string name="app_entry_email_sent">Email sent</string>
     <string name="teams_set_username_subtitle">Usernames help people find you.</string>

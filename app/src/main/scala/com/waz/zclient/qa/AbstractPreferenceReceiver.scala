@@ -22,6 +22,7 @@ import android.content.{BroadcastReceiver, Context, Intent}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.content.GlobalPreferences._
 import com.waz.content.Preferences.PrefKey
+import com.waz.content.Preferences.Preference.PrefCodec
 import com.waz.content.UserPreferences._
 import com.waz.service.ZMessaging
 import com.waz.zclient.controllers.userpreferences.IUserPreferencesController._
@@ -35,24 +36,37 @@ trait AbstractPreferenceReceiver extends BroadcastReceiver {
   import AbstractPreferenceReceiver._
   import com.waz.threading.Threading.Implicits.Background
 
-  override def onReceive(context: Context, intent: Intent) = {
+  def setGlobalPref[K: PrefCodec](preference: PrefKey[K], value: K): Unit = {
     val globalPrefs = ZMessaging.accountsService.map(_.global.prefs)
+    globalPrefs.map(_.preference(preference) := value)
+    setResultCode(Activity.RESULT_OK)
+  }
+
+  def setUserPref[K: PrefCodec](userPref: PrefKey[K], value: K): Unit = {
+    val accounts = ZMessaging.accountsService.map(_.zmsInstances)
+    accounts.map(_.head.map(_.foreach { zms =>
+      zms.userPrefs.preference(userPref) := value
+    }))
+    setResultCode(Activity.RESULT_OK)
+  }
+
+  override def onReceive(context: Context, intent: Intent) = {
+
     intent.getAction match {
       case AUTO_ANSWER_CALL_INTENT =>
-        globalPrefs.map(_.preference(AutoAnswerCallPrefKey) := intent.getBooleanExtra(AUTO_ANSWER_CALL_INTENT_EXTRA_KEY, false))
-        setResultCode(Activity.RESULT_OK)
+        setGlobalPref(AutoAnswerCallPrefKey, intent.getBooleanExtra(AUTO_ANSWER_CALL_INTENT_EXTRA_KEY, false))
       case ENABLE_GCM_INTENT =>
-        globalPrefs.map(_.preference(PushEnabledKey) := true)
-        setResultCode(Activity.RESULT_OK)
+        setGlobalPref(PushEnabledKey, true)
       case DISABLE_GCM_INTENT =>
-        globalPrefs.map(_.preference(PushEnabledKey) := false)
-        setResultCode(Activity.RESULT_OK)
+        setGlobalPref(PushEnabledKey, false)
+      case DISABLE_TRACKING_INTENT =>
+        setGlobalPref(DeveloperAnalyticsEnabled, false)
+      case ENABLE_TRACKING_INTENT =>
+        setGlobalPref(DeveloperAnalyticsEnabled, true)
+      case HIDE_GDPR_POPUPS =>
+        setGlobalPref(ShowMarketingConsentDialog, false)
       case SILENT_MODE =>
-        val accounts = ZMessaging.accountsService.map(_.zmsInstances)
-        accounts.map(_.head.map(_.foreach { zms =>
-          Seq(RingTone, PingTone, TextTone).map(zms.userPrefs.preference(_)).foreach(_ := "silent")
-        }))
-        setResultCode(Activity.RESULT_OK)
+        Seq(RingTone, PingTone, TextTone).foreach(setUserPref(_, "silent"))
       case NO_CONTACT_SHARING =>
         val preferences = context.getSharedPreferences(UserPreferencesController.USER_PREFS_TAG, Context.MODE_PRIVATE)
         preferences.edit()
@@ -64,21 +78,13 @@ trait AbstractPreferenceReceiver extends BroadcastReceiver {
           val wireApplication = context.getApplicationContext.asInstanceOf[WireApplication]
           implicit val injector = wireApplication.module
           val id = wireApplication.inject[GlobalTrackingController].getId
-          setResultData(id)
+          setResultData(id.toString)
           setResultCode(Activity.RESULT_OK)
         } catch {
           case _: Throwable =>
             setResultData("")
             setResultCode(Activity.RESULT_CANCELED)
         }
-      case ENABLE_TRACKING_INTENT =>
-        globalPrefs.map(_.preference(DeveloperAnalyticsEnabled) := true)
-        setResultCode(Activity.RESULT_OK)
-      case DISABLE_TRACKING_INTENT =>
-        globalPrefs.map(_.preference(DeveloperAnalyticsEnabled) := false)
-        setResultCode(Activity.RESULT_OK)
-      case PHONE_LOGIN =>
-        setResultCode(Activity.RESULT_OK)
       case _ =>
         setResultData("Unknown Intent!")
         setResultCode(Activity.RESULT_CANCELED)
@@ -89,17 +95,17 @@ trait AbstractPreferenceReceiver extends BroadcastReceiver {
 
 object AbstractPreferenceReceiver {
   val AUTO_ANSWER_CALL_INTENT_EXTRA_KEY = "AUTO_ANSWER_CALL_EXTRA_KEY"
-  val packageName = BuildConfig.APPLICATION_ID
-  private val intentPrefix = packageName + ".intent.action"
-  val AUTO_ANSWER_CALL_INTENT = intentPrefix + ".AUTO_ANSWER_CALL"
-  val ENABLE_GCM_INTENT = intentPrefix + ".ENABLE_GCM"
-  val DISABLE_GCM_INTENT = intentPrefix + ".DISABLE_GCM"
-  val ENABLE_TRACKING_INTENT = intentPrefix + ".ENABLE_TRACKING"
-  val DISABLE_TRACKING_INTENT = intentPrefix + ".DISABLE_TRACKING"
-  val SILENT_MODE = intentPrefix + ".SILENT_MODE"
-  val NO_CONTACT_SHARING = intentPrefix + ".NO_CONTACT_SHARING"
-  val TRACKING_ID_INTENT = intentPrefix + ".TRACKING_ID"
-  val PHONE_LOGIN = intentPrefix + ".PHONE_LOGIN"
+  private val packageName = BuildConfig.APPLICATION_ID
+  private val AUTO_ANSWER_CALL_INTENT = packageName + ".intent.action.AUTO_ANSWER_CALL"
+  private val ENABLE_GCM_INTENT = packageName + ".intent.action.ENABLE_GCM"
+  private val DISABLE_GCM_INTENT = packageName + ".intent.action.DISABLE_GCM"
+  private val ENABLE_TRACKING_INTENT = packageName + ".intent.action.ENABLE_TRACKING"
+  private val DISABLE_TRACKING_INTENT = packageName + ".intent.action.DISABLE_TRACKING"
+  private val SILENT_MODE = packageName + ".intent.action.SILENT_MODE"
+  private val NO_CONTACT_SHARING = packageName + ".intent.action.NO_CONTACT_SHARING"
+  private val TRACKING_ID_INTENT = packageName + ".intent.action.TRACKING_ID"
 
-  lazy val DeveloperAnalyticsEnabled = PrefKey[Boolean]("DEVELOPER_TRACKING_ENABLED")
+  private final val HIDE_GDPR_POPUPS = packageName + ".intent.action.HIDE_GDPR_POPUPS"
+
+  private lazy val DeveloperAnalyticsEnabled = PrefKey[Boolean]("DEVELOPER_TRACKING_ENABLED")
 }

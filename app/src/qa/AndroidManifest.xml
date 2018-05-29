@@ -39,7 +39,7 @@
                 <action android:name="${applicationId}.intent.action.TRACKING_ID" />
                 <action android:name="${applicationId}.intent.action.ENABLE_TRACKING" />
                 <action android:name="${applicationId}.intent.action.DISABLE_TRACKING" />
-                <action android:name="${applicationId}.intent.action.TEAM_CREATION_TOS_AB" />
+                <action android:name="${applicationId}.intent.action.HIDE_GDPR_POPUPS" />
             </intent-filter>
         </receiver>
     </application>

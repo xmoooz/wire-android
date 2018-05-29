@@ -25,6 +25,7 @@ import android.view.View.{OnClickListener, OnLongClickListener}
 import android.widget.RelativeLayout
 import com.waz.utils.events.EventStream
 import com.waz.zclient.ui.text.{GlyphTextView, TypefaceTextView}
+import com.waz.zclient.utils.ContextUtils.getDrawable
 import com.waz.zclient.utils.RichView
 import com.waz.zclient.{R, ViewHelper}
 
@@ -54,6 +55,8 @@ class TextButton(context: Context, attrs: AttributeSet, style: Int) extends Rela
   subtitle.foreach(subtitle => setOptionText(subtitle, subtitleAttr))
   iconStart.foreach(iconStart => setOptionGlyphId(iconStart, iconStartAttr))
   iconEnd.foreach(iconEnd => setOptionGlyphId(iconEnd, iconEndAttr))
+
+  setBackground(getDrawable(R.drawable.selector__transparent_button))
 
   setOnClickListener(new OnClickListener {
     override def onClick(v: View): Unit = onClickEvent ! v
