@@ -37,7 +37,7 @@ import com.waz.zclient._
 import com.waz.zclient.calling.controllers.CallController
 import com.waz.zclient.common.views.ImageController
 import com.waz.zclient.utils.ContextUtils._
-import com.waz.zclient.utils.DeprecationUtils
+import com.waz.zclient.utils.{DeprecationUtils, RingtoneUtils}
 import com.waz.zms.CallWakeService
 import org.threeten.bp.Instant
 
@@ -101,6 +101,8 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
 
   private var currentNotifications = Set.empty[Int]
 
+  notifications.map(_.exists(!_.isMainCall)).onUi(soundController.playRingFromThemInCall)
+
   notifications.onUi { nots =>
     verbose(s"${nots.size} call notifications")
 
@@ -122,8 +124,10 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
         .setOnlyAlertOnce(true)
         .setOngoing(true)
 
-      if (!not.isMainCall)
-        builder.setDefaults(NotificationCompat.DEFAULT_ALL) //used to make the notification drop down
+      if (!not.isMainCall) {
+        builder.setDefaults(NotificationCompat.DEFAULT_LIGHTS | NotificationCompat.DEFAULT_VIBRATE)
+        builder.setSound(RingtoneUtils.getUriForRawId(cxt, R.raw.empty_sound))
+      }
 
       not.state match {
         case Some(OtherCalling) => //not in a call, decline or join
