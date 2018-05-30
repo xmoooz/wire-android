@@ -183,7 +183,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
       true         <- isVideoCall
       Some(est)    <- currentCall.map(_.estabTime)
       (show, last) <- lastControlsClick.orElse(Signal.const((true, clock.instant())))
-      display      <- if (show) ClockSignal(10.seconds).map(c => last.max(est).until(c).asScala <= 10.seconds)
+      display      <- if (show) ClockSignal(3.seconds).map(c => last.max(est).until(c).asScala <= 3.seconds)
                       else Signal.const(false)
     } yield display).orElse(Signal.const(true))
 
