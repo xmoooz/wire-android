@@ -45,7 +45,7 @@ class CallingMiddleLayout(val context: Context, val attrs: AttributeSet, val def
 
   lazy val onShowAllClicked = participants.onShowAllClicked
 
-  Signal(callStateCollapseJoin, showVideoView, isGroupCall).map {
+  Signal(callStateCollapseJoin, isVideoCall, isGroupCall).map {
     case (_,                   false, false) => CallDisplay.Chathead
     case (Some(OtherCalling),  false, true)  => CallDisplay.Chathead
     case (Some(SelfConnected), _,     true)  => CallDisplay.Participants
