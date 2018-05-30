@@ -20,27 +20,21 @@
 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item android:state_enabled="false">
-        <shape android:shape="oval">
-            <solid android:color="@color/graphite_8"/>
-        </shape>
-    </item>
-
     <item android:state_pressed="true">
         <shape android:shape="oval">
-            <solid android:color="@color/graphite_48" />
+            <solid android:color="@color/graphite" />
         </shape>
     </item>
 
     <item android:state_activated="true">
         <shape android:shape="oval">
-            <solid android:color="@color/graphite_64" />
+            <solid android:color="@color/graphite" />
         </shape>
     </item>
 
     <item>
         <shape android:shape="oval">
-            <solid android:color="@color/graphite_24"/>
+            <solid android:color="@color/graphite_8"/>
         </shape>
     </item>
 </selector>

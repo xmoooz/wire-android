@@ -31,10 +31,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|start"
-        android:padding="@dimen/wire__padding__regular"
+        android:padding="@dimen/wire__padding__14"
         android:text="@string/glyph__linedown"
         android:textColor="@color/text__primary_dark"
-        android:textSize="@dimen/wire__text_size__small"
+        android:textSize="@dimen/wire__text_size__regular"
         app:themedColor="Primary"
         />
 
@@ -63,8 +63,8 @@
         android:textAlignment="center"
         android:textColor="@color/text__primary_dark"
         android:textSize="@dimen/wire__text_size__regular"
-        app:w_font="@string/wire__typeface__light"
-        app:themedColor="Primary"
+        app:w_font="@string/wire__typeface__medium"
+        app:themedColor="Secondary"
         />
 
     <com.waz.zclient.ui.text.TypefaceTextView
@@ -77,8 +77,8 @@
         android:textAlignment="center"
         android:textAllCaps="true"
         android:textColor="?wirePrimaryTextColor"
-        android:textSize="@dimen/wire__text_size__regular"
-        app:w_font="@string/wire__typeface__light"
-        app:themedColor="Primary"
+        android:textSize="@dimen/wire__text_size__smaller"
+        app:w_font="@string/wire__typeface__medium"
+        app:themedColor="Secondary"
         />
 </merge>

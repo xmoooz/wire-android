@@ -47,22 +47,23 @@
             android:paddingBottom="@dimen/wire__padding__tiny"
         >
 
-            <TextView
+            <com.waz.zclient.ui.text.TypefaceTextView
                 android:id="@+id/call_banner_status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/white"
                 android:textSize="@dimen/wire__text_size__small"
-                android:text="@string/call_banner_tap_to_return_to_call"
-            />
+                app:w_font="@string/wire__typeface__medium"
+                />
 
-            <TextView
+            <com.waz.zclient.ui.text.TypefaceTextView
                 android:paddingStart="@dimen/wire__padding__small"
                 android:id="@+id/call_banner_duration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/white"
                 android:textSize="@dimen/wire__text_size__small"
+                app:w_font="@string/wire__typeface__medium"
             />
 
         </LinearLayout>

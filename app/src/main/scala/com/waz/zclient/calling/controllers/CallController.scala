@@ -25,7 +25,7 @@ import com.waz.avs.VideoPreview
 import com.waz.model.{AssetId, UserData, UserId}
 import com.waz.service.ZMessaging.clock
 import com.waz.service.call.Avs.VideoState
-import com.waz.service.call.CallInfo
+import com.waz.service.call.{CallInfo, CallingService}
 import com.waz.service.call.CallInfo.CallState.{SelfJoining, _}
 import com.waz.service.{AccountsService, GlobalModule, NetworkModeService, ZMessaging}
 import com.waz.threading.{CancellableFuture, Threading}
@@ -39,8 +39,8 @@ import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.{ConversationMembersSignal, DeprecationUtils, UiStorage, UserSignal}
 import com.waz.zclient.{Injectable, Injector, R, WireContext}
 import org.threeten.bp.Instant
-
 import com.waz.utils._
+
 import scala.concurrent.duration._
 
 class CallController(implicit inj: Injector, cxt: WireContext, eventContext: EventContext) extends Injectable {
@@ -72,7 +72,6 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   val currentCall = currentCallOpt.collect { case Some(c) => c }
 
   val callConvIdOpt = currentCallOpt.map(_.map(_.convId))
-  val callConvId    = callConvIdOpt.collect { case Some(c) => c }
 
   val isCallActive      = currentCallOpt.map(_.isDefined)
   val isCallActiveDelay = isCallActive.flatMap {
@@ -88,6 +87,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   val isCallOutgoing    = callStateOpt.map(_.contains(SelfCalling))
   val isCallIncoming    = callStateOpt.map(_.contains(OtherCalling))
 
+  val callConvId            = currentCall.map(_.convId)
   val isMuted               = currentCall.map(_.muted)
   val callerId              = currentCall.map(_.caller)
   val startedAsVideo        = currentCall.map(_.startedAsVideoCall)
@@ -191,49 +191,42 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
 
   def leaveCall(): Unit = {
     verbose(s"leaveCall")
-    for {
-      cId <- callConvId.head
-      cs  <- callingService.head
-    } yield cs.endCall(cId)
+    updateCall { case (call, cs) => cs.endCall(call.convId) }
   }
 
   def toggleMuted(): Unit = {
     verbose(s"toggleMuted")
-    for {
-      muted <- isMuted.head
-      cs    <- callingService.head
-    } yield cs.setCallMuted(!muted)
+    updateCall { case (call, cs) => cs.setCallMuted(!call.muted) }
   }
 
   def toggleVideo(): Unit = {
     verbose(s"toggleVideo")
-    for {
-      st  <- videoSendState.head
-      cId <- callConvId.head
-      cs  <- callingService.head
-    } yield {
+    updateCall { case (call, cs) =>
       import VideoState._
-      cs.setVideoSendState(cId, if (st != Started) Started else Stopped)
+      cs.setVideoSendState(call.convId, if (call.videoSendState != Started) Started else Stopped)
     }
   }
 
   def setVideoPause(pause: Boolean): Unit = {
     verbose(s"setVideoPause: $pause")
-    for {
-      true <- isVideoCall.head
-      st  <- videoSendState.head
-      cId <- callConvId.head
-      cs  <- callingService.head
-    } yield {
+    updateCall { case (call, cs) =>
       import VideoState._
-      val targetSt = st match {
-        case Started if pause => Paused
-        case Paused if !pause => Started
-        case _ => st
+      if (call.isVideoCall) {
+        val targetSt = call.videoSendState match {
+          case Started if pause => Paused
+          case Paused if !pause => Started
+          case _ => call.videoSendState
+        }
+        cs.setVideoSendState(call.convId, targetSt)
       }
-      cs.setVideoSendState(cId, targetSt)
     }
   }
+
+  private def updateCall(f: (CallInfo, CallingService) => Unit): Unit =
+    for {
+      Some(call) <- currentCallOpt.head
+      cs  <- callingService.head
+    } yield f(call, cs)
 
   private var _wasUiActiveOnCallStart = false
 
@@ -316,12 +309,6 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     soundController.setOutgoingRingTonePlaying(play, v)
   }
 
-  //Use Audio view to show conversation degraded screen for calling
-  val showVideoView = convDegraded.flatMap {
-    case true  => Signal(false)
-    case false => isVideoCall
-  }.disableAutowiring()
-
   def setVideoPreview(view: Option[VideoPreview]): Unit =
     flowManager.head.foreach { fm =>
       verbose(s"Setting VideoPreview on Flowmanager, view: $view")
@@ -337,9 +324,8 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     case _                      => R.string.empty_string
   }
 
-  val subtitleText: Signal[String] = convDegraded.flatMap {
-    case true => Signal("")
-    case false => (for {
+  val subtitleText: Signal[String] =
+    (for {
       video <- isVideoCall
       state <- callState
       dur   <- duration
@@ -352,7 +338,6 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
       case (_,     SelfConnected, d) => d
       case _ => ""
     }
-  }
 
   def stateMessageText(userId: UserId): Signal[Option[String]] = Signal(callState, cameraFailed, allVideoReceiveStates.map(_.getOrElse(userId, Unknown))).map { vs =>
     verbose(s"Message Text: $vs")

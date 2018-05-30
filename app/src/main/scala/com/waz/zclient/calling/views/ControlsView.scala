@@ -79,8 +79,9 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
       isTeam = zms.teamId.isDefined
       incoming <- controller.isCallIncoming
       established <- controller.isCallEstablished
-      showVideo <- controller.showVideoView
-    } yield (established || incoming) && (showVideo || isTeam || !isGroup)).onUi(button.setEnabled)
+      showVideo <- controller.isVideoCall
+      startedAsVideo <- controller.startedAsVideo
+    } yield (established && (showVideo || isTeam || !isGroup)) || (incoming && startedAsVideo)).onUi(button.setEnabled)
   }
 
   returning(findById[CallControlButtonView](R.id.speaker_flip_call)) { button =>
@@ -153,7 +154,7 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
 
   private def video(): Future[Unit] = async {
     onButtonClick ! {}
-    val isVideoOn = await(controller.showVideoView.head)
+    val isVideoOn = await(controller.isVideoCall.head)
     val memberCount = await(controller.conversationMembers.map(_.size).head)
     val hasCameraPermissions = await(permissions.requestAllPermissions(Set(CAMERA)))
     if (!isVideoOn && memberCount > CallController.VideoCallMaxMembers)

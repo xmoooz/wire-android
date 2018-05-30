@@ -47,6 +47,8 @@
         android:layout_width="@dimen/calling__controls__max_width"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center"
-        android:layout_marginBottom="@dimen/wire__padding__32" />
+        android:layout_marginBottom="@dimen/wire__padding__32"
+        android:layout_marginStart="@dimen/wire__padding__regular"
+        android:layout_marginEnd="@dimen/wire__padding__regular"/>
 
 </LinearLayout>

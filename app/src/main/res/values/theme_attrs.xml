@@ -119,6 +119,8 @@
     <attr name="callingControlButtonLabel" format="reference" />
     <attr name="callButtonBackground" format="reference" />
     <attr name="callIconDisabledColor" format="color" />
+    <attr name="callTextDisabledColor" format="color" />
+    <attr name="callIconDisabledActivatedColor" format="color" />
 
     <!-- OTR -->
     <attr name="otrClientLink" format="reference" />

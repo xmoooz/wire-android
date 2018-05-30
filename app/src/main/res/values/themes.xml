@@ -140,7 +140,9 @@
         <item name="callingChatheadFooter">@style/calling__chathead_footer__dark</item>
         <item name="callingControlButtonLabel">@style/calling__controls__button_label__dark</item>
         <item name="callButtonBackground">@drawable/selector__icon_button__background__calling</item>
-        <item name="callIconDisabledColor">@color/white_40</item>
+        <item name="callIconDisabledColor">@color/white_24</item>
+        <item name="callTextDisabledColor">@color/white_24</item>
+        <item name="callIconDisabledActivatedColor">@color/graphite_40</item>
 
         <!-- OTR -->
         <item name="otrClientLink">@style/otr_client__link__dark</item>
@@ -298,7 +300,9 @@
         <item name="callingChatheadFooter">@style/calling__chathead_footer__light</item>
         <item name="callingControlButtonLabel">@style/calling__controls__button_label__light</item>
         <item name="callButtonBackground">@drawable/selector__icon_button__background__calling_light</item>
-        <item name="callIconDisabledColor">@color/graphite_40</item>
+        <item name="callIconDisabledColor">@color/graphite_24</item>
+        <item name="callTextDisabledColor">@color/graphite_24</item>
+        <item name="callIconDisabledActivatedColor">@color/graphite_40</item>
 
         <!-- OTR -->
         <item name="otrClientLink">@style/otr_client__link__light</item>
