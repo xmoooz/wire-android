@@ -47,7 +47,7 @@
     <string name="phone_invalid_format_message">Please enter a valid phone number</string>
 
     <string name="phone_password_exists_header">Password exists</string>
-    <string name="phone_password_exists_message">This account already has a password and email associated. Please login by email.</string>
+    <string name="phone_password_exists_message">This account already has a password and email associated. Please log in by email.</string>
 
     <string name="invalid_code_header">Invalid code</string>
     <string name="incorrect_code_header">Incorrect Code</string>
