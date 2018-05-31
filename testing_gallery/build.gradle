@@ -31,10 +31,10 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile deps.appcompatv7
-    compile deps.gson
-    compile deps.guava
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation deps.appcompatv7
+    implementation deps.gson
+    implementation deps.guava
 }
 
 //add pretty naming to apk filename
@@ -44,6 +44,6 @@ android.applicationVariants.all { variant ->
     variant.outputs.each { output ->
         def newApkName
         newApkName = "${appName}-${output.baseName}.apk"
-        output.outputFile = new File(output.outputFile.parent, newApkName)
+        output.outputFileName = new File("../..", newApkName)
     }
 }
