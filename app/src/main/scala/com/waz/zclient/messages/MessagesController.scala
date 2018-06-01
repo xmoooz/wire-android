@@ -76,14 +76,12 @@ import scala.concurrent.Future
       }
     })
 
-    uiActive flatMap {
-      case false => Signal const Option.empty[ConvId]
-      case true =>
-        pageVisible flatMap {
-          case true => currentConvId.map(Some(_))
-          case false => Signal const Option.empty[ConvId]
-        }
-    }
+    (for {
+      true <- inject[com.waz.zclient.messages.controllers.NavigationController].mainActivityActive
+      true <- uiActive
+      true <- pageVisible
+      conv <- currentConvId.map(Option(_))
+    } yield conv).orElse(Signal.const(Option.empty[ConvId]))
   }
 
   @volatile
