@@ -28,6 +28,7 @@ import com.waz.ZLog._
 import com.waz.avs.{VideoPreview, VideoRenderer}
 import com.waz.model.{Dim2, UserId}
 import com.waz.service.call.Avs.VideoState
+import com.waz.service.call.Avs.VideoState.Unknown
 import com.waz.threading.SerialDispatchQueue
 import com.waz.utils.events.Signal
 import com.waz.utils.returning
@@ -68,6 +69,11 @@ abstract class UserVideoView(context: Context, val userId: UserId) extends Frame
 
   protected val videoCallInfo = returning(findById[View](R.id.video_call_info)) {
     _.setBackgroundColor(getColor(R.color.black_58))
+  }
+
+  controller.allVideoReceiveStates.map(_.getOrElse(userId, Unknown)).onUi {
+    case VideoState.Paused => videoView.fadeOut()
+    case _                 => videoView.fadeIn()
   }
 
   Signal(controller.controlsVisible, shouldShowInfo).onUi {
