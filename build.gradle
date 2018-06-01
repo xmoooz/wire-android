@@ -10,12 +10,11 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.3'
+        classpath 'com.android.tools.build:gradle:3.1.2'
         classpath 'com.jakewharton.hugo:hugo-plugin:1.2.1'
-        classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
         classpath 'com.mutualmobile.gradle.plugins:dexinfo:0.1.2'
         classpath 'com.wire:gradle-android-scala-plugin:1.5.0'
-        classpath 'com.google.gms:google-services:3.0.0'
+        classpath 'com.google.gms:google-services:3.2.0'
     }
 }
 
@@ -63,16 +62,16 @@ ext {
     // There are some classes with possibility of being simplified.
     minSdkVersion = 17
     targetSdkVersion = 23
-    buildToolsVersion = '26.0.1'
+    buildToolsVersion = '27.0.3'
     scalaMajorVersion = '2.11'
     scalaVersion = scalaMajorVersion + '.12'
-    sourceCompatibilityVersion = JavaVersion.VERSION_1_7
-    targetCompatibilityVersion = JavaVersion.VERSION_1_7
+    sourceCompatibilityVersion = JavaVersion.VERSION_1_8
+    targetCompatibilityVersion = JavaVersion.VERSION_1_8
     preDexLibs = !project.hasProperty('disablePreDex')
 
     checkstyleVersion = '6.18'
     pmdVersion = '5.4.1'
-    supportLibVersion = '26.0.1'
+    supportLibVersion = '27.0.0'
     playServicesVersion = '11.0.0'
 
     audioVersion = System.getenv("AUDIO_VERSION") ?: '1.209.0@aar'

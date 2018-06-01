@@ -515,6 +515,8 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       case AssetIntentsManager.IntentType.CAMERA =>
         sendImage(uri)
         extendedCursorContainer.close(true)
+      case intentType =>
+        warn(s"Unrecognized intent type: $intentType")
     }
 
     override def openIntent(intent: Intent, intentType: AssetIntentsManager.IntentType): Unit = {
