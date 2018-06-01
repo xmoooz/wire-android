@@ -131,6 +131,8 @@ class SoundController(implicit inj: Injector, cxt: Context) extends Injectable {
     setVibrating(R.array.camera)
   }
 
+  def playRingFromThemInCall(play: Boolean) = setMediaPlaying(R.raw.ringing_from_them_incall, play)
+
   /**
     * @param play For looping patterns, this parameter will tell to stop vibrating if they have previously been started
     */
