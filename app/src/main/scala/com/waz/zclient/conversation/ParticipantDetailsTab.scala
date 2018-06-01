@@ -30,11 +30,12 @@ import com.waz.zclient.paintcode.GuestIcon
 import com.waz.zclient.participants.ParticipantsController
 import com.waz.zclient.ui.text.TypefaceTextView
 import com.waz.zclient.utils.ContextUtils._
-import com.waz.zclient.utils.{GuestUtils, RichView, UiStorage}
+import com.waz.zclient.utils.{GuestUtils, RichView}
 import com.waz.zclient.views.ShowAvailabilityView
 import com.waz.zclient.views.menus.{FooterMenu, FooterMenuCallback}
 import com.waz.zclient.{R, ViewHelper}
 import org.threeten.bp.Instant
+
 import scala.concurrent.duration._
 
 class ParticipantDetailsTab(val context: Context, callback: FooterMenuCallback) extends LinearLayout(context, null, 0) with ViewHelper {
@@ -42,7 +43,6 @@ class ParticipantDetailsTab(val context: Context, callback: FooterMenuCallback) 
   inflate(R.layout.single_participant_tab_details)
   setOrientation(LinearLayout.VERTICAL)
 
-  private implicit val uiStorage     = inject[UiStorage]
   private val zms                    = inject[Signal[ZMessaging]]
   private val usersController        = inject[UsersController]
   private val participantsController = inject[ParticipantsController]
@@ -65,8 +65,8 @@ class ParticipantDetailsTab(val context: Context, callback: FooterMenuCallback) 
   } yield !user.isWireBot && user.isGuest(teamId)
 
   private val leftActionStrings = for {
-    isWireless <- participantsController.otherParticipant.map(_.expiresAt.isDefined)
-    isGroupOrBot <- participantsController.isGroupOrBot
+    isWireless     <- participantsController.otherParticipant.map(_.expiresAt.isDefined)
+    isGroupOrBot   <- participantsController.isGroupOrBot
     hasPermissions <- userAccountsController.hasCreateConvPermission
   } yield if (isWireless) {
     (R.string.empty_string, R.string.empty_string)
@@ -87,14 +87,14 @@ class ParticipantDetailsTab(val context: Context, callback: FooterMenuCallback) 
 
   (for {
     expires <- participantsController.otherParticipant.map(_.expiresAt)
-    clock <- if (expires.isDefined) ClockSignal(5.minutes) else Signal.const(Instant.EPOCH)
+    clock   <- if (expires.isDefined) ClockSignal(5.minutes) else Signal.const(Instant.EPOCH)
   } yield expires match {
     case Some(expiresAt) => GuestUtils.timeRemainingString(expiresAt, clock)
     case _ => ""
   }).onUi(guestIndicatorTimer.setText)
 
   Signal(participantsController.otherParticipant.map(_.expiresAt.isDefined), usersController.availabilityVisible).map {
-    case (true, _) => false
+    case (true, _)         => false
     case (_, isTeamMember) => isTeamMember
   }.onUi { userAvailability.setVisible }
 
