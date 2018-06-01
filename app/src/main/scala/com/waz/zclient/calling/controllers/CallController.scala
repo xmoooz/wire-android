@@ -213,12 +213,11 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     updateCall { case (call, cs) =>
       import VideoState._
       if (call.isVideoCall) {
-        val targetSt = call.videoSendState match {
-          case Started if pause => Paused
-          case Paused if !pause => Started
-          case _ => call.videoSendState
+        call.videoSendState match {
+          case Started if pause => cs.setVideoSendState(call.convId, Paused)
+          case Paused if !pause => cs.setVideoSendState(call.convId, Started)
+          case _ =>
         }
-        cs.setVideoSendState(call.convId, targetSt)
       }
     }
   }
@@ -343,10 +342,11 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   def stateMessageText(userId: UserId): Signal[Option[String]] = Signal(callState, cameraFailed, allVideoReceiveStates.map(_.getOrElse(userId, Unknown))).map { vs =>
     verbose(s"Message Text: $vs")
     (vs match {
-      case (SelfCalling,   true, _)             => Some(R.string.calling__self_preview_unavailable_long)
-      case (SelfConnected, _,    BadConnection) => Some(R.string.ongoing__poor_connection_message)
-      case (SelfConnected, _,    Paused)        => Some(R.string.video_paused)
-      case _                                    => None
+      case (SelfCalling,   true, _)                  => Some(R.string.calling__self_preview_unavailable_long)
+      case (SelfConnected, _,    BadConnection)      => Some(R.string.ongoing__poor_connection_message)
+      case (SelfConnected, _,    Paused)             => Some(R.string.video_paused)
+      case (OtherCalling,  _,    NoCameraPermission) => Some(R.string.calling__cannot_start__no_camera_permission__message)
+      case _                                         => None
     }).map(getString)
   }
 

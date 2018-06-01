@@ -28,8 +28,7 @@ import com.waz.ZLog._
 import com.waz.avs.{VideoPreview, VideoRenderer}
 import com.waz.model.{Dim2, UserId}
 import com.waz.service.call.Avs.VideoState
-import com.waz.service.call.Avs.VideoState.Unknown
-import com.waz.threading.SerialDispatchQueue
+import com.waz.threading.{SerialDispatchQueue, Threading}
 import com.waz.utils.events.Signal
 import com.waz.utils.returning
 import com.waz.zclient.calling.controllers.CallController
@@ -60,8 +59,6 @@ abstract class UserVideoView(context: Context, val userId: UserId) extends Frame
 
   protected val pausedText = findById[TextView](R.id.paused_text_view)
 
-  addView(returning(videoView)(_.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))), 1)
-
   protected val stateMessageText = controller.stateMessageText(userId)
   stateMessageText.onUi(msg => pausedText.setText(msg.getOrElse("")))
   protected val pausedTextVisible = stateMessageText.map(_.exists(_.nonEmpty))
@@ -71,14 +68,16 @@ abstract class UserVideoView(context: Context, val userId: UserId) extends Frame
     _.setBackgroundColor(getColor(R.color.black_16))
   }
 
-  controller.allVideoReceiveStates.map(_.getOrElse(userId, Unknown)).onUi {
-    case VideoState.Paused => videoView.fadeOut()
-    case _                 => videoView.fadeIn()
-  }
+  protected def registerHandler(view: View) =
+    controller.allVideoReceiveStates.map(_.getOrElse(userId, VideoState.Unknown)).onUi {
+      case VideoState.Paused => view.fadeOut()
+      case _                 => view.fadeIn()
+    }
 
-  Signal(controller.controlsVisible, shouldShowInfo).onUi {
-    case (false, true)  => videoCallInfo.fadeIn()
-    case _              => videoCallInfo.fadeOut()
+  Signal(controller.controlsVisible, shouldShowInfo, controller.isCallIncoming).onUi {
+    case (_, true, true) |
+         (false, true, _) => videoCallInfo.fadeIn()
+    case _                => videoCallInfo.fadeOut()
   }
 
   override def onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int): Unit = {
@@ -87,7 +86,6 @@ abstract class UserVideoView(context: Context, val userId: UserId) extends Frame
       imageView.setBackground(new BackgroundDrawable(pictureId, getContext, Dim2(right - left, bottom - top)))
   }
 
-  val videoView: View
   val shouldShowInfo: Signal[Boolean]
 }
 
@@ -101,9 +99,13 @@ class SelfVideoView(context: Context, userId: UserId) extends UserVideoView(cont
     case false => muteIcon.fadeOut()
   }
 
-  override lazy val videoView: View = returning(new VideoPreview(getContext)) { v =>
-    controller.setVideoPreview(Some(v))
-  }
+  registerHandler(returning(new VideoPreview(getContext)) { v =>
+    controller.videoSendState.filter(_ != VideoState.NoCameraPermission).head.foreach { _ =>
+      controller.setVideoPreview(Some(v))
+      v.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+      addView(v, 1)
+    }(Threading.Ui)
+  })
 
   override lazy val shouldShowInfo = Signal(pausedTextVisible, controller.isMuted).map {
     case (paused, muted) => paused || muted
@@ -111,8 +113,11 @@ class SelfVideoView(context: Context, userId: UserId) extends UserVideoView(cont
 }
 
 class OtherVideoView(context: Context, userId: UserId) extends UserVideoView(context, userId) {
-  override lazy val videoView: View = new VideoRenderer(getContext, userId.str, false)
   override lazy val shouldShowInfo = pausedTextVisible
+  registerHandler(returning(new VideoRenderer(getContext, userId.str, false)) { v =>
+    v.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+    addView(v, 1)
+  })
 }
 
 class CallingFragment extends FragmentHelper {
@@ -140,7 +145,7 @@ class CallingFragment extends FragmentHelper {
 
       vh.foreach { v =>
         val videoUsers = vrs.toSeq.collect {
-          case (userId, VideoState.Started | VideoState.Paused | VideoState.BadConnection) => userId
+          case (userId, VideoState.Started | VideoState.Paused | VideoState.BadConnection | VideoState.NoCameraPermission) => userId
         }
         val views = videoUsers.map { uId => viewMap.getOrElse(uId, createView(uId))}
 
@@ -185,7 +190,6 @@ class CallingFragment extends FragmentHelper {
             case 2                                             => (1, 0, 1)
             case 3                                             => (1, 1, 1)
           }
-          verbose(s"Span sizes: ($row, $col, $span)")
           r.setLayoutParams(returning(new GridLayout.LayoutParams()) { params =>
             params.width      = 0
             params.height     = 0

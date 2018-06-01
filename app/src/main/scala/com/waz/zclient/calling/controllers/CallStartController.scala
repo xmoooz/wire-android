@@ -120,7 +120,7 @@ class CallStartController(implicit inj: Injector, cxt: WireContext, ec: EventCon
           if (hasPerms) newCallZms.calling.startCall(newCallConv.id, curWithVideo, forceOption)
           else showPermissionsErrorDialog(
             R.string.calling__cannot_start__title,
-            if (curWithVideo) R.string.calling__cannot_start__no_video_permission__message else R.string.calling__cannot_start__no_permission__message
+            if (curWithVideo) R.string.calling__cannot_start__no_camera_permission__message else R.string.calling__cannot_start__no_permission__message
           ).flatMap(_ => if (curCall.isDefined) newCallZms.calling.endCall(newCallConv.id) else Future.successful({}))
         _                 <- if (forceOption && !withVideo) Future(newCallZms.calling.setVideoSendState(newCallConv.id, Stopped)) else Future.successful({})
       } yield {}
