@@ -2,7 +2,7 @@
 
 buildscript {
 
-    ext.kotlin_version = '1.2.41'
+    ext.kotlinVersion = '1.2.41'
 
     repositories {
         maven {
@@ -18,7 +18,7 @@ buildscript {
         classpath 'com.mutualmobile.gradle.plugins:dexinfo:0.1.2'
         classpath 'com.wire:gradle-android-scala-plugin:1.5.0'
         classpath 'com.google.gms:google-services:3.2.0'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
 
@@ -98,6 +98,8 @@ ext {
     deps = [
             scala               : "org.scala-lang:scala-library:$scalaVersion",
             scalaReflect        : "org.scala-lang:scala-reflect:$scalaVersion",
+
+            kotlin              : "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlinVersion",
 
             // Lint dependencies
             lintapi              : 'com.android.tools.lint:lint-api:24.5.0',

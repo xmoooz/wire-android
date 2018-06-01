@@ -228,6 +228,7 @@ dependencies {
     //    implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation deps.scala
     compileOnly deps.scalaReflect
+    implementation deps.kotlin
     implementation deps.multidex
     implementation deps.timber
     implementation deps.supportv4
@@ -311,7 +312,6 @@ dependencies {
     ScalaCompileOptions.metaClass.fork = true
     ScalaCompileOptions.metaClass.useAnt = false
     ScalaCompileOptions.metaClass.useCompileDaemon = false
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
 }
 
 tasks.withType(ScalaCompile) {
