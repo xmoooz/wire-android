@@ -37,7 +37,7 @@ trait AbstractPreferenceReceiver extends BroadcastReceiver {
   import com.waz.threading.Threading.Implicits.Background
 
   def setGlobalPref[K: PrefCodec](preference: PrefKey[K], value: K): Unit = {
-    val globalPrefs = ZMessaging.accountsService.map(_.global.prefs)
+    val globalPrefs = ZMessaging.globalModule.map(_.prefs)
     globalPrefs.map(_.preference(preference) := value)
     setResultCode(Activity.RESULT_OK)
   }
