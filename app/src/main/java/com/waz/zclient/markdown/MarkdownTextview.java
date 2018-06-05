@@ -22,8 +22,14 @@ import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
 import android.util.AttributeSet;
 
+import com.waz.zclient.markdown.spans.GroupSpan;
+import com.waz.zclient.markdown.spans.commonmark.ImageSpan;
 import com.waz.zclient.markdown.spans.commonmark.LinkSpan;
 import com.waz.zclient.ui.text.TypefaceTextView;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class MarkdownTextview extends TypefaceTextView {
     public MarkdownTextview(Context context, AttributeSet attrs, int defStyle) {
@@ -53,15 +59,19 @@ public class MarkdownTextview extends TypefaceTextView {
     }
 
     /**
-     * Re-applies all LinkSpan objects.
+     * Re-applies all LinkSpan and ImageSpan objects.
      */
     public void refreshLinks() {
         if (!(getText() instanceof SpannableString)) return;
 
         SpannableString text = (SpannableString) getText();
-        LinkSpan[] spans = text.getSpans(0, text.length(), LinkSpan.class);
+        GroupSpan[] linkSpans = text.getSpans(0, text.length(), LinkSpan.class);
+        GroupSpan[] imageSpans = text.getSpans(0, text.length(), ImageSpan.class);
+        List<GroupSpan> allSpans = new ArrayList<>(Arrays.asList(linkSpans));
+        allSpans.addAll(Arrays.asList(imageSpans));
 
-        for (LinkSpan span: spans) {
+
+        for (GroupSpan span: allSpans) {
             int start = text.getSpanStart(span);
             int end = text.getSpanEnd(span);
             int flags = text.getSpanFlags(span);

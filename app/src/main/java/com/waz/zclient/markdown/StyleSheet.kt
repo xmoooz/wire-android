@@ -205,7 +205,7 @@ public class StyleSheet {
         LinkSpan(link.destination, linkColor, onClickLink)
 
     fun spanFor(image: Image): GroupSpan =
-        ImageSpan(image.destination)
+        ImageSpan(image.destination, linkColor, onClickLink)
 
     fun spanFor(emphasis: Emphasis): GroupSpan =
         EmphasisSpan()

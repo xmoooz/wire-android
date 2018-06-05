@@ -17,18 +17,23 @@
  */
 package com.waz.zclient.markdown.spans.commonmark
 
+import android.text.style.ForegroundColorSpan
 import android.text.style.URLSpan
 import com.waz.zclient.markdown.spans.InlineSpan
+import com.waz.zclient.markdown.spans.custom.MarkdownLinkSpan
 import org.commonmark.node.Image
 import org.commonmark.node.Node
 
 /**
- * NOT YET SUPPORTED!
+ * NOT YET SUPPORTED! Identical to LinkSpan
  * The span corresponding to the markdown "Image" unit.
  */
-class ImageSpan(val url: String) : InlineSpan() {
+class ImageSpan(val url: String, val color: Int, onClick: (String) -> Unit) : InlineSpan() {
 
-    init { add(URLSpan(url)) }
+    init {
+        add(MarkdownLinkSpan(url, onClick))
+        add(ForegroundColorSpan(color))
+    }
 
     override fun toNode(literal: String?): Node {
         val n = Image()
