@@ -508,7 +508,7 @@ public class LocationFragment extends BaseFragment<LocationFragment.Container> i
                 }
 
                 getControllerFactory().getLocationController().hideShareLocation(location);
-                ZMessaging.getCurrentGlobal().trackingService().contribution(new ContributionEvent.Action("location")); //TODO use lazy val when in scala
+                ZMessaging.currentGlobal().trackingService().contribution(new ContributionEvent.Action("location")); //TODO use lazy val when in scala
                 break;
         }
     }

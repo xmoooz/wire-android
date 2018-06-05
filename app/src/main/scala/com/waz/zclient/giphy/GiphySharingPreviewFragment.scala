@@ -236,7 +236,7 @@ class GiphySharingPreviewFragment extends BaseFragment[GiphySharingPreviewFragme
     }
 
   private def sendGif() = {
-    ZMessaging.getCurrentGlobal.trackingService.contribution(new ContributionEvent.Action("text")) //TODO use lazy val when in scala
+    ZMessaging.currentGlobal.trackingService.contribution(new ContributionEvent.Action("text"))
     for {
       term <- searchTerm.head
       gif <- selectedGif.head
