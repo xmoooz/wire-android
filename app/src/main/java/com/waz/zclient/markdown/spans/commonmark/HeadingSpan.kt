@@ -19,6 +19,7 @@ package com.waz.zclient.markdown.spans.commonmark
 
 import android.graphics.Typeface
 import android.text.style.AbsoluteSizeSpan
+import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
 import com.waz.zclient.markdown.spans.BlockSpan
 import com.waz.zclient.markdown.spans.custom.ParagraphSpacingSpan
@@ -31,13 +32,13 @@ import org.commonmark.node.Node
  */
 class HeadingSpan(
     val level: Int,
-    val fontSize: Int,
+    val fontSizeMultiplier: Float,
     val beforeSpacing: Int,
     val afterSpacing: Int
 ) : BlockSpan() {
 
     init {
-        add(AbsoluteSizeSpan(fontSize, true))
+        add(RelativeSizeSpan(fontSizeMultiplier))
         add(ParagraphSpacingSpan(beforeSpacing, afterSpacing))
         add(StyleSpan(Typeface.BOLD))
     }

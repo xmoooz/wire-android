@@ -33,7 +33,7 @@ import org.commonmark.node.*
 public class StyleSheet {
 
     /**
-     * The base font size (in points) used for all markdown units unless otherwise specified.
+     * The base font size (in pixels) used for all markdown units unless otherwise specified.
      */
     public var baseFontSize: Int = 17
 
@@ -53,10 +53,10 @@ public class StyleSheet {
     public var paragraphSpacingAfter: Int = 16
 
     /**
-     * The font sizes (in points) for the various header levels where the key is the header
-     * level (Int) and the value is the font size (Int). Header levels range from 1 to 6.
+     * The relative font size multiplers (values) for the various header levels (keys).
+     * The header values range from 1 to 6.
      */
-    public var headerFontSizeMapping = mapOf(1 to 28, 2 to 24, 3 to 20)
+    public var headingSizeMultipliers = mapOf(1 to 3f, 2 to 2f, 3 to 1f)
 
     /**
      * The color of a quote (including stripe).
@@ -125,7 +125,7 @@ public class StyleSheet {
     fun spanFor(heading: Heading): GroupSpan =
         HeadingSpan(
             heading.level,
-            headerFontSizeMapping[heading.level] ?: baseFontSize,
+            headingSizeMultipliers[heading.level] ?: 1f,
             paragraphSpacingBefore,
             paragraphSpacingAfter
         )
