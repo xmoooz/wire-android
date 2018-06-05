@@ -68,7 +68,7 @@ abstract class UserVideoView(context: Context, val userId: UserId) extends Frame
   pausedTextVisible.onUi(pausedText.setVisible)
 
   protected val videoCallInfo = returning(findById[View](R.id.video_call_info)) {
-    _.setBackgroundColor(getColor(R.color.black_58))
+    _.setBackgroundColor(getColor(R.color.black_16))
   }
 
   controller.allVideoReceiveStates.map(_.getOrElse(userId, Unknown)).onUi {
