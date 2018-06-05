@@ -33,7 +33,7 @@ class TextSpan(val size: Int, val color: Int) : InlineSpan() {
         get() = GroupSpan.Priority.LOW
 
     init {
-        add(AbsoluteSizeSpan(size, true))
+        add(AbsoluteSizeSpan(size, false))
         add(ForegroundColorSpan(color))
     }
 
