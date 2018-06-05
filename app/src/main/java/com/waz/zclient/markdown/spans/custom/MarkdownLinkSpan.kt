@@ -20,6 +20,7 @@ package com.waz.zclient.markdown.spans.custom
 import android.text.TextPaint
 import android.text.style.URLSpan
 import android.view.View
+import android.webkit.URLUtil
 
 /**
  * MarkdownLinkSpan is a URLSpan without underline styling. Furthermore, an onClick handler
@@ -28,7 +29,7 @@ import android.view.View
 class MarkdownLinkSpan(url: String, val onClick: (String) -> Unit): URLSpan(url) {
 
     override fun onClick(widget: View?) {
-        onClick(url)
+        onClick(URLUtil.guessUrl(url))
     }
 
     override fun updateDrawState(ds: TextPaint?) {
