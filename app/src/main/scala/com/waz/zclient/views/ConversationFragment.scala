@@ -239,28 +239,24 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       case _ =>
     }
 
-    convController.currentConv.onUi {
-      case conv if conv.isActive =>
-        inflateCollectionIcon()
-        (for {
-          acc                <- zms.map(_.selfUserId).head
-          call               <- callController.currentCallOpt.head
-          isCallActive       = call.exists(_.convId == conv.id) && call.exists(_.account == acc)
-          participantsNumber <- convController.participantsIds(conv.id).map(_.size)
-          isTeam             <- accountsController.isTeam.head
-          isGroup            <- convController.isGroup(conv.id)
-        } yield {
-          if (isCallActive)
-            Option.empty[Int]
-          else if (!isGroup || (isTeam && participantsNumber <= CallController.VideoCallMaxMembers))
-            Some(R.menu.conversation_header_menu_video)
-          else
-            Some(R.menu.conversation_header_menu_audio)
-        }).foreach { id =>
-          toolbar.getMenu.clear()
-          id.foreach(toolbar.inflateMenu)
-        }
-      case _ => toolbar.getMenu.clear()
+    (for {
+      (convId, isConvActive) <- convController.currentConv.map(c => (c.id, c.isActive))
+      isGroup                <- Signal.future(convController.isGroup(convId))
+      participantsNumber     <- Signal.future(convController.participantsIds(convId).map(_.size))
+      acc                    <- zms.map(_.selfUserId)
+      call                   <- callController.currentCallOpt
+      isCallActive           = call.exists(_.convId == convId) && call.exists(_.account == acc)
+      isTeam                 <- accountsController.isTeam
+    } yield {
+      if (isCallActive || !isConvActive)
+        Option.empty[Int]
+      else if (!isGroup || (isTeam && participantsNumber <= CallController.VideoCallMaxMembers))
+        Some(R.menu.conversation_header_menu_video)
+      else
+        Some(R.menu.conversation_header_menu_audio)
+    }).onUi { id =>
+      toolbar.getMenu.clear()
+      id.foreach(toolbar.inflateMenu)
     }
 
     convChange.onUi {
