@@ -24,9 +24,9 @@ import org.commonmark.parser.Parser
 class Markdown {
     companion object {
         @JvmStatic
-        fun parse(input: String): SpannableString {
+        fun parse(input: String, style: StyleSheet? = null): SpannableString {
             val document = Parser.builder().build().parse(input)
-            val renderer = SpanRenderer(StyleSheet())
+            val renderer = SpanRenderer(style ?: StyleSheet())
             document.accept(renderer)
             return renderer.spannableString
         }
