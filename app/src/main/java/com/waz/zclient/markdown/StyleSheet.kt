@@ -23,6 +23,7 @@ import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.Paint
 import android.net.Uri
+import android.support.v4.content.ContextCompat
 import android.support.v4.content.ContextCompat.startActivity
 import android.widget.TextView
 import com.waz.zclient.R
@@ -42,12 +43,12 @@ public class StyleSheet {
     companion object {
         fun styleFor(textView: TextView): StyleSheet {
             val context = textView.context
-            val resources = textView.resources
             val style = StyleSheet()
 
             style.baseFontColor = textView.currentTextColor
             style.baseFontSize = textView.textSize.toInt()
-            style.linkColor = resources.getColor(R.color.accent_blue, context.theme)
+            style.linkColor = ContextCompat.getColor(context, R.color.accent_blue)
+
             style.onClickLink = { url: String ->
                 // show dialog to confirm if url should be open
                 ViewUtils.showAlertDialog(context,
