@@ -15,27 +15,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.waz.zclient.markdown.spans.commonmark
+package com.waz.zclient.markdown.spans.custom
 
-import android.text.style.ForegroundColorSpan
-import com.waz.zclient.markdown.spans.InlineSpan
-import com.waz.zclient.markdown.spans.custom.MarkdownLinkSpan
-import org.commonmark.node.Link
-import org.commonmark.node.Node
+import android.text.TextPaint
+import android.text.style.URLSpan
+import android.view.View
 
 /**
- * The span corresponding to the markdown "Link" unit.
+ * MarkdownLinkSpan is a URLSpan without underline styling. Furthermore, an onClick handler
+ * can be provided which is called with the url as the only argument.
  */
-class LinkSpan(val url: String, val color: Int, onClick: (String) -> Unit) : InlineSpan() {
+class MarkdownLinkSpan(url: String, val onClick: (String) -> Unit): URLSpan(url) {
 
-    init {
-        add(MarkdownLinkSpan(url, onClick))
-        add(ForegroundColorSpan(color))
+    override fun onClick(widget: View?) {
+        onClick(url)
     }
 
-    override fun toNode(literal: String?): Node {
-        val n = Link()
-        n.destination = url
-        return n
+    override fun updateDrawState(ds: TextPaint?) {
+        super.updateDrawState(ds)
+        ds?.isUnderlineText = false
     }
 }

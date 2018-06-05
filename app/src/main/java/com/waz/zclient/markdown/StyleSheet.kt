@@ -99,6 +99,11 @@ public class StyleSheet {
     public var linkColor: Int = Color.BLUE
 
     /**
+     * The handler called when a markdown link is tapped.
+     */
+    public var onClickLink: (String) -> Unit = { }
+
+    /**
      * The standard width of the leading margin of a list item, which is equal to 3 monospace
      * digits plus `listPrefixGapWidth`. This locates where the list content should begin
      * (including any wrapped content).
@@ -161,7 +166,7 @@ public class StyleSheet {
         HtmlBlockSpan(codeColor, codeBlockIndentation.scaled)
 
     fun spanFor(link: Link): GroupSpan =
-        LinkSpan(link.destination, linkColor)
+        LinkSpan(link.destination, linkColor, onClickLink)
 
     fun spanFor(image: Image): GroupSpan =
         ImageSpan(image.destination)
