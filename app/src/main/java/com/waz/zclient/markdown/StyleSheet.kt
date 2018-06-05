@@ -93,7 +93,7 @@ public class StyleSheet {
      * The relative font size multiplers (values) for the various header levels (keys).
      * The header values range from 1 to 6.
      */
-    public var headingSizeMultipliers = mapOf(1 to 3f, 2 to 2f, 3 to 1f)
+    public var headingSizeMultipliers = mapOf(1 to 1.7f, 2 to 1.5f, 3 to 1.25f)
 
     /**
      * The color of a quote (including stripe).
