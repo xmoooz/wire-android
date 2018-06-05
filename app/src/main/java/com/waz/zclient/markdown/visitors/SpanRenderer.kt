@@ -188,7 +188,7 @@ class SpanRenderer(private val styleSheet: StyleSheet) : AbstractVisitor(), Node
 
         // span the prefix
         val prefixSpan = ListPrefixSpan(digits, digitWidth, styleSheet.listPrefixColor)
-        writer.set(AbsoluteSizeSpan(styleSheet.baseFontSize, true), prefixStart, writer.cursor)
+        writer.set(AbsoluteSizeSpan(styleSheet.baseFontSize, false), prefixStart, writer.cursor)
         writer.set(prefixSpan, prefixStart, writer.cursor)
 
         // write the content
