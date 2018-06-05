@@ -38,16 +38,23 @@ public class MarkdownTextview extends TypefaceTextView {
         super(context);
     }
 
+    /**
+     * Mark down the text currently in the buffer.
+     */
     public void markdown() {
-
         StyleSheet ss = StyleSheet.Companion.styleFor(this);
 
+        // to make links clickable
         setMovementMethod(LinkMovementMethod.getInstance());
+
         String text = getText().toString();
         SpannableString result = Markdown.parse(text, ss);
         setText(result);
     }
 
+    /**
+     * Re-applies all LinkSpan objects.
+     */
     public void refreshLinks() {
         if (!(getText() instanceof SpannableString)) return;
 
@@ -59,7 +66,7 @@ public class MarkdownTextview extends TypefaceTextView {
             int end = text.getSpanEnd(span);
             int flags = text.getSpanFlags(span);
 
-            // remove subspans & readd them
+            // remove subspans & re-add them
             for (Object subspan: span.getSpans()) {
                 text.removeSpan(subspan);
                 text.setSpan(subspan, start, end, flags);

@@ -66,7 +66,6 @@ public class StyleSheet {
 
             return style
         }
-
     }
 
     /**

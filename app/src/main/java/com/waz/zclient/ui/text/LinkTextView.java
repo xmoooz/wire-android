@@ -81,6 +81,8 @@ public class LinkTextView extends MarkdownTextview {
             // ignore
         }
 
+        // Linkify.addLinks() removes all existing URLSpan objects, so we need to re-apply
+        // the ones added generated through markdown.
         refreshLinks();
     }
 
