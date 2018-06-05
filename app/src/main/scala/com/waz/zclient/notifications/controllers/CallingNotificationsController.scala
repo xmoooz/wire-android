@@ -56,16 +56,13 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
 
   val notifications =
     (for {
-      (curCallId, currentCallerId, curCallAccount) <- currentCall.map(cc => (cc.convId, cc.caller, cc.account))
+      curCallId <- currentCall.map(_.convId)
       zs        <- inject[AccountsService].zmsInstances
-      available <- Signal.sequence(zs.map(_.calling.availableCalls).toSeq:_*).map(_.flatten.toMap).map {
+      allCalls <- Signal.sequence(zs.map(_.calling.availableCalls).toSeq:_*).map(_.flatten.toMap).map {
         _.values
-          .filter(c => c.state.contains(OtherCalling) && c.convId != curCallId)
-          .toVector
-          .sortBy(_.convId.str)
+          .filter(c => c.state.contains(OtherCalling) || c.convId == curCallId)
           .map(c => c.convId -> (c.caller, c.account))
       }
-      allCalls = available.toMap + (curCallId -> (currentCallerId, curCallAccount))
       bitmaps <- Signal.sequence(allCalls.map { case (conv, (caller, account)) =>
           zs.find(_.selfUserId == account).fold2(Signal.const(conv -> Option.empty[Bitmap]), z => getBitmapSignal(z, caller).map(conv -> _))
       }.toSeq: _*).map(_.toMap)
@@ -93,7 +90,11 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
             convId == curCallId,
             action)
       }
-    } yield notificationData).orElse(Signal.const(Seq.empty[CallNotification]))
+    } yield notificationData.sortWith {
+      case (cn1, _) if cn1.convId == curCallId => false
+      case (_, cn2) if cn2.convId == curCallId => true
+      case (cn1, cn2) => cn1.convId.str > cn2.convId.str
+    }).orElse(Signal.const(Seq.empty[CallNotification]))
 
   private var currentNotifications = Set.empty[Int]
 
