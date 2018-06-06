@@ -121,11 +121,6 @@ class SpanRenderer(private val styleSheet: StyleSheet) : AbstractVisitor(), Node
         val start = writer.retrieveCursor()
         val span = styleSheet.spanFor(orderedList)
 
-        // we only want to show at most two levels of nesting; the indentation of the 1st nested
-        // will apply to all further nested lists.
-        if ((listHolder as ListHolder).depth == 1)
-            span.add(LeadingMarginSpan.Standard(styleSheet.listItemContentMargin))
-
         writer.set(span, start)
 
         // we're done with the current holder
@@ -148,10 +143,6 @@ class SpanRenderer(private val styleSheet: StyleSheet) : AbstractVisitor(), Node
         val start = writer.retrieveCursor()
         val span = styleSheet.spanFor(bulletList)
 
-        // see ordered list
-        if ((listHolder as ListHolder).depth == 1)
-            span.add(LeadingMarginSpan.Standard(styleSheet.listItemContentMargin))
-
         writer.set(span, start)
 
         listHolder = (listHolder as ListHolder).parent
@@ -164,13 +155,16 @@ class SpanRenderer(private val styleSheet: StyleSheet) : AbstractVisitor(), Node
 
         var digits = 3
         var digitWidth = styleSheet.maxDigitWidth.toInt()
-        var tabLocation = styleSheet.listItemContentMargin
-        val restIndent = tabLocation
+
+        val standardPrefixWidth = styleSheet.listItemContentMargin
+        var tabLocation = standardPrefixWidth
+        val indentation = (listHolder?.depth ?: 0) * standardPrefixWidth
 
         when (listHolder) {
             is SmartOrderedListHolder -> {
                 val smartListHolder = listHolder as SmartOrderedListHolder
 
+                // standard prefix width is 2 digits + "."
                 digits = Math.max(2, smartListHolder.largestPrefix.numberOfDigits) + 1
                 tabLocation = digits * digitWidth + styleSheet.listPrefixGapWidth
 
@@ -179,6 +173,8 @@ class SpanRenderer(private val styleSheet: StyleSheet) : AbstractVisitor(), Node
             }
 
             is BulletListHolder -> {
+                // a bullet is just one digit, but we make the width equal to 3
+                // so that it aligns with number prefixes
                 digits = 1
                 digitWidth = 3 * styleSheet.maxDigitWidth.toInt()
 
@@ -197,16 +193,8 @@ class SpanRenderer(private val styleSheet: StyleSheet) : AbstractVisitor(), Node
         writeLineIfNeeded(listItem)
 
         val start = writer.retrieveCursor()
-        val itemSpan = styleSheet.spanFor(listItem)
 
-        // we only want to indent items on the outermost level, since all nested items
-        // are children of an item and inherit their spans.
-        if (listHolder!!.depth == 0) {
-            itemSpan.add(LeadingMarginSpan.Standard(0, restIndent))
-            itemSpan.add(TabStopSpan.Standard(tabLocation))
-        }
-
-        writer.set(itemSpan, start)
+        // TODO: General clean up here
 
         // if the item contains a break, then the first line of each paragraph is not
         // correctly indented, so we must adjust it to match the rest of the lines.
@@ -215,13 +203,28 @@ class SpanRenderer(private val styleSheet: StyleSheet) : AbstractVisitor(), Node
         // there is a break & it's not the last char
         if (-1 < breakIndex && breakIndex < writer.cursor - 1) {
             // boundary is start of nested list if it exists, else end of this item.
-            val boundary = listRanges.firstOrNull {
+            // TODO: be more explicit about how to get the next occuring list. Here we just rely on the fact that list ranges are added in reverse order.
+            val boundary = listRanges.lastOrNull {
                 it.start > start && it.endInclusive <= writer.cursor
             }?.start ?: writer.cursor
 
-            if (breakIndex != boundary)
-                writer.set(LeadingMarginSpan.Standard(restIndent, 0), breakIndex, boundary)
+            // spans for first paragraph (up to abd including the break)
+            writer.set(LeadingMarginSpan.Standard(indentation, indentation + standardPrefixWidth), start, breakIndex + 1)
+            writer.set(TabStopSpan.Standard(tabLocation), start, breakIndex + 1)
+
+            // TODO: is boundary a newline? It needs to be for paragraph spans
+            if (breakIndex != boundary) {
+                // spans for rest paragraphs
+                writer.set(LeadingMarginSpan.Standard(indentation + standardPrefixWidth), breakIndex, boundary)
+            }
         }
+        else {
+            // there is no break, no nested list, just apply the span to the whole item
+            writer.set(LeadingMarginSpan.Standard(indentation, indentation + standardPrefixWidth), start, writer.cursor)
+            writer.set(TabStopSpan.Standard(tabLocation), start, writer.cursor)
+        }
+
+        writer.set(styleSheet.spanFor(listItem), start)
     }
 
     override fun visit(fencedCodeBlock: FencedCodeBlock?) {
