@@ -55,12 +55,12 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
   import callCtrler._
 
   val notifications =
-    (for {
-      curCallId <- currentCall.map(_.convId)
+    for {
+      curCallId <- currentCallOpt.map(_.map(_.convId))
       zs        <- inject[AccountsService].zmsInstances
       allCalls <- Signal.sequence(zs.map(_.calling.availableCalls).toSeq:_*).map(_.flatten.toMap).map {
         _.values
-          .filter(c => c.state.contains(OtherCalling) || c.convId == curCallId)
+          .filter(c => c.state.contains(OtherCalling) || curCallId.contains(c.convId))
           .map(c => c.convId -> (c.caller, c.account))
       }
       bitmaps <- Signal.sequence(allCalls.map { case (conv, (caller, account)) =>
@@ -87,14 +87,14 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
             title,
             msg,
             bitmaps.getOrElse(convId, None),
-            convId == curCallId,
+            curCallId.contains(convId),
             action)
       }
     } yield notificationData.sortWith {
-      case (cn1, _) if cn1.convId == curCallId => false
-      case (_, cn2) if cn2.convId == curCallId => true
+      case (cn1, _) if curCallId.contains(cn1.convId) => false
+      case (_, cn2) if curCallId.contains(cn2.convId) => true
       case (cn1, cn2) => cn1.convId.str > cn2.convId.str
-    }).orElse(Signal.const(Seq.empty[CallNotification]))
+    }
 
   private var currentNotifications = Set.empty[Int]
 
@@ -106,7 +106,6 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
     toCancel.foreach(notificationManager.cancel(CallNotificationTag, _))
 
     nots.foreach { not =>
-      verbose(s"call not: $not")
       val builder = DeprecationUtils.getBuilder(cxt)
         .setSmallIcon(R.drawable.call_notification_icon)
         .setLargeIcon(not.bitmap.orNull)
