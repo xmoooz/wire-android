@@ -957,5 +957,6 @@
     <dimen name="calling_button_icon_padding">22dp</dimen>
     <dimen name="call_control_icon_size">16dp</dimen>
     <dimen name="hangup_call_icon_size">20dp</dimen>
+    <dimen name="calling_profile_margin_side">32dp</dimen>
 
 </resources>

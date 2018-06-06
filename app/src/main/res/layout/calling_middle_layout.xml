@@ -31,6 +31,8 @@
         android:layout_gravity="center"
         android:paddingTop="@dimen/wire__padding__12"
         android:paddingBottom="@dimen/wire__padding__12"
+        android:layout_marginStart="@dimen/calling_profile_margin_side"
+        android:layout_marginEnd="@dimen/calling_profile_margin_side"
         app:show_border="false"
         app:allow_icon="false"
         app:is_round="true"
