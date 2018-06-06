@@ -173,8 +173,8 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
       case _                            => R.string.empty_string
     })
 
-  private def createJoinIntent(account: UserId, convId: ConvId) = pendingIntent(JoinCallRequestCode, CallWakeService.joinIntent(Context.wrap(cxt), account, convId))
-  private def createEndIntent(account: UserId, convId: ConvId) = pendingIntent(EndCallRequestCode, CallWakeService.silenceIntent(Context.wrap(cxt), account, convId))
+  private def createJoinIntent(account: UserId, convId: ConvId) = pendingIntent((account.str + convId.str).hashCode, CallWakeService.joinIntent(Context.wrap(cxt), account, convId))
+  private def createEndIntent(account: UserId, convId: ConvId) = pendingIntent((account.str + convId.str).hashCode, CallWakeService.silenceIntent(Context.wrap(cxt), account, convId))
 
   private def pendingIntent(reqCode: Int, intent: Intent) = PendingIntent.getService(cxt, reqCode, Intent.unwrap(intent), PendingIntent.FLAG_UPDATE_CURRENT)
 }
@@ -201,7 +201,5 @@ object CallingNotificationsController {
 
   val CallImageSizeDp = 64
 
-  val JoinCallRequestCode = 8912
-  val EndCallRequestCode = 8914
   private implicit val tag: LogTag = logTagFor[CallingNotificationsController]
 }
