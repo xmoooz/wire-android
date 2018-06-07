@@ -26,7 +26,7 @@ import com.waz.model.{ConvId, UserId}
 import com.waz.service.assets.AssetService.BitmapResult.BitmapLoaded
 import com.waz.service.call.CallInfo
 import com.waz.service.call.CallInfo.CallState._
-import com.waz.service.{AccountsService, ZMessaging}
+import com.waz.service.{AccountsService, GlobalModule, ZMessaging}
 import com.waz.ui.MemoryImageCache.BitmapRequest.Regular
 import com.waz.utils.LoggedTry
 import com.waz.utils.events.{EventContext, Signal}
@@ -54,24 +54,26 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
   val callCtrler = inject[CallController]
   import callCtrler._
 
+  val filteredGlobalProfile: Signal[(Option[ConvId], Seq[(ConvId, (UserId, UserId))])] = for {
+    globalProfile <- inject[GlobalModule].calling.globalCallProfile
+    curCallId = globalProfile.activeCall.map(_.convId)
+    allCalls = globalProfile.availableCalls.values.filter(c => c.state.contains(OtherCalling) || (curCallId.contains(c.convId) && !c.state.contains(Ongoing)))
+      .map(c => c.convId -> (c.caller, c.account)).toSeq
+  } yield (curCallId, allCalls)
+
   val notifications =
     for {
-      curCallId <- currentCallOpt.map(_.map(_.convId))
-      zs        <- inject[AccountsService].zmsInstances
-      allCalls <- Signal.sequence(zs.map(_.calling.availableCalls).toSeq:_*).map(_.flatten.toMap).map {
-        _.values
-          .filter(c => c.state.contains(OtherCalling) || curCallId.contains(c.convId))
-          .map(c => c.convId -> (c.caller, c.account))
-      }
-      bitmaps <- Signal.sequence(allCalls.map { case (conv, (caller, account)) =>
-          zs.find(_.selfUserId == account).fold2(Signal.const(conv -> Option.empty[Bitmap]), z => getBitmapSignal(z, caller).map(conv -> _))
-      }.toSeq: _*).map(_.toMap)
-      notInfo <- Signal.sequence(allCalls.map { case (conv, (caller, account)) =>
+      zs <- inject[AccountsService].zmsInstances
+      (curCallId, allCallsF) <- filteredGlobalProfile
+      bitmaps <- Signal.sequence(allCallsF.map { case (conv, (caller, account)) =>
+        zs.find(_.selfUserId == account).fold2(Signal.const(conv -> Option.empty[Bitmap]), z => getBitmapSignal(z, caller).map(conv -> _))
+      }: _*).map(_.toMap)
+      notInfo <- Signal.sequence(allCallsF.map { case (conv, (caller, account)) =>
         zs.find(_.selfUserId == account).fold2(Signal.const(Option.empty[CallInfo], "", ""),
           z => Signal(z.calling.availableCalls.map(_.get(conv)),
             z.usersStorage.optSignal(caller).map(_.map(_.name).getOrElse("")),
             z.convsStorage.optSignal(conv).map(_.map(_.displayName).getOrElse("")))).map(conv -> _)
-      }.toSeq: _*)
+      }: _*)
       notificationData = notInfo.collect {
         case (convId, (Some(callInfo), title, msg)) =>
           val action = callInfo.state match {
