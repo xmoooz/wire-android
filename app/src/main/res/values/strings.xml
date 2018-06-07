@@ -228,7 +228,9 @@
     <string name="content__otr__conversation_verified">Conversation verified</string>
     <string name="content__otr__conversation_unverified">Conversation not verified</string>
     <string name="content__otr__message_error">A MESSAGE FROM [[%1$s]] WAS NOT RECEIVED. _WHY?_</string>
+    <string name="content__otr__message_error_you">A MESSAGE FROM YOU WAS NOT RECEIVED. _WHY?_</string>
     <string name="content__otr__identity_changed_error">[[%1$s]]\'S DEVICE IDENTITY CHANGED. UNDELIVERED MESSAGE. _LEARN MORE_</string>
+    <string name="content__otr__identity_changed_error_you">YOUR DEVICE IDENTITY CHANGED. UNDELIVERED MESSAGE. _LEARN MORE_</string>
     <string name="content__otr__added_new_device__message">[[%1$s]] STARTED USING A _NEW DEVICE_</string>
     <string name="content__otr__start_this_device__message">[[YOU]] STARTED USING _THIS DEVICE_</string>
     <string name="content__otr__all_fingerprints_verified">ALL FINGERPRINTS ARE VERIFIED</string>
@@ -361,7 +363,6 @@
     <string name="connect_request__ignore_button__text">Ignore</string>
     <string name="content__message__connect_request__footer">CONNECTED</string>
     <string name="content__message__connect_request__auto_connect__footer">AUTO-CONNECTED. _LEARN MORE_</string>
-    <string name="content__message__connect_request__user_info">%1$s in Contacts</string>
 
     <!-- Otr-->
     <plurals name="conversation__degraded_confirmation__header__single_user">

@@ -31,6 +31,7 @@ import com.waz.zclient.controllers.navigation.{INavigationController, Page}
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
 import com.waz.zclient.messages.UsersController
+import com.waz.zclient.messages.UsersController.DisplayName.Other
 import com.waz.zclient.pages.main.conversation.controller.IConversationScreenController
 import com.waz.zclient.pages.main.profile.camera.CameraContext
 import com.waz.zclient.participants.ConversationOptionsMenuController._
@@ -177,7 +178,7 @@ class ConversationOptionsMenuController(convId: ConvId, mode: Mode)(implicit inj
   private def showBlockConfirmation(convId: ConvId, userId: UserId) =
     (for {
       curConvId <- convController.currentConvId.map(Option(_)).orElse(Signal.const(Option.empty[ConvId])).head
-      displayName <- users.displayNameString(userId).head
+      displayName <- users.displayName(userId).collect { case Other(name) => name }.head //should be impossible to get Me in this case
     } yield (curConvId, displayName)).map {
       case (curConvId, displayName) =>
         val dialog = new AlertDialog.Builder(context, R.style.Theme_Light_Dialog_Alert_Destructive)
