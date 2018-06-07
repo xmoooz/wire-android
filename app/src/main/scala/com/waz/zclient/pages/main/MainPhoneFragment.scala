@@ -195,7 +195,7 @@ class MainPhoneFragment extends FragmentHelper
 
   override def onHideSingleImage(): Unit = ()
 
-  override def onSearch(keyword: String): Unit = openGiphyPreviewFragment()
+  override def onSearch(searchTerm: String): Unit = openGiphyPreviewFragment(searchTerm = Some(searchTerm))
 
   override def onRandomSearch(): Unit = openGiphyPreviewFragment()
 
@@ -205,11 +205,11 @@ class MainPhoneFragment extends FragmentHelper
 
   override def onCancelGiphy(): Unit = closeGiphyPreviewFragment()
 
-  private def openGiphyPreviewFragment(): Unit = {
+  private def openGiphyPreviewFragment(searchTerm: Option[String] = None): Unit = {
     import GiphySharingPreviewFragment._
     getChildFragmentManager
       .beginTransaction
-      .add(R.id.fl__overlay_container, newInstance, Tag)
+      .add(R.id.fl__overlay_container, newInstance(searchTerm), Tag)
       .addToBackStack(Tag)
       .commit
   }
