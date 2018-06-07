@@ -270,7 +270,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   }
 
   (for {
-    m <- isMuted
+    m <- isMuted.orElse(Signal.const(false))
     i <- isCallIncoming
   } yield (m, i)) { case (m, i) =>
     soundController.setIncomingRingTonePlaying(!m && i)
