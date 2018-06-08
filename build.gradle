@@ -56,7 +56,7 @@ task licenseFormatAndroid(type: nl.javadude.gradle.plugins.license.License) {
 licenseFormat.dependsOn licenseFormatAndroid
 
 ext {
-    majorVersion = "3.10."
+    majorVersion = "3.11."
 
     compileSdkVersion = 26
     // When upgrading minimum sdk you might want to search for occurrences of Build.VERSION_CODES.
