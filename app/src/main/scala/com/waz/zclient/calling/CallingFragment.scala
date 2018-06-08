@@ -99,13 +99,13 @@ class SelfVideoView(context: Context, userId: UserId) extends UserVideoView(cont
     case false => muteIcon.fadeOut()
   }
 
-  registerHandler(returning(new VideoPreview(getContext)) { v =>
-    controller.videoSendState.filter(_ != VideoState.NoCameraPermission).head.foreach { _ =>
+  controller.videoSendState.filter(_ != VideoState.NoCameraPermission).head.foreach { _ =>
+    registerHandler(returning(new VideoPreview(getContext)) { v =>
       controller.setVideoPreview(Some(v))
       v.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
       addView(v, 1)
-    }(Threading.Ui)
-  })
+    })
+  }(Threading.Ui)
 
   override lazy val shouldShowInfo = Signal(pausedTextVisible, controller.isMuted).map {
     case (paused, muted) => paused || muted
@@ -141,7 +141,7 @@ class CallingFragment extends FragmentHelper {
         viewMap = viewMap.updated(userId, v)
       }
 
-      val isVideoBeingSent = vrs.get(selfId).contains(VideoState.Started)
+      val isVideoBeingSent = !vrs.get(selfId).contains(VideoState.Stopped)
 
       vh.foreach { v =>
         val videoUsers = vrs.toSeq.collect {
