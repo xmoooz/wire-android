@@ -96,7 +96,7 @@ class SelfVideoView(context: Context, userId: UserId) extends UserVideoView(cont
 
   controller.isMuted.onUi {
     case true  => muteIcon.fadeIn()
-    case false => muteIcon.fadeOut()
+    case false => muteIcon.fadeOut(setToGoneWithEndAction = true)
   }
 
   controller.videoSendState.filter(_ != VideoState.NoCameraPermission).head.foreach { _ =>
