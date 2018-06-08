@@ -21,15 +21,8 @@ import com.waz.api.impl.ErrorResponse
 import com.waz.zclient.R
 
 trait DialogErrorMessage {
-
   def headerResource: Int
   def bodyResource: Int
-
-  def genericError(code: Int) = code match {
-    case 598 => (R.string.internet_connectivity_error_header, R.string.internet_connectivity_error_message)
-    case 600 => (R.string.generic_error_header,               R.string.internet_connectivity_error_message)
-    case _   => (R.string.generic_error_header,               R.string.generic_error_message)
-  }
 }
 
 object DialogErrorMessage {
@@ -59,6 +52,12 @@ object DialogErrorMessage {
       case (429, "client-error"          ) => (R.string.too_many_attempts_header,      R.string.login_later_message)
       case _ => genericError(err.code)
     }
+  }
+
+  def genericError(code: Int) = code match {
+    case 598 => (R.string.internet_connectivity_error_header, R.string.internet_connectivity_error_message)
+    case 600 => (R.string.generic_error_header,               R.string.internet_connectivity_error_message)
+    case _   => (R.string.generic_error_header,               R.string.generic_error_message)
   }
 }
 
