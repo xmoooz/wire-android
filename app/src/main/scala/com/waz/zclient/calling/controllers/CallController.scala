@@ -403,7 +403,6 @@ private class ScreenManager(implicit injector: Injector) extends Injectable {
 }
 
 object CallController {
-  val VideoCallMaxMembers:Int = 4
   case class CallParticipantInfo(userId: UserId,
                                  assetId: Option[AssetId],
                                  displayName: String,
