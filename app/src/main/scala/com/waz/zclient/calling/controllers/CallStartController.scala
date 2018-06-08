@@ -25,7 +25,6 @@ import com.waz.content.GlobalPreferences.AutoAnswerCallPrefKey
 import com.waz.model.{ConvId, UserId}
 import com.waz.permissions.PermissionsService
 import com.waz.service.ZMessaging
-import com.waz.service.call.Avs.VideoState.Stopped
 import com.waz.service.call.CallInfo.CallState
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, Signal}
@@ -122,7 +121,6 @@ class CallStartController(implicit inj: Injector, cxt: WireContext, ec: EventCon
             R.string.calling__cannot_start__title,
             if (curWithVideo) R.string.calling__cannot_start__no_camera_permission__message else R.string.calling__cannot_start__no_permission__message
           ).flatMap(_ => if (curCall.isDefined) newCallZms.calling.endCall(newCallConv.id) else Future.successful({}))
-        _                 <- if (forceOption && !withVideo) Future(newCallZms.calling.setVideoSendState(newCallConv.id, Stopped)) else Future.successful({})
       } yield {}
     }.recover {
       case NonFatal(e) => warn("Failed to start call", e)
