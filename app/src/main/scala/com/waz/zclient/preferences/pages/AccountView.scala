@@ -206,8 +206,8 @@ class AccountViewController(view: AccountView)(implicit inj: Injector, ec: Event
   view.onEmailClick.onUi { _ =>
     import Threading.Implicits.Ui
     accounts.activeAccountManager.head.map(_.foreach(_.hasPassword().foreach {
-      case None => ContextUtils.showToast("Something went wrong, please try again later")
-      case Some(hasPass) =>
+      case Left(_) => ContextUtils.showToast("Something went wrong, please try again later")
+      case Right(hasPass) =>
         showPrefDialog(
           returning(ChangeEmailDialog(hasPassword = hasPass)) {
             _.onEmailChanged { e =>
