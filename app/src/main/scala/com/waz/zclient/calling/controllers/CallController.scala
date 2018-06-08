@@ -96,8 +96,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   val isGroupCall           = currentCall.map(_.isGroup)
   val cbrEnabled            = currentCall.map(_.isCbrEnabled)
   val duration              = currentCall.flatMap(_.durationFormatted)
-  val otherUserId           = currentCall.map(_.others.headOption)
-  val participantIds        = currentCall.map(_.others.toVector)
+  val others                = currentCall.map(_.others)
 
   val theme: Signal[Theme] = isVideoCall.flatMap {
     case true  => Signal.const(Theme.Dark)
@@ -107,7 +106,10 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   def participantInfos(take: Option[Int] = None): Signal[Vector[CallParticipantInfo]] =
     for {
       cZms        <- callingZms
-      ids         <- take.fold(participantIds)(t => participantIds.map(_.take(t)))
+      ids         <- others.map { os =>
+        val ordered = os.toSeq.sortBy(_._2.getOrElse(Instant.EPOCH)).reverse.map(_._1)
+        take.fold(ordered)(t => ordered.take(t))
+      }
       users       <- cZms.usersStorage.listSignal(ids)
       videoStates <- allVideoReceiveStates
     } yield
