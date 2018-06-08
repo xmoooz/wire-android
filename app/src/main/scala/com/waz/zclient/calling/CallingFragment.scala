@@ -99,7 +99,7 @@ class SelfVideoView(context: Context, userId: UserId) extends UserVideoView(cont
     case false => muteIcon.fadeOut(setToGoneWithEndAction = true)
   }
 
-  controller.videoSendState.filter(_ != VideoState.NoCameraPermission).head.foreach { _ =>
+  controller.videoSendState.filter(_ == VideoState.Started).head.foreach { _ =>
     registerHandler(returning(new VideoPreview(getContext)) { v =>
       controller.setVideoPreview(Some(v))
       v.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
