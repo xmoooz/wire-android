@@ -32,6 +32,7 @@ license {
 
 allprojects {
     repositories {
+        google()
         jcenter()
     }
 }
