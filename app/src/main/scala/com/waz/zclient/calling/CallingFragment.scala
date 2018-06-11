@@ -70,7 +70,7 @@ abstract class UserVideoView(context: Context, val userId: UserId) extends Frame
 
   protected def registerHandler(view: View) =
     controller.allVideoReceiveStates.map(_.getOrElse(userId, VideoState.Unknown)).onUi {
-      case VideoState.Paused => view.fadeOut()
+      case VideoState.Paused | VideoState.Stopped => view.fadeOut()
       case _                 => view.fadeIn()
     }
 
@@ -130,7 +130,7 @@ class CallingFragment extends FragmentHelper {
   private var viewMap = Map[UserId, UserVideoView]()
 
   private lazy val videoGrid = returning(view[GridLayout](R.id.video_grid)) { vh =>
-    Signal(controller.allVideoReceiveStates, controller.callingZms.map(_.selfUserId)).onUi { case (vrs, selfId) =>
+    Signal(controller.allVideoReceiveStates, controller.callingZms.map(_.selfUserId), controller.isVideoCall, controller.isCallIncoming).onUi { case (vrs, selfId, videoCall, incoming) =>
 
       def createView(userId: UserId): UserVideoView = returning {
         if (controller.callingZms.currentValue.map(_.selfUserId).contains(userId))
@@ -145,6 +145,7 @@ class CallingFragment extends FragmentHelper {
 
       vh.foreach { v =>
         val videoUsers = vrs.toSeq.collect {
+          case (userId, _) if userId == selfId && videoCall && incoming => userId
           case (userId, VideoState.Started | VideoState.Paused | VideoState.BadConnection | VideoState.NoCameraPermission) => userId
         }
         val views = videoUsers.map { uId => viewMap.getOrElse(uId, createView(uId))}
