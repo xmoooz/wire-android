@@ -28,6 +28,13 @@ android {
             signingConfig signingConfigs.debug
         }
     }
+    flavorDimensions "default"
+
+    productFlavors {
+        qa {
+            dimension "default"
+        }
+    }
 }
 
 dependencies {
