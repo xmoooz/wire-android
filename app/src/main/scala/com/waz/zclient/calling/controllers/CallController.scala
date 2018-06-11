@@ -234,7 +234,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
 
   def wasUiActiveOnCallStart = _wasUiActiveOnCallStart
 
-  val onCallStarted = isCallActive.onChanged.filter(_ == true).map { _ =>
+  val onCallStarted = currentCallOpt.map(_.map(_.convId)).onChanged.filter(_.isDefined).map { _ =>
     val active = ZMessaging.currentGlobal.lifecycle.uiActive.currentValue.getOrElse(false)
     _wasUiActiveOnCallStart = active
     active
