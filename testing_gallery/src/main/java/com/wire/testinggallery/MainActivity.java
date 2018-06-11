@@ -55,9 +55,6 @@ import static com.wire.testinggallery.utils.UriUtils.getFilename;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int TESTING_GALLERY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 23456789;
-    private static final int TESTING_GALLERY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 23456790;
-
     private AlertDialog alertDialog = null;
     private Map<Integer, Supplier<Boolean>> checkMap;
     private Map<Integer, Supplier<Void>> fixMap;
