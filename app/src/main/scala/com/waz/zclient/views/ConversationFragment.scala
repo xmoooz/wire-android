@@ -36,6 +36,7 @@ import com.waz.model.ConversationData.ConversationType
 import com.waz.model.{MessageContent => _, _}
 import com.waz.permissions.PermissionsService
 import com.waz.service.ZMessaging
+import com.waz.service.call.CallingService
 import com.waz.threading.{CancellableFuture, Threading}
 import com.waz.utils.events.{EventStreamWithAuxSignal, Signal}
 import com.waz.utils.returningF
@@ -250,7 +251,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     } yield {
       if (isCallActive || !isConvActive)
         Option.empty[Int]
-      else if (!isGroup || (isTeam && participantsNumber <= CallController.VideoCallMaxMembers))
+      else if (!isGroup || (isTeam && participantsNumber <= CallingService.VideoCallMaxMembers))
         Some(R.menu.conversation_header_menu_video)
       else
         Some(R.menu.conversation_header_menu_audio)

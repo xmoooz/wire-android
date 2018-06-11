@@ -65,7 +65,7 @@ class CallParticipantsAdapter(implicit context: Context, eventContext: EventCont
     notifyDataSetChanged()
   }
 
-  callController.participantIds.map(_.size).onUi { size =>
+  callController.others.map(_.size).onUi { size =>
     numOfParticipants = size
     notifyDataSetChanged()
   }

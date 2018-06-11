@@ -7,6 +7,7 @@ buildscript {
         }
         jcenter()
         mavenCentral()
+        google()
     }
 
     dependencies {
@@ -31,6 +32,7 @@ license {
 
 allprojects {
     repositories {
+        google()
         jcenter()
     }
 }
@@ -55,7 +57,7 @@ task licenseFormatAndroid(type: nl.javadude.gradle.plugins.license.License) {
 licenseFormat.dependsOn licenseFormatAndroid
 
 ext {
-    majorVersion = "3.10."
+    majorVersion = "3.11."
 
     compileSdkVersion = 26
     // When upgrading minimum sdk you might want to search for occurrences of Build.VERSION_CODES.
@@ -75,10 +77,10 @@ ext {
     playServicesVersion = '11.0.0'
 
     audioVersion = System.getenv("AUDIO_VERSION") ?: '1.209.0@aar'
-    zMessagingDevVersionBase = '122.2032'
+    zMessagingDevVersionBase = '123.2048'
     zMessagingDevVersion = "${zMessagingDevVersionBase}@aar"
     // Release version number must be like this X.0(.Y)
-    zMessagingReleaseVersion = System.getenv("ZMESSAGING_VERSION") ?: '122.5.454@aar'
+    zMessagingReleaseVersion = System.getenv("ZMESSAGING_VERSION") ?: '123.6.461@aar'
 
     avsVersion = '4.4.147@aar'
     avsInternalVersion = avsVersion //leave this here in case we want to test specific AVS versions on internal
@@ -86,7 +88,7 @@ ext {
     avsGroup = 'com.wire'
 
     // proprietary avs artifact configuration
-    customAvsVersion = '4.4.49@aar'
+    customAvsVersion = '4.4.53@aar'
     customAvsInternalVersion = customAvsVersion
     customAvsName = 'avs'
     customAvsGroup = 'com.wearezeta.avs'
