@@ -20,17 +20,12 @@ package com.wire.testinggallery;
 
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
-import android.support.v4.app.ShareCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -59,17 +54,9 @@ import static com.wire.testinggallery.utils.InfoDisplayManager.showToast;
 import static com.wire.testinggallery.utils.UriUtils.getFilename;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String COMMAND = "command";
-    private static final String PACKAGE_NAME = "package";
-    private static final String CUSTOM_TEXT = "text";
-    private static final String COMMAND_SHARE_TEXT = "share_text";
-    private static final String COMMAND_SHARE_IMAGE = "share_image";
-    private static final String COMMAND_SHARE_VIDEO = "share_video";
-    private static final String COMMAND_SHARE_AUDIO = "share_audio";
-    private static final String COMMAND_SHARE_FILE = "share_file";
-    private static final String COMMAND_CHECK_NOTIFICATION_ACCESS = "check_notification_access";
-    private static final String DEFAULT_TEST_TEXT = "QA AUTOMATION TEST";
-    private static final String DEFAULT_PACKAGE_NAME = "com.wire.candidate";
+
+    private static final int TESTING_GALLERY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 23456789;
+    private static final int TESTING_GALLERY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 23456790;
 
     private AlertDialog alertDialog = null;
     private Map<Integer, Supplier<Boolean>> checkMap;
@@ -83,8 +70,6 @@ public class MainActivity extends AppCompatActivity {
         requestSilentlyRights(this);
         mapTableHandlers();
         checkPreconditions();
-        registerReceiver(broadcastReceiver,
-            new IntentFilter("com.wire.testinggallery.main.receiver"));
     }
 
     private void showInfoUi() {
@@ -100,69 +85,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-        @TargetApi(Build.VERSION_CODES.DONUT)
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Intent shareIntent;
-            String command = intent.getStringExtra(COMMAND);
-            String packageName = intent.getStringExtra(PACKAGE_NAME) == null ?
-                DEFAULT_PACKAGE_NAME : intent.getStringExtra(PACKAGE_NAME);
-            if (command.startsWith("share")) {
-                if (command.equals(COMMAND_SHARE_TEXT)) {
-                    String text = intent.getStringExtra(CUSTOM_TEXT);
-                    if (text == null) {
-                        text = DEFAULT_TEST_TEXT;
-                    }
-                    shareIntent = ShareCompat.IntentBuilder.from(MainActivity.this)
-                        .setType("text/plain")
-                        .setText(text)
-                        .getIntent();
-                } else {
-                    Uri uri = getLatestAssetUriByCommand(command);
-                    shareIntent = ShareCompat.IntentBuilder.from(MainActivity.this)
-                        .setType(getContentResolver().getType(uri))
-                        .setStream(uri)
-                        .getIntent();
-                }
-                shareIntent.setPackage(packageName);
-                startActivity(shareIntent);
-            } else {
-                switch (command) {
-                    case COMMAND_CHECK_NOTIFICATION_ACCESS:
-                        if (Settings.Secure.getString(getContentResolver(), "enabled_notification_listeners").contains(getPackageName())) {
-                            setResultData("VERIFIED");
-                        } else {
-                            setResultData("UNVERIFIED");
-                        }
-                        break;
-                    default:
-                        throw new RuntimeException(String.format("Cannot identify your command [%s]", command));
-                }
-            }
-        }
-    };
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(broadcastReceiver);
-    }
-
-    private Uri getLatestAssetUriByCommand(String command) {
-        DocumentResolver resolver = new DocumentResolver(getContentResolver());
-        switch (command) {
-            case COMMAND_SHARE_FILE:
-                return resolver.getDocumentUri();
-            case COMMAND_SHARE_IMAGE:
-                return resolver.getImageUri();
-            case COMMAND_SHARE_VIDEO:
-                return resolver.getVideoUri();
-            case COMMAND_SHARE_AUDIO:
-                return resolver.getAudioUri();
-            default:
-                throw new RuntimeException(String.format("Cannot identify the command : %s", command));
-        }
     }
 
     @Override
