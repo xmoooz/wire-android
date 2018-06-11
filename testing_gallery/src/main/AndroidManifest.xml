@@ -103,6 +103,12 @@
             </intent-filter>
         </receiver>
 
+        <receiver android:name=".MainReceiver">
+            <intent-filter>
+                <action android:name="com.wire.testinggallery.main.receiver" />
+            </intent-filter>
+        </receiver>
+
         <receiver android:name=".SharingCommandReceiver" >
             <intent-filter>
                 <action android:name="com.wire.testinggallery.sharing" />
