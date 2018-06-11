@@ -19,7 +19,6 @@ package com.waz.zclient.appentry
 
 import android.content.Intent
 import android.content.res.Configuration
-import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.FragmentManager.OnBackStackChangedListener
 import android.support.v4.app.{Fragment, FragmentTransaction}
@@ -197,35 +196,6 @@ class AppEntryActivity extends BaseActivity {
       case _ =>
         onEnterApplication(false)
     }
-
-  def onOpenUrl(url: String): Unit =
-    try {
-      val prefixedUrl =
-        if (!url.startsWith(AppEntryActivity.HTTP_PREFIX) && !url.startsWith(AppEntryActivity.HTTPS_PREFIX))
-          AppEntryActivity.HTTP_PREFIX + url
-        else
-          url
-      startActivity(returning(new Intent(Intent.ACTION_VIEW, Uri.parse(prefixedUrl)))(_.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)))
-    }
-    catch {
-      case _: Exception => error(s"Failed to open URL: $url")
-    }
-
-  def onShowCreateTeamFragment(): Unit =
-    withFragmentOpt(TeamNameFragment.Tag) {
-      case Some(_) =>
-      case None => showFragment(TeamNameFragment(), TeamNameFragment.Tag)
-    }
-
-  def onShowSignInPage(): Unit =
-    withFragmentOpt(SignInFragment.Tag) {
-      case Some(_) =>
-      case None =>
-        showFragment(new SignInFragment, SignInFragment.Tag)
-    }
-
-  def onShowFirstLaunchPage(): Unit =
-    showFragment(FirstLaunchAfterLoginFragment(), FirstLaunchAfterLoginFragment.Tag)
 
   def onEnterApplication(openSettings: Boolean, clientRegState: Option[ClientRegistrationState] = None): Unit = {
     getControllerFactory.getVerificationController.finishVerification()

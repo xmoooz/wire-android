@@ -35,6 +35,8 @@ import com.waz.utils.returning
 import com.waz.zclient.ui.views.OnDoubleClickListener
 import com.waz.zclient.utils.ContextUtils._
 
+import scala.concurrent.duration.{FiniteDuration, _}
+
 package object utils {
 
   case class Offset(l: Int, t: Int, r: Int, b: Int)
@@ -109,8 +111,50 @@ package object utils {
           new LayoutParams(w.getOrElse(WRAP_CONTENT), h.getOrElse(WRAP_CONTENT))
       })
     }
+
     def setWidth(w: Int): Unit = setWidthAndHeight(w = Some(w))
+
     def setHeight(h: Int): Unit = setWidthAndHeight(h = Some(h))
+
+    def fadeIn(duration: FiniteDuration = 300.millis, startDelay: FiniteDuration = 0.seconds, targetAlpha: Float = 1f): Unit =
+      view.animate
+        .alpha(targetAlpha)
+        .setDuration(duration.toMillis)
+        .setStartDelay(startDelay.toMillis)
+        .withStartAction(new Runnable() {
+          override def run() =
+            view.setVisibility(View.VISIBLE)
+        })
+        .start()
+
+    def fadeOut(duration: FiniteDuration = 300.millis, startDelay: FiniteDuration = 0.seconds, setToGoneWithEndAction: Boolean = false): Unit =
+      if (view.getVisibility == View.VISIBLE) {
+        view.animate
+          .alpha(0)
+          .setDuration(duration.toMillis)
+          .setStartDelay(startDelay.toMillis)
+          .withEndAction(new Runnable() {
+            override def run() =
+              view.setVisibility(if (setToGoneWithEndAction) View.GONE else View.INVISIBLE)
+          })
+          .start()
+      }
+
+    def dispatchSetEnabled(enabled: Boolean): Unit = {
+      def dispatchSetEnabledAux(enabled: Boolean, viewGroup: ViewGroup): Unit = {
+        (0 until viewGroup.getChildCount).map(viewGroup.getChildAt(_)).foreach { v =>
+          v.setEnabled(enabled)
+          v match {
+            case vg: ViewGroup => dispatchSetEnabledAux(enabled, vg)
+            case _ =>
+          }
+        }
+      }
+      view match {
+        case vg: ViewGroup => dispatchSetEnabledAux(enabled, vg)
+        case _ =>
+      }
+    }
   }
 
   implicit class RichTextView(val textView: TextView) extends AnyVal {

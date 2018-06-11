@@ -25,8 +25,7 @@ import android.view.View
 import android.widget.{LinearLayout, Toast}
 import com.waz.service.ZMessaging
 import com.waz.threading.{CancellableFuture, Threading}
-import com.waz.zclient.preferences.views.{SwitchPreference, TextButton}
-import com.waz.zclient.tracking.{GlobalTrackingController, MixpanelGuard}
+import com.waz.zclient.preferences.views.TextButton
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.{BackStackKey, DebugUtils}
 import com.waz.zclient.{R, ViewHelper}
@@ -40,12 +39,8 @@ class AdvancedViewImpl(context: Context, attrs: AttributeSet, style: Int) extend
 
   inflate(R.layout.preferences_advanced_layout)
 
-  val analyticsSwitch = findById[SwitchPreference](R.id.preferences_analytics)
   val submitReport = findById[TextButton](R.id.preferences_debug_report)
   val resetPush = findById[TextButton](R.id.preferences_reset_push)
-
-
-  analyticsSwitch.setPreference(GlobalTrackingController.analyticsPrefKey, global = true)
 
   submitReport.onClickEvent { _ =>
     DebugUtils.sendDebugReport(context.asInstanceOf[Activity])
@@ -61,18 +56,6 @@ class AdvancedViewImpl(context: Context, attrs: AttributeSet, style: Int) extend
   private def setResetEnabled(enabled: Boolean) = {
     resetPush.setEnabled(enabled)
     resetPush.setAlpha(if (enabled) 1.0f else 0.5f)
-  }
-
-  analyticsSwitch.pref.flatMap(_.signal).onChanged { pref =>
-    if (pref) ZMessaging.currentGlobal.trackingService.optIn()
-    else ZMessaging.currentGlobal.trackingService.optOut()
-    setAnalyticsSwitchEnabled(false)
-    CancellableFuture.delay(MixpanelGuard.MIXPANEL_CLOSE_DELAY + 1.seconds).map(_ => setAnalyticsSwitchEnabled(true))(Threading.Ui)
-  }
-
-  private def setAnalyticsSwitchEnabled(enabled: Boolean) = {
-    analyticsSwitch.setEnabled(enabled)
-    analyticsSwitch.setAlpha(if (enabled) 1.0f else 0.5f)
   }
 }
 

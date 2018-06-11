@@ -47,6 +47,7 @@ import com.waz.zclient.controllers.navigation.{NavigationControllerObserver, Pag
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
 import com.waz.zclient.fragments.ConnectivityFragment
+import com.waz.zclient.messages.controllers.NavigationController
 import com.waz.zclient.pages.main.MainPhoneFragment
 import com.waz.zclient.pages.startup.UpdateFragment
 import com.waz.zclient.preferences.dialogs.ChangeHandleFragment
@@ -168,6 +169,7 @@ class MainActivity extends BaseActivity
   override def onStart() = {
     info("onStart")
     getControllerFactory.getNavigationController.addNavigationControllerObserver(this)
+    inject[NavigationController].mainActivityActive ! true
 
     super.onStart()
 
@@ -311,6 +313,7 @@ class MainActivity extends BaseActivity
     super.onStop()
     info("onStop")
     getControllerFactory.getNavigationController.removeNavigationControllerObserver(this)
+    inject[NavigationController].mainActivityActive ! false
   }
 
   override def onBackPressed(): Unit = {

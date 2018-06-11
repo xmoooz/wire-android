@@ -26,6 +26,7 @@ import android.view.View.{OnClickListener, OnLongClickListener}
 import android.widget.{ImageView, RelativeLayout}
 import com.waz.utils.events.EventStream
 import com.waz.zclient.ui.text.TypefaceTextView
+import com.waz.zclient.utils.ContextUtils.getDrawable
 import com.waz.zclient.utils.RichView
 import com.waz.zclient.{R, ViewHelper}
 
@@ -68,6 +69,8 @@ class PictureTextButton(context: Context, attrs: AttributeSet, style: Int) exten
   })
 
   def layoutId = R.layout.preference_picture_text_button
+
+  setBackground(getDrawable(R.drawable.selector__transparent_button))
 
   def setTitle(text: String): Unit =
     title.foreach(_.setText(text))

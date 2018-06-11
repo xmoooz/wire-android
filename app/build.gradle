@@ -1,6 +1,5 @@
 apply plugin: 'com.android.application'
 apply plugin: 'jp.leafytree.android-scala'
-apply plugin: 'android-apt'
 apply plugin: 'hugo'
 apply plugin: 'com.mutualmobile.gradle.plugins.dexinfo'
 apply from: 'config/quality.gradle'
@@ -69,6 +68,7 @@ android {
     dexOptions {
         preDexLibraries false
         javaMaxHeapSize '4g'
+//        keepRuntimeAnnotatedClasses false // uncomment if you need to set minSdkVersion to < 21
     }
 
     buildTypes {
@@ -92,9 +92,10 @@ android {
         }
     }
 
+    flavorDimensions "default"
+
     productFlavors {
         dev {
-            minSdkVersion 21
             applicationId "com.waz.zclient.dev"
             versionName majorVersion + android.defaultConfig.versionCode + "-dev"
             manifestPlaceholders = [applicationLabel       : "Wire Dev",
@@ -222,98 +223,93 @@ dexinfo {
 }
 
 dependencies {
-    compile project(':lintlib')
-    compile project(':macrosupport')
-
-//    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile deps.scala
-    provided deps.scalaReflect
-    compile deps.multidex
-    compile deps.timber
-    compile deps.supportv4
-    compile deps.supportv13
-    compile deps.supportdesign
-    compile deps.appcompatv7
-    compile deps.supportannotations
-    compile deps.recyclerview
-    compile deps.threetenabp
-    compile deps.hockey
-    compile deps.audioNotifications
-    compile deps.mixpanel
-    compile deps.rebound
-    compile deps.preferences
-    compile(deps.supportpreferences) {
+    implementation project(':lintlib')
+    //    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation deps.scala
+    compileOnly deps.scalaReflect
+    implementation deps.multidex
+    implementation deps.timber
+    implementation deps.supportv4
+    implementation deps.supportv13
+    implementation deps.supportdesign
+    implementation deps.appcompatv7
+    implementation deps.supportannotations
+    implementation deps.recyclerview
+    implementation deps.threetenabp
+    implementation deps.hockey
+    implementation deps.audioNotifications
+    implementation deps.mixpanel
+    implementation deps.rebound
+    implementation deps.preferences
+    implementation(deps.supportpreferences) {
         exclude group: 'com.android.support', module: 'appcompat-v7'
     }
-
+    implementation deps.gridlayout
     //noinspection GradleDynamicVersion
-    compile deps.psBase
-    compile deps.fcm
-    compile deps.psMaps
-    compile deps.psLocation
-    compile deps.cardview
-
+    implementation deps.psBase
+    implementation deps.fcm
+    implementation deps.psMaps
+    implementation deps.psLocation
+    implementation deps.cardview
     //Be careful not to include in production!!
-    devCompile          deps.stetho
-    experimentalCompile deps.stetho
-    qaCompile           deps.stetho
-    internalCompile     deps.stetho
-
+    devImplementation deps.stetho
+    experimentalImplementation deps.stetho
+    qaImplementation deps.stetho
+    internalImplementation deps.stetho
     // Test dependencies
-    testCompile deps.junit
-    testCompile(deps.testutils) {
+    testImplementation deps.junit
+    testImplementation(deps.testutils) {
         exclude module: 'aspectjrt'
         exclude module: 'isoparser'
         exclude module: 'zmessaging-android'
     }
-    testCompile(deps.scalatest) {
+    testImplementation(deps.scalatest) {
         exclude module: 'scala-library'
     }
-    testCompile deps.espressoIntents
-    testCompile deps.hamcrestCore
-    testCompile deps.hamcrestLib
-    testCompile deps.hamcrestIntegration
-    testCompile deps.mockitoCore
-    testCompile deps.espresso
-    testCompile deps.supportannotations
-
+    testImplementation deps.espressoIntents
+    testImplementation deps.hamcrestCore
+    testImplementation deps.hamcrestLib
+    testImplementation deps.hamcrestIntegration
+    testImplementation deps.mockitoCore
+    testImplementation deps.espresso
+    testImplementation deps.supportannotations
     //AndroidTest dependencies
-    androidTestCompile fileTree(dir: 'libs', include: ['*.jar'])
-    androidTestCompile deps.junit
-    androidTestCompile deps.espressoIntents
-    androidTestCompile deps.testRunner
-    androidTestCompile deps.testRules
-    androidTestCompile deps.espresso
-    androidTestCompile deps.supportannotations
-    androidTestCompile deps.mockitoCore
-    androidTestCompile deps.dexmaker
-    androidTestCompile deps.dexmakerDx
-    androidTestCompile deps.dexmakerMockito
-
+    androidTestImplementation fileTree(include: ['*.jar'], dir: 'libs')
+    androidTestImplementation deps.junit
+    androidTestImplementation deps.espressoIntents
+    androidTestImplementation deps.testRunner
+    androidTestImplementation deps.testRules
+    androidTestImplementation deps.espresso
+    androidTestImplementation deps.supportannotations
+    androidTestImplementation deps.mockitoCore
+    androidTestImplementation deps.dexmaker
+    androidTestImplementation deps.dexmakerDx
+    androidTestImplementation deps.dexmakerMockito
     //Translations
-    compile deps.translations
-    compile deps.jna
-
+    implementation deps.translations
+    implementation deps.jna
     // TODO  Nasty hack to be able to build add only one wire-core flavor to the build
     // TODO  (I know, it sucks, will think of a better way to do this, and we need this
     // TODO   when there are different SE APIs in dev vs internal/prod)
-    boolean internal = true;
+    boolean internal = true
     for (String taskName : gradle.startParameter.taskNames) {
         if (taskName.contains("Prod") || taskName.contains("Candidate")) {
             internal = false;
             break;
         }
     }
-
     // For using local files in app/libs
-    //compile (name:'avs', ext:'aar')
-    //compile (name:'audio-notifications', ext:'aar')
-    //compile (name:'zmessaging-android', ext:'aar')
-
-    compile "$avsGroup:$avsName:${internal ? avsInternalVersion : avsVersion}"
-    compile("com.wire:zmessaging-android:${internal ? zMessagingDevVersion : zMessagingReleaseVersion}") {
+    //implementation (name:'avs', ext:'aar')
+    //implementation (name:'audio-notifications', ext:'aar')
+    //implementation (name:'zmessaging-android', ext:'aar')
+    implementation "$avsGroup:$avsName:${internal ? avsInternalVersion : avsVersion}"
+    implementation("com.wire:zmessaging-android:${internal ? zMessagingDevVersion : zMessagingReleaseVersion}") {
         transitive = true
     }
+    ScalaCompileOptions.metaClass.daemonServer = true
+    ScalaCompileOptions.metaClass.fork = true
+    ScalaCompileOptions.metaClass.useAnt = false
+    ScalaCompileOptions.metaClass.useCompileDaemon = false
 }
 
 tasks.withType(ScalaCompile) {
@@ -358,6 +354,7 @@ android.applicationVariants.all { variant ->
     variant.outputs.each { output ->
         def newApkName
         newApkName = "${appName}-${output.baseName}-${rootProject.ext.majorVersion}${android.defaultConfig.versionCode}.apk"
-        output.outputFile = new File(output.outputFile.parent, newApkName)
+
+        output.outputFileName = new File("../..", newApkName)
     }
 }

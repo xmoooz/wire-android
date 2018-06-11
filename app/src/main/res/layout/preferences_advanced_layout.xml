@@ -35,14 +35,6 @@
             android:orientation="vertical"
             >
 
-            <com.waz.zclient.preferences.views.SwitchPreference
-                android:id="@+id/preferences_analytics"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/preference_button_height"
-                app:subtitle="@string/pref_advanced_analytics_summary"
-                app:title="@string/pref_advanced_analytics_title"
-                />
-
             <com.waz.zclient.preferences.views.TextButton
                 android:id="@+id/preferences_debug_report"
                 android:layout_width="match_parent"

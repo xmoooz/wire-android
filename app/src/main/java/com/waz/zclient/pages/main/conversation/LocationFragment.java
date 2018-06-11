@@ -194,6 +194,7 @@ public class LocationFragment extends BaseFragment<LocationFragment.Container> i
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
+            googleApiClient.connect();
         } else {
             locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
         }
@@ -508,7 +509,7 @@ public class LocationFragment extends BaseFragment<LocationFragment.Container> i
                 }
 
                 getControllerFactory().getLocationController().hideShareLocation(location);
-                ZMessaging.getCurrentGlobal().trackingService().contribution(new ContributionEvent.Action("location")); //TODO use lazy val when in scala
+                ZMessaging.currentGlobal().trackingService().contribution(new ContributionEvent.Action("location")); //TODO use lazy val when in scala
                 break;
         }
     }

@@ -101,6 +101,22 @@
             <com.waz.zclient.ui.text.TypefaceTextView
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/preference_button_height"
+                android:text="@string/pref_account_personal_information_category_title"
+                android:gravity="center_vertical"
+                android:paddingStart="@dimen/wire__padding__16"
+                android:paddingEnd="@dimen/wire__padding__16"
+                android:textColor="@color/accent_blue"/>
+
+            <com.waz.zclient.preferences.views.TextButton
+                android:id="@+id/preferences_data_usage_permissions"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/preference_button_height"
+                app:title="@string/pref_account_data_usage_permissions"
+            />
+
+            <com.waz.zclient.ui.text.TypefaceTextView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/preference_button_height"
                 android:text="@string/pref_account_conversations_category_title"
                 android:gravity="center_vertical"
                 android:paddingStart="@dimen/wire__padding__16"

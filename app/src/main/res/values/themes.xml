@@ -68,6 +68,7 @@
         <item name="conversationToolbarIconCopy">@drawable/ic_action_copy_light</item>
         <item name="conversationToolbarIconDelete">@drawable/ic_action_delete_light</item>
         <item name="conversationToolbarIconFwd">@drawable/ic_action_forward_light</item>
+        <item name="backNavigationIcon">@drawable/action_back_light</item>
 
         <!-- Start UI Toolbar -->
         <item name="startUiToolbar">@style/start_ui__toolbar__dark</item>
@@ -103,6 +104,7 @@
         <item name="circularIconButtonGreen">@style/common__circular_icon_button__green</item>
         <item name="circularIconButtonRed">@style/common__circular_icon_button__red</item>
         <item name="wireBackground">@style/wire__background__dark</item>
+        <item name="wireBackgroundColor">@color/background_dark</item>
         <item name="wireBackgroundAsTextColor">@style/wire__background_as_text_color__dark</item>
         <item name="strongBackground">@style/common__strong_background__dark</item>
         <item name="wirePrimaryTextColor">@color/text__primary_dark</item>
@@ -137,6 +139,10 @@
         <item name="callingChatheadInitials">@style/calling__chathead_initials__dark</item>
         <item name="callingChatheadFooter">@style/calling__chathead_footer__dark</item>
         <item name="callingControlButtonLabel">@style/calling__controls__button_label__dark</item>
+        <item name="callButtonBackground">@drawable/selector__icon_button__background__calling</item>
+        <item name="callIconDisabledColor">@color/white_24</item>
+        <item name="callTextDisabledColor">@color/white_24</item>
+        <item name="callIconDisabledActivatedColor">@color/graphite_40</item>
 
         <!-- OTR -->
         <item name="otrClientLink">@style/otr_client__link__dark</item>
@@ -222,6 +228,7 @@
         <item name="conversationToolbarIconCopy">@drawable/ic_action_copy_dark</item>
         <item name="conversationToolbarIconDelete">@drawable/ic_action_delete_dark</item>
         <item name="conversationToolbarIconFwd">@drawable/ic_action_forward_dark</item>
+        <item name="backNavigationIcon">@drawable/action_back_dark</item>
 
         <!-- Start UI Toolbar -->
         <item name="startUiToolbar">@style/start_ui__toolbar__light</item>
@@ -257,6 +264,7 @@
         <item name="circularIconButtonGreen">@style/common__circular_icon_button__green</item>
         <item name="circularIconButtonRed">@style/common__circular_icon_button__red</item>
         <item name="wireBackground">@style/message_stream__background__light</item>
+        <item name="wireBackgroundColor">@color/background_light</item>
         <item name="wireBackgroundAsTextColor">@style/wire__background_as_text_color__light</item>
         <item name="strongBackground">@style/common__strong_background__light</item>
         <item name="wirePrimaryTextColor">@color/text__primary_light</item>
@@ -291,6 +299,10 @@
         <item name="callingChatheadInitials">@style/calling__chathead_initials__light</item>
         <item name="callingChatheadFooter">@style/calling__chathead_footer__light</item>
         <item name="callingControlButtonLabel">@style/calling__controls__button_label__light</item>
+        <item name="callButtonBackground">@drawable/selector__icon_button__background__calling_light</item>
+        <item name="callIconDisabledColor">@color/graphite_24</item>
+        <item name="callTextDisabledColor">@color/graphite_24</item>
+        <item name="callIconDisabledActivatedColor">@color/graphite_40</item>
 
         <!-- OTR -->
         <item name="otrClientLink">@style/otr_client__link__light</item>
@@ -338,7 +350,7 @@
         <item name="dialogTheme">@style/PreferenceTheme.Dialog</item>
 
         <item name="android:windowNoTitle">true</item>
-        <item name="android:windowBackground">@color/graphite</item>
+        <item name="android:windowBackground">@color/black</item>
         <item name="windowActionModeOverlay">true</item>
 
         <item name="wirePrimaryTextColor">@color/text__primary_dark</item>
@@ -363,6 +375,10 @@
     </style>
 
     <style name="Theme.Share" parent="Theme.Dark">
+        <item name="android:windowBackground">@color/background_graphite</item>
+    </style>
+
+    <style name="Theme.Calling" parent="Theme.Dark">
         <item name="android:windowBackground">@color/background_graphite</item>
     </style>
 

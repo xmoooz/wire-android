@@ -17,43 +17,45 @@
  */
 package com.waz.zclient.calling.controllers
 
-import android.media.AudioManager
-import android.os.{PowerManager, Vibrator}
+import android.os.PowerManager
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
-import com.waz.api.{IConversation, Verification, VideoSendState}
-import com.waz.avs.{VideoPreview, VideoRenderer}
-import com.waz.model.{UserData, UserId}
-import com.waz.service.call.Avs.VideoReceiveState
-import com.waz.service.call.CallInfo
+import com.waz.api.Verification
+import com.waz.avs.VideoPreview
+import com.waz.model.{AssetId, UserData, UserId}
+import com.waz.service.ZMessaging.clock
+import com.waz.service.call.Avs.VideoState
+import com.waz.service.call.{CallInfo, CallingService}
 import com.waz.service.call.CallInfo.CallState.{SelfJoining, _}
 import com.waz.service.{AccountsService, GlobalModule, NetworkModeService, ZMessaging}
 import com.waz.threading.{CancellableFuture, Threading}
-import com.waz.utils.events.{ButtonSignal, EventContext, Signal}
+import com.waz.utils._
+import com.waz.utils.events._
 import com.waz.zclient.calling.CallingActivity
-import com.waz.zclient.calling.views.CallControlButtonView.{ButtonColor, ButtonSettings}
-import com.waz.zclient.common.controllers.SoundController
+import com.waz.zclient.calling.controllers.CallController.CallParticipantInfo
+import com.waz.zclient.common.controllers.ThemeController.Theme
+import com.waz.zclient.common.controllers.{SoundController, ThemeController}
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.utils.ContextUtils._
-import com.waz.zclient.utils.{DeprecationUtils, LayoutSpec}
+import com.waz.zclient.utils.DeprecationUtils
 import com.waz.zclient.{Injectable, Injector, R, WireContext}
+import org.threeten.bp.Instant
 
 import scala.concurrent.duration._
 
 class CallController(implicit inj: Injector, cxt: WireContext, eventContext: EventContext) extends Injectable {
 
   import Threading.Implicits.Background
+  import VideoState._
 
   private val screenManager  = new ScreenManager
   val soundController        = inject[SoundController]
   val conversationController = inject[ConversationController]
   val networkMode            = inject[NetworkModeService].networkMode
   val accounts               = inject[AccountsService]
+  val themeController        = inject[ThemeController]
 
-  //The zms of the account that's currently active (if any)
-  val activeZmsOpt = inject[Signal[Option[ZMessaging]]]
-
-  val callScreenShown = Signal(false)
+  val callControlsVisible = Signal(false)
   //the zms of the account that currently has an active call (if any)
   val callingZmsOpt =
     for {
@@ -64,12 +66,10 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
 
   val currentCallOpt: Signal[Option[CallInfo]] = callingZmsOpt.flatMap {
     case Some(z) => z.calling.currentCall
-    case _ => Signal.const(None)
+    case _       => Signal.const(None)
   }
-  val currentCall = currentCallOpt.collect { case Some(c) => c }
-
-  val callConvIdOpt     = currentCallOpt.map(_.map(_.convId))
-  val callConvId        = callConvIdOpt.collect { case Some(c) => c }
+  val currentCall   = currentCallOpt.collect { case Some(c) => c }
+  val callConvIdOpt = currentCallOpt.map(_.map(_.convId))
 
   val isCallActive      = currentCallOpt.map(_.isDefined)
   val isCallActiveDelay = isCallActive.flatMap {
@@ -77,22 +77,59 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     case false => Signal.const(false)
   }
 
-  val callStateOpt      = currentCallOpt.map(_.flatMap(_.state))
-  val callState         = callStateOpt.collect { case Some(s) => s }
+  val callStateOpt          = currentCallOpt.map(_.flatMap(_.state))
+  val callState             = callStateOpt.collect { case Some(s) => s }
+  val callStateCollapseJoin = currentCall.map(_.stateCollapseJoin)
 
   val isCallEstablished = callStateOpt.map(_.contains(SelfConnected))
   val isCallOutgoing    = callStateOpt.map(_.contains(SelfCalling))
   val isCallIncoming    = callStateOpt.map(_.contains(OtherCalling))
 
-  val isMuted           = currentCall.map(_.muted)
-  val isVideoCall       = currentCall.map(_.isVideoCall)
-  val videoSendState    = currentCall.map(_.videoSendState)
-  val videoReceiveState = currentCall.map(_.videoReceiveState)
-  val isGroupCall       = currentCall.map(_.isGroup)
-  val cbrEnabled        = currentCall.map(_.isCbrEnabled)
-  val duration          = currentCall.flatMap(_.durationFormatted)
+  val callConvId            = currentCall.map(_.convId)
+  val isMuted               = currentCall.map(_.muted)
+  val callerId              = currentCall.map(_.caller)
+  val startedAsVideo        = currentCall.map(_.startedAsVideoCall)
+  val isVideoCall           = currentCall.map(_.isVideoCall)
+  val videoSendState        = currentCall.map(_.videoSendState)
+  val videoReceiveStates    = currentCall.map(_.videoReceiveStates)
+  val allVideoReceiveStates = currentCall.map(_.allVideoReceiveStates)
+  val isGroupCall           = currentCall.map(_.isGroup)
+  val cbrEnabled            = currentCall.map(_.isCbrEnabled)
+  val duration              = currentCall.flatMap(_.durationFormatted)
+  val others                = currentCall.map(_.others)
+
+  val theme: Signal[Theme] = isVideoCall.flatMap {
+    case true  => Signal.const(Theme.Dark)
+    case false => themeController.currentTheme
+  }
+
+  def participantInfos(take: Option[Int] = None): Signal[Vector[CallParticipantInfo]] =
+    for {
+      cZms        <- callingZms
+      ids         <- others.map { os =>
+        val ordered = os.toSeq.sortBy(_._2.getOrElse(Instant.EPOCH)).reverse.map(_._1)
+        take.fold(ordered)(t => ordered.take(t))
+      }
+      users       <- cZms.usersStorage.listSignal(ids)
+      videoStates <- allVideoReceiveStates
+    } yield
+      users.map { u =>
+        CallParticipantInfo(
+          u.id,
+          u.picture,
+          u.getDisplayName,
+          u.isGuest(cZms.teamId),
+          u.isVerified,
+          videoStates.get(u.id).contains(VideoState.Started),
+          Some(cZms)
+        )
+      }
 
   val flowManager = callingZms.map(_.flowmanager)
+
+  def continueDegradedCall(): Unit = callingServiceAndCurrentConvId.head.map {
+    case (cs, _) => cs.continueDegradedCall()
+  }
 
   val captureDevices = flowManager.flatMap(fm => Signal.future(fm.getVideoCaptureDevices))
 
@@ -113,11 +150,9 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     case _ =>
   }
 
-  val cameraFailed = flowManager.flatMap(_.cameraFailedSig)
-
-  val userStorage = callingZms map (_.usersStorage)
-  val prefs       = callingZms.map(_.prefs)
-
+  val cameraFailed   = flowManager.flatMap(_.cameraFailedSig)
+  val userStorage    = callingZms.map(_.usersStorage)
+  val prefs          = callingZms.map(_.prefs)
   val callingService = callingZms.map(_.calling).disableAutowiring()
 
   val callingServiceAndCurrentConvId =
@@ -127,45 +162,79 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     } yield (cs, c)
 
 
-  val conversation = callingZms.zip(callConvId) flatMap { case (z, cId) => z.convsStorage.signal(cId) }
-  val conversationName = conversation map (data => if (data.convType == IConversation.Type.GROUP) data.name.filter(!_.isEmpty).getOrElse(data.generatedName) else data.generatedName)
+  val conversation        = callingZms.zip(callConvId) flatMap { case (z, cId) => z.convsStorage.signal(cId) }
+  val conversationName    = conversation.map(_.displayName)
+  val conversationMembers = for {
+    zms     <- callingZms
+    cId     <- callConvId
+    members <- zms.membersStorage.activeMembers(cId)
+  } yield members
 
   val otherUser = Signal(isGroupCall, userStorage, callConvId).flatMap {
-    case (isGroupCall, usersStorage, convId) if !isGroupCall =>
+    case (false, usersStorage, convId) =>
       usersStorage.optSignal(UserId(convId.str)) // one-to-one conversation has the same id as the other user, so we can access it directly
     case _ => Signal.const[Option[UserData]](None) //Need a none signal to help with further signals
   }
 
+  private lazy val lastControlsClick = Signal[(Boolean, Instant)]() //true = show controls and set timer, false = hide controls
+
+  import com.waz.ZLog.ImplicitTag.implicitLogTag
+  import com.waz.ZLog.verbose
+
+  lazy val controlsVisible =
+    (for {
+      true         <- isVideoCall
+      Some(est)    <- currentCall.map(_.estabTime)
+      (show, last) <- lastControlsClick.orElse(Signal.const((true, clock.instant())))
+      display      <- if (show) ClockSignal(3.seconds).map(c => last.max(est).until(c).asScala <= 3.seconds)
+                      else Signal.const(false)
+    } yield display).orElse(Signal.const(true))
+
+  def controlsClick(show: Boolean): Unit = lastControlsClick ! (show, clock.instant())
+
   def leaveCall(): Unit = {
     verbose(s"leaveCall")
-    for {
-      cId <- callConvId.head
-      cs  <- callingService.head
-    } yield cs.endCall(cId)
+    updateCall { case (call, cs) => cs.endCall(call.convId) }
   }
 
   def toggleMuted(): Unit = {
     verbose(s"toggleMuted")
-    for {
-      muted <- isMuted.head
-      cs    <- callingService.head
-    } yield cs.setCallMuted(!muted)
+    updateCall { case (call, cs) => cs.setCallMuted(!call.muted) }
   }
 
   def toggleVideo(): Unit = {
     verbose(s"toggleVideo")
-    for {
-      st  <- videoSendState.head
-      cId <- callConvId.head
-      cs  <- callingService.head
-    } yield cs.setVideoSendActive(cId, if(st == VideoSendState.SEND) false else true)
+    updateCall { case (call, cs) =>
+      import VideoState._
+      cs.setVideoSendState(call.convId, if (call.videoSendState != Started) Started else Stopped)
+    }
   }
+
+  def setVideoPause(pause: Boolean): Unit = {
+    verbose(s"setVideoPause: $pause")
+    updateCall { case (call, cs) =>
+      import VideoState._
+      if (call.isVideoCall) {
+        call.videoSendState match {
+          case Started if pause => cs.setVideoSendState(call.convId, Paused)
+          case Paused if !pause => cs.setVideoSendState(call.convId, Started)
+          case _ =>
+        }
+      }
+    }
+  }
+
+  private def updateCall(f: (CallInfo, CallingService) => Unit): Unit =
+    for {
+      Some(call) <- currentCallOpt.head
+      cs  <- callingService.head
+    } yield f(call, cs)
 
   private var _wasUiActiveOnCallStart = false
 
   def wasUiActiveOnCallStart = _wasUiActiveOnCallStart
 
-  val onCallStarted = isCallActive.onChanged.filter(_ == true).map { _ =>
+  val onCallStarted = currentCallOpt.map(_.map(_.convId)).onChanged.filter(_.isDefined).map { _ =>
     val active = ZMessaging.currentGlobal.lifecycle.uiActive.currentValue.getOrElse(false)
     _wasUiActiveOnCallStart = active
     active
@@ -187,10 +256,11 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     screenManager.releaseWakeLock()
   }(EventContext.Global)
 
+
   (for {
-    v  <- isVideoCall
-    st <- callStateOpt
-    callingShown <- callScreenShown
+    v            <- isVideoCall
+    st           <- callStateOpt
+    callingShown <- callControlsVisible
   } yield (v, callingShown, st)) {
     case (true, _, _)                       => screenManager.setStayAwake()
     case (false, true, Some(OtherCalling))  => screenManager.setStayAwake()
@@ -201,7 +271,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   }
 
   (for {
-    m <- isMuted
+    m <- isMuted.orElse(Signal.const(false))
     i <- isCallIncoming
   } yield (m, i)) { case (m, i) =>
     soundController.setIncomingRingTonePlaying(!m && i)
@@ -212,8 +282,8 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     .disableAutowiring()
 
   val degradationWarningText = convDegraded.flatMap {
-    case false => Signal("")
-    case true =>
+    case false => Signal(Option.empty[String])
+    case true  =>
       (for {
         zms <- callingZms
         convId <- callConvId
@@ -222,22 +292,15 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
           zms.usersStorage.listSignal(ids)
         }.map(_.filter(_.verified != Verification.VERIFIED).toList)
       }).flatten.map {
-        case u1 :: u2 :: _ =>
-          //TODO handle more than 2 users
-          getString(R.string.conversation__degraded_confirmation__header__multiple_user, u1.name, u2.name)
+        case u1 :: u2 :: Nil =>
+          Some(getString(R.string.conversation__degraded_confirmation__header__multiple_user, u1.name, u2.name))
+        case l if l.size > 2 =>
+          Some(getString(R.string.conversation__degraded_confirmation__header__someone))
         case List(u) =>
           //TODO handle string for case where user adds multiple clients
-          getQuantityString(R.plurals.conversation__degraded_confirmation__header__single_user, 1, u.name)
-        case _ => ""
+          Some(getQuantityString(R.plurals.conversation__degraded_confirmation__header__single_user, 1, u.name))
+        case _ => None
       }
-  }
-
-  val degradationConfirmationText = convDegraded.flatMap {
-    case false => Signal("")
-    case true => isCallOutgoing.map {
-      case true  => R.string.conversation__degraded_confirmation__place_call
-      case false => R.string.conversation__degraded_confirmation__accept_call
-    }.map(getString)
   }
 
   (for {
@@ -248,55 +311,11 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     soundController.setOutgoingRingTonePlaying(play, v)
   }
 
-  //Use Audio view to show conversation degraded screen for calling
-  val showVideoView = convDegraded.flatMap {
-    case true  => Signal(false)
-    case false => isVideoCall
-  }.disableAutowiring()
-
-  val selfUser = callingZms flatMap (_.users.selfUser)
-
-  val callerId = currentCallOpt flatMap {
-    case Some(info) =>
-      (info.others, info.state) match {
-        case (_, Some(SelfCalling)) => selfUser.map(_.id)
-        case (others, Some(OtherCalling)) if others.size == 1 => Signal.const(others.head)
-        case _ => Signal.empty[UserId] //TODO Dean do I need this information for other call states?
-      }
-    case _ => Signal.empty[UserId]
-  }
-
-  val callerData = userStorage.zip(callerId).flatMap { case (storage, id) => storage.signal(id) }
-
-  /////////////////////////////////////////////////////////////////////////////////
-  /// TODO A lot of the following code should probably be moved to some other UI controller for the views that use them
-  /////////////////////////////////////////////////////////////////////////////////
-
-  val flowId = for {
-    zms    <- callingZms
-    convId <- callConvId
-    conv   <- zms.convsStorage.signal(convId)
-    rConvId = conv.remoteId
-    userData <- otherUser
-  } yield (rConvId, userData.map(_.id))
-
-  def setVideoPreview(view: Option[VideoPreview]): Unit = {
-    flowManager.on(Threading.Ui) { fm =>
+  def setVideoPreview(view: Option[VideoPreview]): Unit =
+    flowManager.head.foreach { fm =>
       verbose(s"Setting VideoPreview on Flowmanager, view: $view")
       fm.setVideoPreview(view.orNull)
-    }
-  }
-
-  def setVideoView(view: Option[VideoRenderer]): Unit = {
-    (for {
-      fm <- flowManager
-      (rConvId, userId) <- flowId
-    } yield (fm, rConvId, userId)).on(Threading.Ui) {
-      case (fm, rConvId, userId) =>
-        verbose(s"Setting ViewRenderer on Flowmanager, rConvId: $rConvId, userId: $userId, view: $view")
-        view.foreach(fm.setVideoView(rConvId, userId, _))
-    }
-  }
+    } (Threading.Ui)
 
   val callBannerText = Signal(isVideoCall, callState).map {
     case (_,     SelfCalling)   => R.string.call_banner_outgoing
@@ -307,9 +326,8 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     case _                      => R.string.empty_string
   }
 
-  val subtitleText: Signal[String] = convDegraded.flatMap {
-    case true => Signal("")
-    case false => (for {
+  val subtitleText: Signal[String] =
+    (for {
       video <- isVideoCall
       state <- callState
       dur   <- duration
@@ -319,86 +337,24 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
       case (true,  OtherCalling, _)  => cxt.getString(R.string.calling__header__incoming_subtitle__video)
       case (false, OtherCalling, _)  => cxt.getString(R.string.calling__header__incoming_subtitle)
       case (_,     SelfJoining,  _)  => cxt.getString(R.string.calling__header__joining)
-      case (false, SelfConnected, d) => d
+      case (_,     SelfConnected, d) => d
       case _ => ""
     }
+
+  def stateMessageText(userId: UserId): Signal[Option[String]] = Signal(callState, cameraFailed, allVideoReceiveStates.map(_.getOrElse(userId, Unknown))).map { vs =>
+    verbose(s"Message Text: $vs")
+    (vs match {
+      case (SelfCalling,   true, _)                  => Some(R.string.calling__self_preview_unavailable_long)
+      case (SelfConnected, _,    BadConnection)      => Some(R.string.ongoing__poor_connection_message)
+      case (SelfConnected, _,    Paused)             => Some(R.string.video_paused)
+      case (OtherCalling,  _,    NoCameraPermission) => Some(R.string.calling__cannot_start__no_camera_permission__message)
+      case _                                         => None
+    }).map(getString)
   }
 
-  val stateMessageText = Signal(callState, cameraFailed, videoReceiveState, conversationName).map { vs =>
-    verbose(s"$vs")
-    import VideoReceiveState._
-    vs match {
-      case (SelfCalling,   true, _,             _)             => Option(cxt.getString(R.string.calling__self_preview_unavailable_long))
-      case (SelfJoining,   _,    _,             _)             => Option(cxt.getString(R.string.ongoing__connecting))
-      case (SelfConnected, _,    BadConnection, _)             => Option(cxt.getString(R.string.ongoing__poor_connection_message))
-      case (SelfConnected, _,    Stopped,       otherUserName) => Option(cxt.getString(R.string.ongoing__other_turned_off_video, otherUserName))
-      case (SelfConnected, _,    Unknown,       otherUserName) => Option(cxt.getString(R.string.ongoing__other_unable_to_send_video, otherUserName))
-      case _ => None
-    }
-  }
-
-  val showOngoingControls = convDegraded.flatMap {
-    case true => Signal(true)
-    case false => callState.map {
-      case OtherCalling => false
-      case _ => true
-    }
-  }.orElse(Signal(true)) //ensure that controls are ALWAYS visible in case something goes wrong...
-
-  val participantIdsToDisplay = currentCall.map(_.others.toVector)
-
-  def continueDegradedCall(): Unit = callingServiceAndCurrentConvId.head.map {
-    case (cs, _) => cs.continueDegradedCall()
-  }
-
-  def vibrate(): Unit = {
-    import com.waz.zclient.utils.ContextUtils._
-    val audioManager = Option(inject[AudioManager])
-    val vibrator = Option(inject[Vibrator])
-
-    val disableRepeat = -1
-    (audioManager, vibrator) match {
-      case (Some(am), Some(vib)) if am.getRingerMode != AudioManager.RINGER_MODE_SILENT =>
-        DeprecationUtils.vibrate(vib, getIntArray(R.array.call_control_enter).map(_.toLong), disableRepeat)
-      case _ =>
-    }
-  }
-
-  val speakerButton = ButtonSignal(callingZms.map(_.mediamanager), callingZms.flatMap(_.mediamanager.isSpeakerOn)) {
+  lazy val speakerButton = ButtonSignal(callingZms.map(_.mediamanager), callingZms.flatMap(_.mediamanager.isSpeakerOn)) {
     case (mm, isSpeakerSet) => mm.setSpeaker(!isSpeakerSet)
-  }
-
-  val leftButtonSettings = convDegraded.map {
-    case true  => ButtonSettings(R.string.glyph__close, R.string.confirmation_menu__cancel, () => leaveCall())
-    case false => ButtonSettings(R.string.glyph__microphone_off, R.string.incoming__controls__ongoing__mute, () => toggleMuted())
-  }
-
-  val middleButtonSettings = convDegraded.flatMap {
-    case true  =>
-      isCallOutgoing.map { outgoing =>
-        val text = if (outgoing) R.string.conversation__action__call else R.string.incoming__controls__incoming__accept
-        ButtonSettings(R.string.glyph__call, text, () => continueDegradedCall(), ButtonColor.Green)
-      }
-    case false => Signal(ButtonSettings(R.string.glyph__end_call, R.string.incoming__controls__ongoing__hangup, () => leaveCall(), ButtonColor.Red))
-  }
-
-  val rightButtonSettings = isVideoCall.map {
-    case true  => ButtonSettings(R.string.glyph__video,        R.string.incoming__controls__ongoing__video,   () => toggleVideo())
-    case false => ButtonSettings(R.string.glyph__speaker_loud, R.string.incoming__controls__ongoing__speaker, () => speakerButton.press())
-  }
-
-  val isTablet = Signal(!LayoutSpec.isPhone(cxt))
-
-  val rightButtonShown = convDegraded.flatMap {
-    case true  => Signal(false)
-    case false => Signal(isVideoCall, isCallEstablished, captureDevices, isTablet) map {
-      case (true, false, _, _) => false
-      case (true, true, captureDevices, _) => captureDevices.size >= 0
-      case (false, _, _, isTablet) => !isTablet //Tablets don't have ear-pieces, so you can't switch between speakers
-      case _ => false
-    }
-  }
-
+  }.disableAutowiring()
 }
 
 private class ScreenManager(implicit injector: Injector) extends Injectable {
@@ -448,3 +404,12 @@ private class ScreenManager(implicit injector: Injector) extends Injectable {
   }
 }
 
+object CallController {
+  case class CallParticipantInfo(userId: UserId,
+                                 assetId: Option[AssetId],
+                                 displayName: String,
+                                 isGuest: Boolean,
+                                 isVerified: Boolean,
+                                 isVideoEnabled: Boolean,
+                                 zms: Option[ZMessaging])
+}

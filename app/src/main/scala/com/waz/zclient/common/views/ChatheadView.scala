@@ -124,7 +124,8 @@ class ChatheadView(val context: Context, val attrs: AttributeSet, val defStyleAt
 
   def clearUser(): Unit = ctrl.clearUser()
 
-  def setUserId(userId: UserId): Unit = ctrl.setUserId(userId)
+  def setUserId(userId: UserId, zms: Option[ZMessaging]): Unit = ctrl.setUserId(userId, zms)
+  def setUserId(userId: UserId): Unit = setUserId(userId, None): Unit
 
   def setIntegration(integration: IntegrationData): Unit = ctrl.setIntegration(integration)
 
@@ -261,20 +262,29 @@ protected class ChatheadController(val setSelectable:            Boolean        
                                   (implicit inj: Injector, eventContext: EventContext) extends Injectable {
 
   val zMessaging = inject[Signal[ZMessaging]]
+
   val teamsAndUserController = inject[UserAccountsController]
 
   val assignInfo = Signal[Option[AssignDetails]]()
 
   def clearUser(): Unit = assignInfo ! None
 
-  def setUserId(userId: UserId): Unit = Option(userId).fold(throw new IllegalArgumentException("UserId should not be null"))(u => assignInfo ! Some(AssignDetails(u)))
+  def setUserId(userId: UserId, zms: Option[ZMessaging] = None): Unit =
+    Option(userId).fold(throw new IllegalArgumentException("UserId should not be null"))(u => assignInfo ! Some(AssignDetails(u, zms)))
 
-  def setIntegration(integration: IntegrationData): Unit = Option(integration).fold(throw new IllegalArgumentException("IntegrationDetails should not be null"))(i => assignInfo ! Some(AssignDetails(i)))
+  def setIntegration(integration: IntegrationData): Unit =
+    Option(integration).fold(throw new IllegalArgumentException("IntegrationDetails should not be null"))(i => assignInfo ! Some(AssignDetails(i)))
 
-  val chatheadInfo: Signal[Option[ChatheadDetails]] = zMessaging.zip(assignInfo).flatMap {
-    case (zms, Some(AssignDetails(Some(userId), _))) => zms.usersStorage.signal(userId).map(ud => Some(ChatheadDetails(ud, zms.teamId.isDefined && zms.teamId == ud.teamId)))
-    case (_, Some(AssignDetails(_, Some(integration)))) => Signal.const(Some(ChatheadDetails(integration)))
-    case _ => Signal.const(None)
+  val chatheadInfo: Signal[Option[ChatheadDetails]] = assignInfo.flatMap {
+    case Some(AssignDetails(_, Some(integration), _)) =>
+      Signal.const(Some(ChatheadDetails(integration)))
+    case Some(AssignDetails(Some(userId), _, zms)) =>
+      for {
+        z  <- zms.fold(zMessaging)(Signal.const)
+        ud <- z.usersStorage.signal(userId)
+      } yield Some(ChatheadDetails(ud, z.teamId.isDefined && z.teamId == ud.teamId, zms = Some(z)))
+    case _ =>
+      Signal.const(None)
   }
 
   val accentColor = chatheadInfo.map {
@@ -307,9 +317,9 @@ protected class ChatheadController(val setSelectable:            Boolean        
     case _ => false
   }.map(_ && grayscaleOnUnconnected)
 
-  val assetId = chatheadInfo.map {
-    case Some(details) => details.assetId
-    case _ => None
+  val assetIdAndZms = chatheadInfo.map {
+    case Some(details) => (details.assetId, details.zms)
+    case _ => (None, None)
   }
 
   val selectable = knownUser.zip(teamMember).map {
@@ -325,21 +335,22 @@ protected class ChatheadController(val setSelectable:            Boolean        
   val viewWidth = Signal(0)
 
   val borderWidth = viewWidth.zip(knownUser).map {
-    case (viewWidth, isKnownUser) => if (showBorder && isKnownUser) border.fold(0)(_.getWidth(viewWidth)) else 0
+    case (width, isKnownUser) if showBorder && isKnownUser => border.fold(0)(_.getWidth(width))
+    case _ => 0
   }
 
-  val isBot =  chatheadInfo.map {
+  val isBot = chatheadInfo.map {
     case Some(info) => info.isBot
-    case _ => false
+    case _          => false
   }
 
   val bitmapResult = (for {
-    zMessaging <- zMessaging
-    assetId <- assetId
-    viewWidth <- viewWidth
-    borderWidth <- borderWidth
-    accentColor <- accentColor
-    isBot <- isBot
+    (assetId, zmsOpt) <- assetIdAndZms
+    zMessaging        <- zmsOpt.fold(zMessaging)(Signal.const)
+    viewWidth         <- viewWidth
+    borderWidth       <- borderWidth
+    accentColor       <- accentColor
+    isBot             <- isBot
   } yield (zMessaging, assetId, viewWidth, borderWidth, accentColor, isBot)).flatMap[BitmapResult] {
     case (zms, Some(id), width, bWidth, bColor, bot) if width > 0 => zms.assetsStorage.signal(id).flatMap {
       case data@AssetData.IsImage() if isRound && !bot => BitmapSignal(zms, data, Round(width, bWidth, bColor.value))
@@ -359,13 +370,13 @@ protected class ChatheadController(val setSelectable:            Boolean        
   //Everything else that requires a redraw
   val invalidate = Signal(bitmap, selected, borderWidth).zip(Signal(initials, connectionStatus)).onChanged
 
-  case class AssignDetails(userId: Option[UserId], integration: Option[IntegrationData]){
+  case class AssignDetails(userId: Option[UserId], integration: Option[IntegrationData], zms: Option[ZMessaging]){
     assert(userId.nonEmpty || integration.nonEmpty)
   }
 
   object AssignDetails {
-    def apply(userId: UserId): AssignDetails = AssignDetails(Some(userId), None)
-    def apply(integration: IntegrationData): AssignDetails = AssignDetails(None, Some(integration))
+    def apply(userId: UserId, zms: Option[ZMessaging]): AssignDetails = AssignDetails(Some(userId), None, zms)
+    def apply(integration: IntegrationData): AssignDetails = AssignDetails(None, Some(integration), None)
   }
 
   case class ChatheadDetails(accentColor: ColorVal = contactBackgroundColor,
@@ -377,11 +388,14 @@ protected class ChatheadController(val setSelectable:            Boolean        
                              grayScale: Boolean = false,
                              assetId: Option[AssetId] = None,
                              selectable: Boolean = false,
-                             isBot: Boolean = false
+                             isBot: Boolean = false,
+                             zms: Option[ZMessaging] = None
                             )
 
   object ChatheadDetails {
-    def apply(user: UserData, isTeamMember: Boolean): ChatheadDetails = {
+    def apply(user: UserData, isTeamMember: Boolean): ChatheadDetails = apply(user, isTeamMember, None)
+
+    def apply(user: UserData, isTeamMember: Boolean, zms: Option[ZMessaging]): ChatheadDetails = {
       val knownUser = user.isConnected || user.isSelf
 
       ChatheadDetails(
@@ -392,7 +406,8 @@ protected class ChatheadController(val setSelectable:            Boolean        
         grayScale = !(user.isConnected || user.isSelf || isTeamMember),
         assetId = user.picture,
         selectable = knownUser || isTeamMember,
-        isBot = user.isWireBot
+        isBot = user.isWireBot,
+        zms = zms
       )
     }
 

@@ -35,7 +35,10 @@ trait WireDrawable extends Drawable {
 
   override def setAlpha(alpha: Int): Unit = paint.setAlpha(alpha)
 
-  def setColor(color: Int): Unit = paint.setColor(color)
+  def setColor(color: Int): Unit = {
+    paint.setColor(color)
+    invalidateSelf()
+  }
 
   protected def getDrawingRect = new RectF(getBounds.left + padding.left, getBounds.top + padding.top, getBounds.right - padding.right, getBounds.bottom - padding.bottom)
 
@@ -123,4 +126,14 @@ case class ForwardNavigationIcon(colorRes: Int)(implicit context: Context) exten
 case class BackupRestoreIcon(color: Int)(implicit context: Context) extends WireDrawable {
   setColor(color)
   override def draw(canvas: Canvas) = drawRestore(canvas, new RectF(canvas.getClipBounds), ResizingBehavior.AspectFit, paint.getColor)
+}
+
+case class VideoIcon(colorRes: Int)(implicit context: Context) extends WireDrawable {
+  setColor(getColor(colorRes))
+  override def draw(canvas: Canvas) = drawCamera(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
+}
+
+case class ConversationIcon(colorRes: Int)(implicit context: Context) extends WireDrawable {
+  setColor(getColor(colorRes))
+  override def draw(canvas: Canvas) = drawConversation(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
 }

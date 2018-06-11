@@ -20,7 +20,8 @@
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
              android:layout_width="match_parent"
-             android:layout_height="match_parent">
+             android:layout_height="match_parent"
+             xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <com.waz.zclient.common.views.BackgroundImageView
         android:id="@+id/bl__background"
@@ -44,21 +45,23 @@
             android:paddingBottom="@dimen/wire__padding__tiny"
         >
 
-            <TextView
+            <com.waz.zclient.ui.text.TypefaceTextView
                 android:id="@+id/call_banner_status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/white"
                 android:textSize="@dimen/wire__text_size__small"
+                app:w_font="@string/wire__typeface__medium"
             />
 
-            <TextView
+            <com.waz.zclient.ui.text.TypefaceTextView
                 android:paddingStart="@dimen/wire__padding__small"
                 android:id="@+id/call_banner_duration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/white"
                 android:textSize="@dimen/wire__text_size__small"
+                app:w_font="@string/wire__typeface__medium"
             />
 
         </LinearLayout>

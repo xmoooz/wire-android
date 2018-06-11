@@ -22,7 +22,6 @@ import android.content.Context
 import android.util.AttributeSet
 import android.widget.{LinearLayout, TextView}
 import com.waz.model.UserId
-import com.waz.threading.Threading
 import com.waz.utils.events.Signal
 import com.waz.zclient.messages.UsersController
 import com.waz.zclient.utils.StringUtils
@@ -33,7 +32,6 @@ class UserDetailsView(val context: Context, val attrs: AttributeSet, val defStyl
   def this(context: Context) = this(context, null)
 
   private lazy val userNameTextView: TextView = findById(R.id.user_handle)
-  private lazy val userInfoTextView: TextView = findById(R.id.ttv__user_details__user_info)
   inflate(R.layout.user__details, this, addToParent = true)
 
   val users = inject[UsersController]
@@ -42,19 +40,7 @@ class UserDetailsView(val context: Context, val attrs: AttributeSet, val defStyl
   userId.flatMap(users.userHandle).map {
     case Some(h) => StringUtils.formatHandle(h.string)
     case None => ""
-  }.on(Threading.Ui) { userNameTextView.setText }
-
-  (for {
-    id <- userId
-    c <- users.userFirstContact(id)
-    n <- users.displayNameString(id)
-  } yield {
-      c match {
-        case Some(cont) if cont.name == n => getContext.getString(R.string.content__message__connect_request__user_info, "")
-        case Some(cont) => getContext.getString(R.string.content__message__connect_request__user_info, c.get.name)
-        case _ => ""
-      }
-  }).on(Threading.Ui) { userInfoTextView.setText }
+  }.onUi(userNameTextView.setText)
 
   def setUserId(id: UserId): Unit =
     Option(id).fold(throw new IllegalArgumentException("UserId should not be null"))(userId ! _)

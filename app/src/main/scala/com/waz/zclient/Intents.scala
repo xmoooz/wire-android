@@ -40,7 +40,7 @@ object Intents {
     lazy val Devices  = "Devices"
   }
 
-  def CallIntent(userId: UserId, convId: ConvId, requestCode: Int)(implicit context: Context) =
+  def CallIntent(userId: UserId, convId: ConvId, requestCode: Int = System.currentTimeMillis().toInt)(implicit context: Context) =
     Intent(context, userId, Some(convId), requestCode, startCall = true)
 
   def QuickReplyIntent(userId: UserId, convId: ConvId, requestCode: Int)(implicit context: Context) =

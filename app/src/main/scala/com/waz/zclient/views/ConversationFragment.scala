@@ -36,6 +36,7 @@ import com.waz.model.ConversationData.ConversationType
 import com.waz.model.{MessageContent => _, _}
 import com.waz.permissions.PermissionsService
 import com.waz.service.ZMessaging
+import com.waz.service.call.CallingService
 import com.waz.threading.{CancellableFuture, Threading}
 import com.waz.utils.events.{EventStreamWithAuxSignal, Signal}
 import com.waz.utils.returningF
@@ -98,6 +99,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
   private lazy val errorsController       = inject[ErrorsController]
   private lazy val callController         = inject[CallController]
   private lazy val callStartController    = inject[CallStartController]
+  private lazy val accountsController     = inject[UserAccountsController]
 
   private val previewShown = Signal(false)
   private lazy val convChange = convController.convChanged.filter { _.to.isDefined }
@@ -238,23 +240,24 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       case _ =>
     }
 
-    convController.currentConv.onUi {
-      case conv if conv.isActive =>
-        inflateCollectionIcon()
-        (for {
-          acc  <- zms.map(_.selfUserId).head
-          call <- callController.currentCallOpt.head
-        } yield (acc, call)).flatMap {
-          case (acc, Some(call)) if call.convId == conv.id && call.account == acc => Future.successful(None)
-          case _ => convController.hasOtherParticipants(conv.id).flatMap {
-            case true  => convController.isGroup(conv.id).map(isGroup => Some(if (isGroup) R.menu.conversation_header_menu_audio else R.menu.conversation_header_menu_video))
-            case false => Future.successful(None)
-          }
-        }.foreach { id =>
-          toolbar.getMenu.clear()
-          id.foreach(toolbar.inflateMenu)
-        }
-      case _ => toolbar.getMenu.clear()
+    (for {
+      (convId, isConvActive) <- convController.currentConv.map(c => (c.id, c.isActive))
+      isGroup                <- Signal.future(convController.isGroup(convId))
+      participantsNumber     <- Signal.future(convController.participantsIds(convId).map(_.size))
+      acc                    <- zms.map(_.selfUserId)
+      call                   <- callController.currentCallOpt
+      isCallActive           = call.exists(_.convId == convId) && call.exists(_.account == acc)
+      isTeam                 <- accountsController.isTeam
+    } yield {
+      if (isCallActive || !isConvActive)
+        Option.empty[Int]
+      else if (!isGroup || (isTeam && participantsNumber <= CallingService.VideoCallMaxMembers))
+        Some(R.menu.conversation_header_menu_video)
+      else
+        Some(R.menu.conversation_header_menu_audio)
+    }).onUi { id =>
+      toolbar.getMenu.clear()
+      id.foreach(toolbar.inflateMenu)
     }
 
     convChange.onUi {
@@ -285,7 +288,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       override def onMenuItemClick(item: MenuItem): Boolean =
         item.getItemId match {
           case R.id.action_audio_call | R.id.action_video_call =>
-            callStartController.startCallInCurrentConv(withVideo = item.getItemId == R.id.action_video_call)
+            callStartController.startCallInCurrentConv(withVideo = item.getItemId == R.id.action_video_call, forceOption = true)
             cursorView.closeEditMessage(false)
             true
           case _ => false
@@ -509,6 +512,8 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       case AssetIntentsManager.IntentType.CAMERA =>
         sendImage(uri)
         extendedCursorContainer.close(true)
+      case intentType =>
+        warn(s"Unrecognized intent type: $intentType")
     }
 
     override def openIntent(intent: Intent, intentType: AssetIntentsManager.IntentType): Unit = {

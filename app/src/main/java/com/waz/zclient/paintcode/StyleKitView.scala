@@ -22,10 +22,16 @@ import android.graphics.{Canvas, Color, RectF}
 import android.util.AttributeSet
 import android.view.View
 import com.waz.zclient.R
+import com.waz.zclient.paintcode.StyleKitView.StyleKitDrawMethod
 
 trait StyleKitView {
 
 }
+
+object StyleKitView {
+  type StyleKitDrawMethod = (Canvas, RectF, WireStyleKit.ResizingBehavior, Int) => Unit
+}
+
 
 class RestoreIconView(context: Context, attrs: AttributeSet, defStyleAttr: Int) extends View(context, attrs, defStyleAttr) with StyleKitView  {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
@@ -38,6 +44,34 @@ class RestoreIconView(context: Context, attrs: AttributeSet, defStyleAttr: Int) 
 
   override def onDraw(canvas: Canvas): Unit = {
     WireStyleKit.drawRestore(canvas, new RectF(getPaddingLeft, getPaddingTop, getWidth - getPaddingRight, getHeight - getPaddingBottom), WireStyleKit.ResizingBehavior.AspectFit, color)
+  }
+
+  def setColor(color: Int): Unit = {
+    this.color = color
+    invalidate()
+  }
+}
+
+class GenericStyleKitView(context: Context, attrs: AttributeSet, defStyleAttr: Int) extends View(context, attrs, defStyleAttr) with StyleKitView  {
+  def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
+  def this(context: Context) = this(context, null, 0)
+
+  private val a = Option(attrs).map(a => getContext.obtainStyledAttributes(a, R.styleable.StyleKitView))
+  private var color = a.map(_.getColor(R.styleable.StyleKitView_drawableColor, Color.WHITE)).getOrElse(Color.WHITE)
+
+  def setSoftwareLayer(enabled: Boolean): Unit = if (enabled) setLayerType(View.LAYER_TYPE_SOFTWARE, null) else setLayerType(View.LAYER_TYPE_HARDWARE, null)
+
+  setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+
+  var onDrawMethod: Option[StyleKitDrawMethod] = None
+
+  def setOnDraw(fun:StyleKitDrawMethod): Unit = {
+    onDrawMethod = Some(fun)
+    invalidate()
+  }
+
+  override def onDraw(canvas: Canvas): Unit = {
+    onDrawMethod.foreach(_(canvas, new RectF(getPaddingLeft, getPaddingTop, getWidth - getPaddingRight, getHeight - getPaddingBottom), WireStyleKit.ResizingBehavior.AspectFit, color))
   }
 
   def setColor(color: Int): Unit = {

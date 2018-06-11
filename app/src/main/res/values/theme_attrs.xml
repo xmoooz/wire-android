@@ -84,6 +84,7 @@
     <attr name="circularIconButtonGreen" format="reference" />
     <attr name="circularIconButtonRed" format="reference" />
     <attr name="wireBackground" format="reference" />
+    <attr name="wireBackgroundColor" format="color" />
     <attr name="wireBackgroundAsTextColor" format="reference" />
     <attr name="strongBackground" format="reference" />
     <attr name="wireDivider" format="reference" />
@@ -92,6 +93,7 @@
     <attr name="wireSecondaryTextColor" format="color" />
     <attr name="wirePrimaryTextColorReverted" format="color" />
     <attr name="thinDividerColor" format="color" />
+    <attr name="backNavigationIcon" format="color" />
 
     <!-- StartUI error labels -->
     <attr name="startUiErrorLabel" format="reference" />
@@ -115,6 +117,10 @@
     <attr name="callingChatheadInitials" format="reference" />
     <attr name="callingChatheadFooter" format="reference" />
     <attr name="callingControlButtonLabel" format="reference" />
+    <attr name="callButtonBackground" format="reference" />
+    <attr name="callIconDisabledColor" format="color" />
+    <attr name="callTextDisabledColor" format="color" />
+    <attr name="callIconDisabledActivatedColor" format="color" />
 
     <!-- OTR -->
     <attr name="otrClientLink" format="reference" />

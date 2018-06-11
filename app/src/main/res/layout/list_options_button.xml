@@ -24,7 +24,7 @@
               android:layout_width="match_parent"
               android:layout_height="@dimen/menu_item_height"
               style="?wireBackground"
-              android:layout_marginTop="@dimen/participants_options_button_margin_top"
+              android:layout_marginTop="@dimen/wire__padding__8"
     >
 
     <ImageView
@@ -62,7 +62,6 @@
         android:layout_centerVertical="true"
         android:layout_toEndOf="@id/icon"
         android:layout_toStartOf="@id/next_indicator"
-        android:text="@string/guest_options_title"
         />
 
 </RelativeLayout>

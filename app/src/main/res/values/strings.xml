@@ -47,7 +47,7 @@
     <string name="phone_invalid_format_message">Please enter a valid phone number</string>
 
     <string name="phone_password_exists_header">Password exists</string>
-    <string name="phone_password_exists_message">This account already has a password and email associated. Please login by email.</string>
+    <string name="phone_password_exists_message">This account already has a password and email associated. Please log in by email.</string>
 
     <string name="invalid_code_header">Invalid code</string>
     <string name="incorrect_code_header">Incorrect Code</string>
@@ -133,6 +133,12 @@
     <string name="people_picker__guest_label">Guest</string>
     <string name="people_picker__search_people">PEOPLE</string>
     <string name="people_picker__search_services">SERVICES</string>
+
+    <string name="receive_news_and_offers_request_title">Newsletter</string>
+    <string name="receive_news_and_offers_request_body">Do you want to receive news and product updates from Wire via email? You can unsubscribe at any time.</string>
+
+    <string name="crashes_and_analytics_request_title">Help us make Wire better</string>
+    <string name="crashes_and_analytics_request_body">Sending anonymous usage and crash reports helps us to improve our products and services. We do not use this information for anything else.</string>
 
     <!-- Bots / Integrations / Services -->
     <string name="integrations_picker__section_title">Services</string>
@@ -222,7 +228,9 @@
     <string name="content__otr__conversation_verified">Conversation verified</string>
     <string name="content__otr__conversation_unverified">Conversation not verified</string>
     <string name="content__otr__message_error">A MESSAGE FROM [[%1$s]] WAS NOT RECEIVED. _WHY?_</string>
+    <string name="content__otr__message_error_you">A MESSAGE FROM YOU WAS NOT RECEIVED. _WHY?_</string>
     <string name="content__otr__identity_changed_error">[[%1$s]]\'S DEVICE IDENTITY CHANGED. UNDELIVERED MESSAGE. _LEARN MORE_</string>
+    <string name="content__otr__identity_changed_error_you">YOUR DEVICE IDENTITY CHANGED. UNDELIVERED MESSAGE. _LEARN MORE_</string>
     <string name="content__otr__added_new_device__message">[[%1$s]] STARTED USING A _NEW DEVICE_</string>
     <string name="content__otr__start_this_device__message">[[YOU]] STARTED USING _THIS DEVICE_</string>
     <string name="content__otr__all_fingerprints_verified">ALL FINGERPRINTS ARE VERIFIED</string>
@@ -290,13 +298,14 @@
     <!-- Calling/voice -->
     <string name="calling__slow_connection__title">Slow Internet</string>
     <string name="calling__slow_connection__message">Your Internet connection is too slow to call right now. Please try again later.</string>
-    <string name="calling__cannot_start__title">Calling not available</string>
+    <string name="calling__cannot_start__title">Microphone required</string>
     <string name="calling__cannot_start__message">To call, hang up your current call.</string>
-    <string name="calling__cannot_start__no_permission__message">To call, grant permission to access the microphone.</string>
+    <string name="calling__cannot_start__no_permission__message">Go to Settings and allow Wire to access the microphone.</string>
+    <string name="calling__cannot_start__cancel__message">CANCEL</string>
+    <string name="calling__cannot_start__no_camera_permission__message">Wire doesn\'t have access to the camera</string>
     <string name="calling__cannot_start__ongoing_different_kind__title">%1$s is busy</string>
     <string name="calling__cannot_start__ongoing_different_kind__message">Try again later</string>
-    <string name="calling__cannot_start__no_video_permission__message">To video call, grant permission to access the microphone and camera.</string>
-    <string name="calling__cannot_start__button_settings">Settings</string>
+    <string name="calling__cannot_start__button_settings">SETTINGS</string>
     <string name="calling__video_call__slow_connection__message">You might experience issues during the call</string>
     <string name="incoming__controls__incoming__decline">DECLINE</string>
     <string name="incoming__controls__incoming__accept">ACCEPT</string>
@@ -304,23 +313,21 @@
     <string name="incoming__controls__ongoing__speaker">SPEAKER</string>
     <string name="incoming__controls__ongoing__mute">MUTE</string>
     <string name="incoming__controls__ongoing__video">VIDEO</string>
-    <string name="ongoing__other_turned_off_video">%1$s TURNED OFF THE VIDEO</string>
-    <string name="ongoing__other_unable_to_send_video">%1$s IS UNABLE TO SEND VIDEO</string>
+    <string name="incoming__controls__ongoing__flip">FLIP</string>
     <string name="ongoing__poor_connection_message">VIDEO STOPPED DUE TO POOR CONNECTION</string>
-    <string name="ongoing__connecting">CONNECTING&#8230;</string>
     <string name="calling__self_preview_unavailable">VIDEO OFF</string>
     <string name="calling__self_preview_unavailable_long">CAMERA NOT AVAILABLE</string>
 
-    <string name="calling__header__joining">joining</string>
-    <string name="calling__header__outgoing_subtitle">ringing</string>
-    <string name="calling__header__outgoing_video_subtitle">ringing</string>
-    <string name="calling__header__incoming_subtitle">calling</string>
-    <string name="calling__header__incoming_subtitle__video">video calling</string>
+    <string name="calling__header__joining">Connecting…</string>
+    <string name="calling__header__outgoing_subtitle">Ringing…</string>
+    <string name="calling__header__outgoing_video_subtitle">Ringing…</string>
+    <string name="calling__header__incoming_subtitle">Calling…</string>
+    <string name="calling__header__incoming_subtitle__video">Calling…</string>
 
-    <string name="call_banner_joining">JOINING</string>
-    <string name="call_banner_outgoing">RINGING</string>
-    <string name="call_banner_incoming">CALLING</string>
-    <string name="call_banner_incoming_video">VIDEO CALLING</string>
+    <string name="call_banner_joining">CONNECTING…</string>
+    <string name="call_banner_outgoing">RINGING…</string>
+    <string name="call_banner_incoming">CALLING…</string>
+    <string name="call_banner_incoming_video">CALLING…</string>
     <string name="call_banner_tap_to_return_to_call">TAP TO RETURN TO CALL</string>
 
     <string name="calling_ongoing_call_title">Ongoing call</string>
@@ -330,6 +337,7 @@
 
     <string name="calling_ongoing_call_join_message">A call is active in another conversation.\nJoining this call will hang up the other one.</string>
     <string name="calling_ongoing_call_join_anyway">JOIN ANYWAY</string>
+    <string name="calling_ongoing_call_participants_header">PARTICIPANTS</string>
 
     <string name="calling_ongoing_call_audio_message">You can\'t record an audio message while on a call</string>
     <string name="calling_ongoing_call_video_message">You can\'t record a video message while on a call</string>
@@ -356,7 +364,6 @@
     <string name="connect_request__ignore_button__text">Ignore</string>
     <string name="content__message__connect_request__footer">CONNECTED</string>
     <string name="content__message__connect_request__auto_connect__footer">AUTO-CONNECTED. _LEARN MORE_</string>
-    <string name="content__message__connect_request__user_info">%1$s in Contacts</string>
 
     <!-- Otr-->
     <plurals name="conversation__degraded_confirmation__header__single_user">
@@ -478,7 +485,6 @@
     <string name="pref_developer_screen_title">Developer Settings</string>
     <string name="pref_dev_avs_screen_title">AVS Settings</string>
     <string name="pref_profile_screen_title">Profile</string>
-    <string name="pref_backup_screen_title">Back Up Conversations</string>
 
     <!-- Account -->
     <string name="pref_account_screen_title">Account</string>
@@ -489,6 +495,7 @@
     <string name="pref_account_actions_category_title">Actions</string>
     <string name="pref_account_personal_category_title">Personal</string>
     <string name="pref_account_appearance_category_title">Appearance</string>
+    <string name="pref_account_personal_information_category_title">Personal Information</string>
     <string name="pref_account_conversations_category_title">History</string>
     <string name="pref_account_details_category_summary">People can find you with these details.</string>
     <string name="pref_account_personal_category_summary">The information is not visible to anyone else</string>
@@ -513,6 +520,15 @@
     <string name="pref_account_password_title">Reset Password</string>
     <string name="pref_account_edit_name_empty_warning">Name must have 2 or more characters</string>
     <string name="pref_account_edit_name_empty_verify">OK</string>
+    <string name="pref_account_data_usage_permissions">Data Usage Permissions</string>
+    <string name="pref_backup_screen_title">Back Up Conversations</string>
+
+    <!-- Data Usage Permissions -->
+
+    <string name="pref_advanced_send_anonymous_data_title">Send Anonymous Data</string>
+    <string name="pref_advanced_send_anonymous_data_summary">Help make Wire better by sending anonymous usage and crash reports.</string>
+    <string name="pref_advanced_receive_news_and_offers_title">Receive Newsletter</string>
+    <string name="pref_advanced_receive_news_and_offers_summary">Receive news and product updates from Wire via email.</string>
 
     <!-- Options -->
     <string name="pref_options_dark_theme_title">Dark theme</string>
@@ -1269,7 +1285,9 @@
 
     <string name="app_entry_dialog_accept">ACCEPT</string>
     <string name="app_entry_dialog_cancel">CANCEL</string>
+    <string name="app_entry_dialog_not_now">NOT NOW</string>
     <string name="app_entry_dialog_view">VIEW</string>
+    <string name="app_entry_dialog_privacy_policy">PRIVACY POLICY</string>
 
     <string name="app_entry_email_sent">Email sent</string>
     <string name="teams_set_username_subtitle">Usernames help people find you.</string>
@@ -1320,6 +1338,7 @@
     <string name="open_this_conversation_to_people_outside_your_team">Open this conversation to people outside your team.</string>
     <string name="allow_guests">Allow Guests</string>
     <string name="guest_options_title">Guest Options</string>
+    <string name="show_all_participants">Show all (%1$s)</string>
 
     <string name="allow_guests_error_title">Something went wrong</string>
     <string name="allow_guests_error_body">Could not allow guests. Please try again.</string>
@@ -1381,5 +1400,8 @@
     <string name="backup_import_error_unsupported_version">This backup was created by a newer or outdated version of Wire and cannot be restored here.</string>
     <string name="backup_import_error_wrong_account_title">Wrong backup</string>
     <string name="backup_import_error_wrong_account">You cannot restore history from a different account.</string>
-
+    <string name="video_paused">Video paused</string>
+    <string name="calling_degraded_title">New device</string>
+    <string name="call_info_text">Up to 128 people can join a group conversation. Video calls work in groups of 4 or less.</string>
+    <string name="too_many_people_video_toast">Video calls only work in groups of 4 or less.</string>
 </resources>

@@ -35,7 +35,7 @@ import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, EventStream, Signal}
 import com.waz.utils.returning
 import com.waz.zclient._
-import com.waz.zclient.appentry.AppEntryActivity
+import com.waz.zclient.appentry.{AppEntryActivity, DialogErrorMessage}
 import com.waz.zclient.common.controllers.global.PasswordController
 import com.waz.zclient.common.views.ImageAssetDrawable
 import com.waz.zclient.common.views.ImageAssetDrawable.{RequestBuilder, ScaleType}
@@ -45,7 +45,7 @@ import com.waz.zclient.preferences.views.{EditNameDialog, PictureTextButton, Tex
 import com.waz.zclient.ui.utils.TextViewUtils._
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.ViewUtils._
-import com.waz.zclient.utils.{BackStackKey, BackStackNavigator, ContextUtils, RichView, StringUtils, UiStorage}
+import com.waz.zclient.utils.{BackStackKey, BackStackNavigator, RichView, StringUtils, UiStorage}
 
 trait AccountView {
   val onNameClick:          EventStream[Unit]
@@ -58,6 +58,7 @@ trait AccountView {
   val onLogoutClick:        EventStream[Unit]
   val onDeleteClick:        EventStream[Unit]
   val onBackupClick:        EventStream[Unit]
+  val onDataUsageClick:     EventStream[Unit]
 
   def setName(name: String): Unit
   def setHandle(handle: String): Unit
@@ -85,6 +86,7 @@ class AccountViewImpl(context: Context, attrs: AttributeSet, style: Int) extends
   val logoutButton        = findById[TextButton](R.id.preferences_account_logout)
   val deleteAccountButton = findById[TextButton](R.id.preferences_account_delete)
   val backupButton        = findById[TextButton](R.id.preferences_backup)
+  val dataUsageButton     = findById[TextButton](R.id.preferences_data_usage_permissions)
 
   override val onNameClick          = nameButton.onClickEvent.map(_ => ())
   override val onHandleClick        = handleButton.onClickEvent.map(_ => ())
@@ -96,6 +98,7 @@ class AccountViewImpl(context: Context, attrs: AttributeSet, style: Int) extends
   override val onLogoutClick        = logoutButton.onClickEvent.map(_ => ())
   override val onDeleteClick        = deleteAccountButton.onClickEvent.map(_ => ())
   override val onBackupClick        = backupButton.onClickEvent.map(_ => ())
+  override val onDataUsageClick     = dataUsageButton.onClickEvent.map(_ => ())
 
   override def setName(name: String) = nameButton.setTitle(name)
 
@@ -203,8 +206,9 @@ class AccountViewController(view: AccountView)(implicit inj: Injector, ec: Event
   view.onEmailClick.onUi { _ =>
     import Threading.Implicits.Ui
     accounts.activeAccountManager.head.map(_.foreach(_.hasPassword().foreach {
-      case None => ContextUtils.showToast("Something went wrong, please try again later")
-      case Some(hasPass) =>
+      case Left(ex) => val (h, b) = DialogErrorMessage.genericError(ex.code)
+        showErrorDialog(h, b)
+      case Right(hasPass) =>
         showPrefDialog(
           returning(ChangeEmailDialog(hasPassword = hasPass)) {
             _.onEmailChanged { e =>
@@ -313,6 +317,10 @@ class AccountViewController(view: AccountView)(implicit inj: Injector, ec: Event
             def onClick(dialog: DialogInterface, which: Int) = dialog.dismiss()
           }, true)
     }(Threading.Ui)
+  }
+
+  view.onDataUsageClick.onUi { _ =>
+    navigator.goTo(DataUsagePermissionsKey())
   }
 
   private def showPrefDialog(f: Fragment, tag: String) = {

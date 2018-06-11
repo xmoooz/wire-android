@@ -18,6 +18,7 @@
 package com.waz.zclient.messages.parts
 
 import android.content.Context
+import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.{GridLayout, LinearLayout}
@@ -34,6 +35,7 @@ import com.waz.zclient.common.views.ChatheadView
 import com.waz.zclient.messages.MessageView.MsgBindOptions
 import com.waz.zclient.messages.UsersController.DisplayName.{Me, Other}
 import com.waz.zclient.messages._
+import com.waz.zclient.paintcode.ConversationIcon
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.{R, ViewHelper}
 import com.waz.zclient.utils.RichView
@@ -55,11 +57,11 @@ class MemberChangePartView(context: Context, attrs: AttributeSet, style: Int) ex
   val gridView: MembersGridView       = findById(R.id.people_changed_grid)
   val position = Signal[Int]()
 
-  val iconGlyph = message map { msg =>
+  val iconGlyph: Signal[Either[Int, Drawable]] = message map { msg =>
     msg.msgType match {
-      case Message.Type.MEMBER_JOIN if msg.firstMessage => R.string.glyph__conversation
-      case Message.Type.MEMBER_JOIN =>                     R.string.glyph__plus
-      case _ =>                                            R.string.glyph__minus
+      case Message.Type.MEMBER_JOIN if msg.firstMessage => Right(ConversationIcon(R.color.background_graphite))
+      case Message.Type.MEMBER_JOIN =>                     Left(R.string.glyph__plus)
+      case _ =>                                            Left(R.string.glyph__minus)
     }
   }
 
@@ -106,7 +108,10 @@ class MemberChangePartView(context: Context, attrs: AttributeSet, style: Int) ex
     .map(_.map(toPx))
     .onUi(_.foreach(this.setMarginTop))
 
-  iconGlyph { messageView.setIconGlyph }
+  iconGlyph {
+    case Left(i) => messageView.setIconGlyph(i)
+    case Right(d) => messageView.setIcon(d)
+  }
 
   linkText.on(Threading.Ui) { messageView.setText }
 
