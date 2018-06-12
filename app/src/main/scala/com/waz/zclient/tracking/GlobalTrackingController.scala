@@ -72,7 +72,7 @@ class GlobalTrackingController(implicit inj: Injector, cxt: WireContext, eventCo
   val zMessaging = inject[Signal[ZMessaging]]
   val currentConv = inject[Signal[ConversationData]]
 
-  private def trackingEnabled = Future.successful(true)//ZMessaging.globalModule.flatMap(_.prefs.preference(analyticsPrefKey).apply())
+  private def trackingEnabled = ZMessaging.globalModule.flatMap(_.prefs.preference(analyticsPrefKey).apply())
 
   inject[UiLifeCycle].uiActive.onChanged {
     case false =>
