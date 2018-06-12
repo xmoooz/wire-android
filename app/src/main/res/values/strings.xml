@@ -765,7 +765,7 @@
     <!-- System notifications -->
     <string name="system_notification__group_call_title">%1$s in %2$s</string>
     <string name="system_notification__silence_call">Decline</string>
-    <string name="system_notification__join_call">Join call</string>
+    <string name="system_notification__join_call">Accept</string>
     <string name="system_notification__leave_call">End call</string>
     <string name="system_notification__outgoing">Calling</string>
     <string name="system_notification__outgoing_video">Video calling</string>
@@ -773,6 +773,10 @@
     <string name="system_notification__incoming_video">Is video calling</string>
     <string name="system_notification__ongoing">On a call</string>
     <string name="number_of_conversations_string">ARCHIVE</string>
+    <string name="system_notification__calling_one">Calling…</string>
+    <string name="system_notification__calling_group">%1$s is calling…</string>
+    <string name="system_notification__video_calling_one">Calling with video…</string>
+    <string name="system_notification__video_calling_group">%1$s is calling with video…</string>
 
     <!-- Notification actions -->
     <string name="notification__action__call">Call</string>
