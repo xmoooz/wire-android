@@ -77,6 +77,12 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     case false => Signal.const(false)
   }
 
+  private var lastCallZms = Option.empty[ZMessaging]
+  callingZmsOpt.onUi { zms =>
+    lastCallZms.foreach(_.flowmanager.setVideoPreview(null))
+    lastCallZms = zms
+  }
+
   val callStateOpt          = currentCallOpt.map(_.flatMap(_.state))
   val callState             = callStateOpt.collect { case Some(s) => s }
   val callStateCollapseJoin = currentCall.map(_.stateCollapseJoin)
