@@ -81,7 +81,8 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
       established    <- controller.isCallEstablished
       showVideo      <- controller.isVideoCall
       startedAsVideo <- controller.startedAsVideo
-    } yield (established && (showVideo || isTeam || !isGroup)) || (incoming && startedAsVideo)).onUi(button.setEnabled)
+      members        <- controller.conversationMembers.map(_.size)
+    } yield members <= 4 && ((established && (showVideo || isTeam || !isGroup)) || (incoming && startedAsVideo))).onUi(button.setEnabled)
   }
 
   returning(findById[CallControlButtonView](R.id.speaker_flip_call)) { button =>
