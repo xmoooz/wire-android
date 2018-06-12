@@ -77,11 +77,10 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
       conv           <- controller.conversation
       isGroup        <- Signal.future(zms.conversations.isGroupConversation(conv.id))
       isTeam         =  zms.teamId.isDefined
-      incoming       <- controller.isCallIncoming
       established    <- controller.isCallEstablished
       showVideo      <- controller.isVideoCall
-      startedAsVideo <- controller.startedAsVideo
-    } yield (established && (showVideo || isTeam || !isGroup)) || (incoming && startedAsVideo)).onUi(button.setEnabled)
+      members        <- controller.conversationMembers.map(_.size)
+    } yield members <= CallingService.VideoCallMaxMembers && ((established && (isTeam || !isGroup)) || showVideo)).onUi(button.setEnabled)
   }
 
   returning(findById[CallControlButtonView](R.id.speaker_flip_call)) { button =>
@@ -154,13 +153,9 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
 
   private def video(): Future[Unit] = async {
     onButtonClick ! {}
-    val isVideoOn            = await(controller.isVideoCall.head)
-    val memberCount          = await(controller.conversationMembers.map(_.size).head)
     val hasCameraPermissions = await(permissions.requestAllPermissions(Set(CAMERA)))
 
-    if (!isVideoOn && memberCount > CallingService.VideoCallMaxMembers)
-        showToast(R.string.too_many_people_video_toast)
-    else if (!hasCameraPermissions)
+    if (!hasCameraPermissions)
       showPermissionsErrorDialog(
         R.string.calling__cannot_start__title,
         R.string.calling__cannot_start__no_camera_permission__message
