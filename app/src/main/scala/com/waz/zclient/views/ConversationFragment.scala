@@ -249,7 +249,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       isCallActive           = call.exists(_.convId == convId) && call.exists(_.account == acc)
       isTeam                 <- accountsController.isTeam
     } yield {
-      if (isCallActive || !isConvActive)
+      if (isCallActive || !isConvActive || participantsNumber <= 1)
         Option.empty[Int]
       else if (!isGroup || (isTeam && participantsNumber <= CallingService.VideoCallMaxMembers))
         Some(R.menu.conversation_header_menu_video)
