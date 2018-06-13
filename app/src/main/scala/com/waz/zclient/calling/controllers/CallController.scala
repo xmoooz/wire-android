@@ -151,6 +151,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     fm     <- flowManager
     conv   <- conversation
     device <- currentCaptureDevice
+    VideoState.Started <- videoSendState
   } yield (fm, conv, device)) {
     case (fm, conv, Some(currentDevice)) => fm.setVideoCaptureDevice(conv.remoteId, currentDevice.id)
     case _ =>
