@@ -28,7 +28,6 @@ import com.waz.permissions.PermissionsService
 import com.waz.service.call.Avs.VideoState._
 import com.waz.service.call.CallInfo.CallState.{SelfCalling, SelfConnected, SelfJoining}
 import com.waz.service.call.{CallInfo, CallingService}
-import com.waz.threading.Threading.Implicits.Ui
 import com.waz.utils.events.{EventStream, Signal, SourceStream}
 import com.waz.utils.returning
 import com.waz.zclient.calling.controllers.CallController
@@ -44,6 +43,8 @@ import scala.concurrent.Future
 class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAttr: Int) extends GridLayout(context, attrs, defStyleAttr) with ViewHelper {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null)
+
+  import com.waz.threading.Threading.Implicits.Ui
 
   inflate(R.layout.calling__controls__grid, this)
   setColumnCount(3)
