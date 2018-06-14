@@ -69,13 +69,14 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
         zs.find(_.selfUserId == account).fold2(Signal.const(conv -> Option.empty[Bitmap]), z => getBitmapSignal(z, caller).map(conv -> _))
       }: _*).map(_.toMap)
       notInfo <- Signal.sequence(allCallsF.map { case (conv, (caller, account)) =>
-        zs.find(_.selfUserId == account).fold2(Signal.const(Option.empty[CallInfo], "", ""),
+        zs.find(_.selfUserId == account).fold2(Signal.const(Option.empty[CallInfo], "", "", false),
           z => Signal(z.calling.availableCalls.map(_.get(conv)),
             z.usersStorage.optSignal(caller).map(_.map(_.name).getOrElse("")),
-            z.convsStorage.optSignal(conv).map(_.map(_.displayName).getOrElse("")))).map(conv -> _)
+            z.convsStorage.optSignal(conv).map(_.map(_.displayName).getOrElse("")),
+            Signal.future(z.conversations.isGroupConversation(conv)))).map(conv -> _)
       }: _*)
       notificationData = notInfo.collect {
-        case (convId, (Some(callInfo), title, msg)) =>
+        case (convId, (Some(callInfo), title, msg, isGroup)) =>
           val action = callInfo.state match {
             case Some(OtherCalling) => NotificationAction.DeclineOrJoin
             case Some(SelfConnected | SelfCalling | SelfJoining) => NotificationAction.Leave
@@ -90,7 +91,9 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
             msg,
             bitmaps.getOrElse(convId, None),
             curCallId.contains(convId),
-            action)
+            action,
+            callInfo.isVideoCall,
+            isGroup)
       }
     } yield notificationData.sortWith {
       case (cn1, _) if curCallId.contains(cn1.convId) => false
@@ -106,15 +109,23 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
     toCancel.foreach(notificationManager.cancel(CallNotificationTag, _))
 
     nots.foreach { not =>
+      val title = if (not.isGroup) not.convName else not.caller
+      val message = (not.isGroup, not.videoCall) match {
+        case (true, true)   => getString(R.string.system_notification__video_calling_group, not.caller)
+        case (true, false)  => getString(R.string.system_notification__calling_group, not.caller)
+        case (false, true)  => getString(R.string.system_notification__video_calling_one)
+        case (false, false) => getString(R.string.system_notification__calling_one)
+      }
+
       val builder = DeprecationUtils.getBuilder(cxt)
         .setSmallIcon(R.drawable.call_notification_icon)
         .setLargeIcon(not.bitmap.orNull)
-        .setContentTitle(not.title)
-        .setContentText(not.msg)
+        .setContentTitle(title)
+        .setContentText(message)
         .setContentIntent(OpenCallingScreen())
         .setStyle(new NotificationCompat.BigTextStyle()
-          .setBigContentTitle(not.title)
-          .bigText(not.msg))
+          .setBigContentTitle(title)
+          .bigText(message))
         .setCategory(NotificationCompat.CATEGORY_CALL)
         .setPriority(if (not.isMainCall) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_MAX) //incoming calls go higher up in the list)
         .setOnlyAlertOnce(true)
@@ -182,11 +193,13 @@ object CallingNotificationsController {
                               convId:        ConvId,
                               accountId:     UserId,
                               callStartTime: Instant,
-                              title:         String,
-                              msg:           String,
+                              caller:        String,
+                              convName:      String,
                               bitmap:        Option[Bitmap],
                               isMainCall:    Boolean,
-                              action:        NotificationAction)
+                              action:        NotificationAction,
+                              videoCall:     Boolean,
+                              isGroup:       Boolean)
 
 
   object NotificationAction extends Enumeration {
