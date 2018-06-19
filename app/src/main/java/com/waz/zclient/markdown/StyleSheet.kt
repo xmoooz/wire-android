@@ -158,77 +158,87 @@ public class StyleSheet {
 
     private val Int.scaled: Int get() = (this * screenDensity).toInt()
 
-    fun spanFor(heading: Heading): GroupSpan =
-        HeadingSpan(
-            heading.level,
-            headingSizeMultipliers[heading.level] ?: 1f,
-            paragraphSpacingBefore,
-            paragraphSpacingAfter
-        )
-
-    fun spanFor(paragraph: Paragraph): GroupSpan {
-        return if (paragraph.isOuterMost)
-            ParagraphSpan(paragraphSpacingBefore, paragraphSpacingAfter)
-        else
-            ParagraphSpan(0, 0)
+    /**
+     * Returns the configured `GroupSpan` for the given node, depending on the node type.
+     */
+    fun spanFor(node: Node): GroupSpan {
+        when (node) {
+            is Heading -> {
+                return HeadingSpan(
+                    node.level,
+                    headingSizeMultipliers[node.level] ?: 1f,
+                    paragraphSpacingBefore,
+                    paragraphSpacingAfter
+                )
+            }
+            is Paragraph -> {
+                return if (node.isOuterMost)
+                    ParagraphSpan(paragraphSpacingBefore, paragraphSpacingAfter)
+                else
+                    ParagraphSpan(0, 0)
+            }
+            is BlockQuote -> {
+                return BlockQuoteSpan(
+                    quoteColor,
+                    quoteStripeWidth,
+                    quoteGapWidth,
+                    paragraphSpacingBefore,
+                    paragraphSpacingAfter,
+                    screenDensity
+                )
+            }
+            is OrderedList -> {
+                return OrderedListSpan(node.startNumber)
+            }
+            is BulletList -> {
+                return BulletListSpan(node.bulletMarker)
+            }
+            is ListItem -> {
+                return ListItemSpan()
+            }
+            is FencedCodeBlock -> {
+                return FencedCodeBlockSpan(codeColor, codeBlockIndentation.scaled)
+            }
+            is IndentedCodeBlock -> {
+                return IndentedCodeBlockSpan(codeColor, codeBlockIndentation.scaled)
+            }
+            is HtmlBlock -> {
+                return HtmlBlockSpan(codeColor, codeBlockIndentation.scaled)
+            }
+            is Link -> {
+                return LinkSpan(node.destination, linkColor, onClickLink)
+            }
+            is Image -> {
+                return ImageSpan(node.destination, linkColor, onClickLink)
+            }
+            is Emphasis -> {
+                return EmphasisSpan()
+            }
+            is StrongEmphasis -> {
+                return StrongEmphasisSpan()
+            }
+            is Code -> {
+                return CodeSpan(codeColor)
+            }
+            is HtmlInline -> {
+                return HtmlInlineSpan(codeColor)
+            }
+            is Text -> {
+                return TextSpan(baseFontSize, baseFontColor)
+            }
+            is SoftLineBreak -> {
+                return SoftLineBreakSpan()
+            }
+            is HardLineBreak -> {
+                return HardLineBreakSpan()
+            }
+            is ThematicBreak -> {
+                return ThematicBreakSpan()
+            }
+            else -> {
+                return DocumentSpan()
+            }
+        }
     }
-
-    fun spanFor(blockQuote: BlockQuote): GroupSpan =
-        BlockQuoteSpan(
-            quoteColor,
-            quoteStripeWidth,
-            quoteGapWidth,
-            paragraphSpacingBefore,
-            paragraphSpacingAfter,
-            screenDensity
-        )
-
-    fun spanFor(orderedList: OrderedList): GroupSpan =
-        OrderedListSpan(orderedList.startNumber)
-
-    fun spanFor(bulletList: BulletList): GroupSpan =
-        BulletListSpan(bulletList.bulletMarker)
-
-    fun spanFor(listItem: ListItem): GroupSpan =
-        ListItemSpan()
-
-    fun spanFor(fencedCodeBlock: FencedCodeBlock): GroupSpan =
-        FencedCodeBlockSpan(codeColor, codeBlockIndentation.scaled)
-
-    fun spanFor(indentedCodeBlock: IndentedCodeBlock): GroupSpan =
-        IndentedCodeBlockSpan(codeColor, codeBlockIndentation.scaled)
-
-    fun spanFor(htmlBlock: HtmlBlock): GroupSpan =
-        HtmlBlockSpan(codeColor, codeBlockIndentation.scaled)
-
-    fun spanFor(link: Link): GroupSpan =
-        LinkSpan(link.destination, linkColor, onClickLink)
-
-    fun spanFor(image: Image): GroupSpan =
-        ImageSpan(image.destination, linkColor, onClickLink)
-
-    fun spanFor(emphasis: Emphasis): GroupSpan =
-        EmphasisSpan()
-
-    fun spanFor(strongEmphasis: StrongEmphasis): GroupSpan =
-        StrongEmphasisSpan()
-
-    fun spanFor(code: Code): GroupSpan =
-        CodeSpan(codeColor)
-
-    fun spanFor(htmlInline: HtmlInline): GroupSpan =
-        HtmlInlineSpan(codeColor)
-
-    fun spanFor(text: Text): GroupSpan =
-        TextSpan(baseFontSize, baseFontColor)
-
-    fun spanFor(softLineBreak: SoftLineBreak): GroupSpan =
-        SoftLineBreakSpan()
-
-    fun spanFor(hardLineBreak: HardLineBreak): GroupSpan =
-        HardLineBreakSpan()
-
-    fun spanFor(thematicBreak: ThematicBreak): GroupSpan =
-        ThematicBreakSpan()
 
 }
