@@ -33,6 +33,10 @@ import org.commonmark.renderer.NodeRenderer
  * A SpanRenderer instance traverses the syntax tree of a markdown document and constructs
  * a spannable string with the appropriate style spans for each markdown unit. The style
  * spans for each node in the tree are provided by a configured StyleSheet instance.
+ *
+ * NOTE: Because cursor positions are stored on a stack within TextWriter, it is critical that
+ * every call to save the cursor position must have a matching call to retrieve it. Unbalanced
+ * calls will lead to incorrect rendering.
  */
 class SpanRenderer(private val styleSheet: StyleSheet) : AbstractVisitor(), NodeRenderer {
 
@@ -192,38 +196,83 @@ class SpanRenderer(private val styleSheet: StyleSheet) : AbstractVisitor(), Node
         visitChildren(listItem)
         writeLineIfNeeded(listItem)
 
+        /*
+            Here comes the tricky part: To make sure that the indentation of a list item is correct,
+            we need to consider some cases. There are potentially three different indentations
+            required. The plain text list on the left should render like the list on the right:
+
+            1. first line                   1. first line
+            line after softbreak    ->         line after softbreak
+            - nested list                      - nested list
+
+            Suppose the margin is 10 points. The 10p tabstop ensures the 'f' is positioned 10p to
+            the right from the left side. The first line therefore needs 0p indentation for its
+            first line, but 10p for the rest of its lines in its paragraph (so wrapped text aligns
+            with the 'f'). The second line starts a new paragraph but has no tabstop, so it needs
+            10p indentation for all its lines. The nested list needs to be indented to align with
+            the 'f' too, but this is taken care of when that list is itself rendered.
+
+            So, we need to check if this list item contains a break, and if so, whether that break
+            comes from a softbreak or a nested list. We apply the first type of indentation to the
+            first paragraph and the second type of indentation from the second paragraph up to the
+            nested list (or to the end of the list item if no nested list exists).
+         */
+
+
         val start = writer.retrieveCursor()
+        val last = writer.cursor - 1
+        val startOfSecondParagraph: Int?
+        val startOfNestedList: Int?
 
-        // TODO: General clean up here
-
-        // if the item contains a break, then the first line of each paragraph is not
-        // correctly indented, so we must adjust it to match the rest of the lines.
         val breakIndex = writer.toString().indexOf('\n', start)
 
-        // there is a break & it's not the last char
-        if (-1 < breakIndex && breakIndex < writer.cursor - 1) {
-            // boundary is start of nested list if it exists, else end of this item.
-            // TODO: be more explicit about how to get the next occuring list. Here we just rely on the fact that list ranges are added in reverse order.
-            val boundary = listRanges.lastOrNull {
-                it.start > start && it.endInclusive <= writer.cursor
-            }?.start ?: writer.cursor
+        // break exists and is not last char in item
+        startOfSecondParagraph = if (breakIndex in start until last) breakIndex else null
 
-            // spans for first paragraph (up to abd including the break)
-            writer.set(LeadingMarginSpan.Standard(indentation, indentation + standardPrefixWidth), start, breakIndex + 1)
-            writer.set(TabStopSpan.Standard(tabLocation), start, breakIndex + 1)
+        // sort by start index ascending
+        listRanges.sortBy { it.start }
 
-            // TODO: is boundary a newline? It needs to be for paragraph spans
-            if (breakIndex != boundary) {
-                // spans for rest paragraphs
-                writer.set(LeadingMarginSpan.Standard(indentation + standardPrefixWidth), breakIndex, boundary)
+        startOfNestedList = listRanges.firstOrNull {
+            it.start > start && it.endInclusive <= writer.cursor
+        }?.start
+
+        var b1 = writer.cursor
+        var b2: Int? = null
+
+        when {
+            startOfSecondParagraph != null && startOfNestedList == null -> {
+                // up to second paragraph, then to end
+                b1 = startOfSecondParagraph + 1
+                b2 = writer.cursor
+            }
+            startOfSecondParagraph == null && startOfNestedList != null -> {
+                // up to nest list only
+                b1 = startOfNestedList
+                b2 = null
+            }
+            startOfSecondParagraph != null && startOfNestedList != null -> {
+                if (startOfSecondParagraph == startOfNestedList) {
+                    // up to nest list only
+                    b1 = startOfNestedList
+                    b2 = null
+                } else {
+                    // up to second paragraph, then to nested list
+                    b1 = startOfSecondParagraph + 1
+                    b2 = startOfNestedList
+                }
             }
         }
-        else {
-            // there is no break, no nested list, just apply the span to the whole item
-            writer.set(LeadingMarginSpan.Standard(indentation, indentation + standardPrefixWidth), start, writer.cursor)
-            writer.set(TabStopSpan.Standard(tabLocation), start, writer.cursor)
+
+        // indentation for first paragraph
+        writer.set(LeadingMarginSpan.Standard(indentation, indentation + standardPrefixWidth), start, b1)
+        writer.set(TabStopSpan.Standard(tabLocation), start, b1)
+
+        if (b2 != null) {
+            // indentation for second paragraph up to nested list or item end
+            writer.set(LeadingMarginSpan.Standard(indentation + standardPrefixWidth), b1, b2)
         }
 
+        // finally, the span for the whole item
         writer.set(styleSheet.spanFor(listItem), start)
     }
 
