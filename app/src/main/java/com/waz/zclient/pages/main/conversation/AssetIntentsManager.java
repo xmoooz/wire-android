@@ -19,6 +19,7 @@ package com.waz.zclient.pages.main.conversation;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -66,7 +67,7 @@ public class AssetIntentsManager {
         this.callback = callback;
     }
 
-    private void openDocument(String mimeType, IntentType tpe) {
+    private void openDocument(String mimeType, IntentType tpe, boolean allowMultiple) {
         if (BuildConfig.DEVELOPER_FEATURES_ENABLED) {
             // trying to load file from testing gallery,
             // this is needed because we are not able to override DocumentsUI on some android versions.
@@ -77,15 +78,19 @@ public class AssetIntentsManager {
             }
             Timber.i("Did not resolve testing gallery for intent: %s", intent.toString());
         }
-        callback.openIntent(new Intent(openDocumentAction()).setType(mimeType).addCategory(Intent.CATEGORY_OPENABLE), tpe);
+        Intent documentIntent = new Intent(openDocumentAction()).setType(mimeType).addCategory(Intent.CATEGORY_OPENABLE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2 && allowMultiple) {
+            documentIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        }
+        callback.openIntent(documentIntent, tpe);
     }
 
     public void openFileSharing() {
-        openDocument("*/*", IntentType.FILE_SHARING);
+        openDocument("*/*", IntentType.FILE_SHARING, true);
     }
 
     public void openBackupImport() {
-        openDocument("*/*", IntentType.BACKUP_IMPORT);
+        openDocument("*/*", IntentType.BACKUP_IMPORT, false);
     }
 
     public void captureVideo(Context context) {
@@ -99,11 +104,11 @@ public class AssetIntentsManager {
     }
 
     public void openGallery() {
-        openDocument(INTENT_GALLERY_TYPE, IntentType.GALLERY);
+        openDocument(INTENT_GALLERY_TYPE, IntentType.GALLERY, false);
     }
 
     public void openGalleryForSketch() {
-        openDocument(INTENT_GALLERY_TYPE, IntentType.SKETCH_FROM_GALLERY);
+        openDocument(INTENT_GALLERY_TYPE, IntentType.SKETCH_FROM_GALLERY, false);
     }
 
     public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -141,6 +146,11 @@ public class AssetIntentsManager {
         } else if (data != null) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
                 callback.onDataReceived(type, AndroidURIUtil.parse(data.getDataString()));
+            } else if(data.getClipData() != null) {
+                ClipData clipData = data.getClipData();
+                for (int i = 0; i < clipData.getItemCount(); i++) {
+                    callback.onDataReceived(type, new AndroidURI(clipData.getItemAt(i).getUri()));
+                }
             } else if (data.getData() != null) {
                 callback.onDataReceived(type, new AndroidURI(data.getData()));
             } else {
@@ -224,7 +234,7 @@ public class AssetIntentsManager {
             }
 
             if (requestCode == BACKUP_IMPORT.requestCode) {
-                return  BACKUP_IMPORT;
+                return BACKUP_IMPORT;
             }
 
             return UNKNOWN;

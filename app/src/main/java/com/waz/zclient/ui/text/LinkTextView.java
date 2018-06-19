@@ -74,7 +74,7 @@ public class LinkTextView extends MarkdownTextview {
         markdown();
 
         try {
-            if (Linkify.addLinks(this, Linkify.ALL)) {
+            if (Linkify.addLinks(this, Linkify.WEB_URLS | Linkify.EMAIL_ADDRESSES | Linkify.PHONE_NUMBERS)) {
                 stripUnderlines();
             }
         } catch (Throwable t) {

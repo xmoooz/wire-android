@@ -58,12 +58,6 @@ class UsersController(implicit injector: Injector, context: Context) extends Inj
       user <- zms.users.userSignal(id)
     } yield user.getDisplayName
 
-  def displayNameString(id: UserId): Signal[String] =
-    displayName(id) map {
-      case Me => getString(R.string.content__system__you)
-      case Other(name) => name
-    }
-
   def displayName(id: UserId): Signal[DisplayName] = zMessaging.flatMap { zms =>
     if (zms.selfUserId == id) Signal const Me
     else zms.users.userSignal(id).map(u => Other(u.getDisplayName))
@@ -105,8 +99,11 @@ class UsersController(implicit injector: Injector, context: Context) extends Inj
     for {
       zms <- zMessaging
       msg <- message
-      names <- Signal.sequence[String](msg.members.toSeq.sortBy(_.str).map(displayNameString): _*)
-        .map(_.map(name => if (boldNames) s"[[$name]]" else name))
+      names <- Signal.sequence(msg.members.toSeq.sortBy(_.str).map(displayName): _*)
+        .map(_.map {
+          case Me          => getString(R.string.content__system__you)
+          case Other(name) => name
+        }.map(name => if (boldNames) s"[[$name]]" else name))
     } yield
       names match {
         case Seq() => ""
@@ -117,12 +114,6 @@ class UsersController(implicit injector: Injector, context: Context) extends Inj
       }
 
   def userHandle(id: UserId): Signal[Option[Handle]] = user(id).map(_.handle)
-
-  def userFirstContact(id: UserId): Signal[Option[Contact]] =
-    for {
-      zms <- zMessaging
-      contact <- zms.contacts.contactForUser(id)
-    } yield contact
 
   def user(id: UserId): Signal[UserData] = zMessaging flatMap { _.users.userSignal(id) }
 

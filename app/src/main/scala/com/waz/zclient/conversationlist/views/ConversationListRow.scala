@@ -208,7 +208,7 @@ class NormalConversationListRow(context: Context, attrs: AttributeSet, style: In
   badge.onClickEvent {
     case ConversationBadge.IncomingCall =>
       (zms.map(_.selfUserId).currentValue, conversationData.map(_.id)) match {
-        case (Some(acc), Some(cId)) => callStartController.startCall(acc, cId)
+        case (Some(acc), Some(cId)) => callStartController.startCall(acc, cId, withVideo = false, forceOption = true)
         case _ => //
       }
     case OngoingCall(_) =>

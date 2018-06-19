@@ -25,10 +25,9 @@ import android.widget.GridLayout
 import com.waz.ZLog.ImplicitTag.implicitLogTag
 import com.waz.ZLog.verbose
 import com.waz.permissions.PermissionsService
-import com.waz.service.call.Avs.VideoState
-import com.waz.service.call.CallInfo
+import com.waz.service.call.Avs.VideoState._
 import com.waz.service.call.CallInfo.CallState.{SelfCalling, SelfConnected, SelfJoining}
-import com.waz.threading.Threading.Implicits.Ui
+import com.waz.service.call.{CallInfo, CallingService}
 import com.waz.utils.events.{EventStream, Signal, SourceStream}
 import com.waz.utils.returning
 import com.waz.zclient.calling.controllers.CallController
@@ -45,6 +44,8 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null)
 
+  import com.waz.threading.Threading.Implicits.Ui
+
   inflate(R.layout.calling__controls__grid, this)
   setColumnCount(3)
   setRowCount(2)
@@ -58,7 +59,7 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
     verbose(s"callStateOpt: $state")
   }
 
-  private val isVideoBeingSent = controller.videoSendState.map(_ != VideoState.Stopped)
+  private val isVideoBeingSent = controller.videoSendState.map(p => !Set(Stopped, NoCameraPermission).contains(p))
 
   // first row
   returning(findById[CallControlButtonView](R.id.mute_call)) { button =>
@@ -77,11 +78,10 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
       conv           <- controller.conversation
       isGroup        <- Signal.future(zms.conversations.isGroupConversation(conv.id))
       isTeam         =  zms.teamId.isDefined
-      incoming       <- controller.isCallIncoming
       established    <- controller.isCallEstablished
       showVideo      <- controller.isVideoCall
-      startedAsVideo <- controller.startedAsVideo
-    } yield (established && (showVideo || isTeam || !isGroup)) || (incoming && startedAsVideo)).onUi(button.setEnabled)
+      members        <- controller.conversationMembers.map(_.size)
+    } yield members <= CallingService.VideoCallMaxMembers && ((established && (isTeam || !isGroup)) || showVideo)).onUi(button.setEnabled)
   }
 
   returning(findById[CallControlButtonView](R.id.speaker_flip_call)) { button =>
@@ -121,23 +121,20 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
 
   private def accept(): Future[Unit] = async {
     onButtonClick ! {}
-    val sendingVideo  = await(controller.videoSendState.head) == VideoState.Started
+    val sendingVideo  = await(controller.videoSendState.head) == Started
     val perms         = await(permissions.requestPermissions(if (sendingVideo) Set(CAMERA, RECORD_AUDIO) else Set(RECORD_AUDIO)))
     val cameraGranted = perms.exists(p => p.key.equals(CAMERA) && p.granted)
     val audioGranted  = perms.exists(p => p.key.equals(RECORD_AUDIO) && p.granted)
     val callingConvId = await(controller.callConvId.head)
     val callingZms    = await(controller.callingZms.head)
 
-    if (sendingVideo && !cameraGranted) controller.toggleVideo()
-
     if (audioGranted)
       callingZms.calling.startCall(callingConvId, await(controller.isVideoCall.head))
     else
-      showPermissionsErrorDialog(
-        R.string.calling__cannot_start__title,
-        if (sendingVideo) R.string.calling__cannot_start__no_video_permission__message
-        else R.string.calling__cannot_start__no_permission__message
-      ).flatMap(_ => callingZms.calling.endCall(callingConvId))
+      showPermissionsErrorDialog(R.string.calling__cannot_start__title,
+        R.string.calling__cannot_start__no_permission__message,
+        R.string.calling__cannot_start__cancel__message
+        ).flatMap(_ => callingZms.calling.endCall(callingConvId))
   }
 
   private def leave(): Unit = {
@@ -157,16 +154,12 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
 
   private def video(): Future[Unit] = async {
     onButtonClick ! {}
-    val isVideoOn            = await(controller.isVideoCall.head)
-    val memberCount          = await(controller.conversationMembers.map(_.size).head)
     val hasCameraPermissions = await(permissions.requestAllPermissions(Set(CAMERA)))
 
-    if (!isVideoOn && memberCount > CallController.VideoCallMaxMembers)
-        showToast(R.string.too_many_people_video_toast)
-    else if (!hasCameraPermissions)
+    if (!hasCameraPermissions)
       showPermissionsErrorDialog(
         R.string.calling__cannot_start__title,
-        R.string.calling__cannot_start__no_video_permission__message
+        R.string.calling__cannot_start__no_camera_permission__message
       )
     else controller.toggleVideo()
   }

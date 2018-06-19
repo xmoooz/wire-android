@@ -228,7 +228,9 @@
     <string name="content__otr__conversation_verified">Conversation verified</string>
     <string name="content__otr__conversation_unverified">Conversation not verified</string>
     <string name="content__otr__message_error">A MESSAGE FROM [[%1$s]] WAS NOT RECEIVED. _WHY?_</string>
+    <string name="content__otr__message_error_you">A MESSAGE FROM YOU WAS NOT RECEIVED. _WHY?_</string>
     <string name="content__otr__identity_changed_error">[[%1$s]]\'S DEVICE IDENTITY CHANGED. UNDELIVERED MESSAGE. _LEARN MORE_</string>
+    <string name="content__otr__identity_changed_error_you">YOUR DEVICE IDENTITY CHANGED. UNDELIVERED MESSAGE. _LEARN MORE_</string>
     <string name="content__otr__added_new_device__message">[[%1$s]] STARTED USING A _NEW DEVICE_</string>
     <string name="content__otr__start_this_device__message">[[YOU]] STARTED USING _THIS DEVICE_</string>
     <string name="content__otr__all_fingerprints_verified">ALL FINGERPRINTS ARE VERIFIED</string>
@@ -296,13 +298,14 @@
     <!-- Calling/voice -->
     <string name="calling__slow_connection__title">Slow Internet</string>
     <string name="calling__slow_connection__message">Your Internet connection is too slow to call right now. Please try again later.</string>
-    <string name="calling__cannot_start__title">Calling not available</string>
+    <string name="calling__cannot_start__title">Microphone required</string>
     <string name="calling__cannot_start__message">To call, hang up your current call.</string>
-    <string name="calling__cannot_start__no_permission__message">To call, grant permission to access the microphone.</string>
+    <string name="calling__cannot_start__no_permission__message">Go to Settings and allow Wire to access the microphone.</string>
+    <string name="calling__cannot_start__cancel__message">CANCEL</string>
+    <string name="calling__cannot_start__no_camera_permission__message">Wire doesn\'t have access to the camera</string>
     <string name="calling__cannot_start__ongoing_different_kind__title">%1$s is busy</string>
     <string name="calling__cannot_start__ongoing_different_kind__message">Try again later</string>
-    <string name="calling__cannot_start__no_video_permission__message">To video call, grant permission to access the microphone and camera.</string>
-    <string name="calling__cannot_start__button_settings">Settings</string>
+    <string name="calling__cannot_start__button_settings">SETTINGS</string>
     <string name="calling__video_call__slow_connection__message">You might experience issues during the call</string>
     <string name="incoming__controls__incoming__decline">DECLINE</string>
     <string name="incoming__controls__incoming__accept">ACCEPT</string>
@@ -320,6 +323,7 @@
     <string name="calling__header__outgoing_video_subtitle">Ringing…</string>
     <string name="calling__header__incoming_subtitle">Calling…</string>
     <string name="calling__header__incoming_subtitle__video">Calling…</string>
+    <string name="calling__header__incoming_subtitle__group">%1$s is calling…</string>
 
     <string name="call_banner_joining">CONNECTING…</string>
     <string name="call_banner_outgoing">RINGING…</string>
@@ -361,7 +365,6 @@
     <string name="connect_request__ignore_button__text">Ignore</string>
     <string name="content__message__connect_request__footer">CONNECTED</string>
     <string name="content__message__connect_request__auto_connect__footer">AUTO-CONNECTED. _LEARN MORE_</string>
-    <string name="content__message__connect_request__user_info">%1$s in Contacts</string>
 
     <!-- Otr-->
     <plurals name="conversation__degraded_confirmation__header__single_user">
@@ -762,7 +765,7 @@
     <!-- System notifications -->
     <string name="system_notification__group_call_title">%1$s in %2$s</string>
     <string name="system_notification__silence_call">Decline</string>
-    <string name="system_notification__join_call">Join call</string>
+    <string name="system_notification__join_call">Accept</string>
     <string name="system_notification__leave_call">End call</string>
     <string name="system_notification__outgoing">Calling</string>
     <string name="system_notification__outgoing_video">Video calling</string>
@@ -770,6 +773,10 @@
     <string name="system_notification__incoming_video">Is video calling</string>
     <string name="system_notification__ongoing">On a call</string>
     <string name="number_of_conversations_string">ARCHIVE</string>
+    <string name="system_notification__calling_one">Calling…</string>
+    <string name="system_notification__calling_group">%1$s is calling…</string>
+    <string name="system_notification__video_calling_one">Calling with video…</string>
+    <string name="system_notification__video_calling_group">%1$s is calling with video…</string>
 
     <!-- Notification actions -->
     <string name="notification__action__call">Call</string>

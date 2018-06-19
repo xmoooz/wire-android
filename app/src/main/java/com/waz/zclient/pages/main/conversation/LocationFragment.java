@@ -194,6 +194,7 @@ public class LocationFragment extends BaseFragment<LocationFragment.Container> i
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
+            googleApiClient.connect();
         } else {
             locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
         }

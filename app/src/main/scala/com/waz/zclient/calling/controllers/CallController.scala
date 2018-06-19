@@ -77,6 +77,12 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     case false => Signal.const(false)
   }
 
+  private var lastCallZms = Option.empty[ZMessaging]
+  callingZmsOpt.onUi { zms =>
+    lastCallZms.foreach(_.flowmanager.setVideoPreview(null))
+    lastCallZms = zms
+  }
+
   val callStateOpt          = currentCallOpt.map(_.flatMap(_.state))
   val callState             = callStateOpt.collect { case Some(s) => s }
   val callStateCollapseJoin = currentCall.map(_.stateCollapseJoin)
@@ -96,8 +102,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   val isGroupCall           = currentCall.map(_.isGroup)
   val cbrEnabled            = currentCall.map(_.isCbrEnabled)
   val duration              = currentCall.flatMap(_.durationFormatted)
-  val otherUserId           = currentCall.map(_.others.headOption)
-  val participantIds        = currentCall.map(_.others.toVector)
+  val others                = currentCall.map(_.others)
 
   val theme: Signal[Theme] = isVideoCall.flatMap {
     case true  => Signal.const(Theme.Dark)
@@ -107,7 +112,10 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   def participantInfos(take: Option[Int] = None): Signal[Vector[CallParticipantInfo]] =
     for {
       cZms        <- callingZms
-      ids         <- take.fold(participantIds)(t => participantIds.map(_.take(t)))
+      ids         <- others.map { os =>
+        val ordered = os.toSeq.sortBy(_._2.getOrElse(Instant.EPOCH)).reverse.map(_._1)
+        take.fold(ordered)(t => ordered.take(t))
+      }
       users       <- cZms.usersStorage.listSignal(ids)
       videoStates <- allVideoReceiveStates
     } yield
@@ -143,6 +151,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     fm     <- flowManager
     conv   <- conversation
     device <- currentCaptureDevice
+    VideoState.Started <- videoSendState
   } yield (fm, conv, device)) {
     case (fm, conv, Some(currentDevice)) => fm.setVideoCaptureDevice(conv.remoteId, currentDevice.id)
     case _ =>
@@ -213,12 +222,11 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     updateCall { case (call, cs) =>
       import VideoState._
       if (call.isVideoCall) {
-        val targetSt = call.videoSendState match {
-          case Started if pause => Paused
-          case Paused if !pause => Started
-          case _ => call.videoSendState
+        call.videoSendState match {
+          case Started if pause => cs.setVideoSendState(call.convId, Paused)
+          case Paused if !pause => cs.setVideoSendState(call.convId, Started)
+          case _ =>
         }
-        cs.setVideoSendState(call.convId, targetSt)
       }
     }
   }
@@ -233,7 +241,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
 
   def wasUiActiveOnCallStart = _wasUiActiveOnCallStart
 
-  val onCallStarted = isCallActive.onChanged.filter(_ == true).map { _ =>
+  val onCallStarted = currentCallOpt.map(_.map(_.convId)).onChanged.filter(_.isDefined).map { _ =>
     val active = ZMessaging.currentGlobal.lifecycle.uiActive.currentValue.getOrElse(false)
     _wasUiActiveOnCallStart = active
     active
@@ -270,7 +278,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   }
 
   (for {
-    m <- isMuted
+    m <- isMuted.orElse(Signal.const(false))
     i <- isCallIncoming
   } yield (m, i)) { case (m, i) =>
     soundController.setIncomingRingTonePlaying(!m && i)
@@ -327,26 +335,31 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
 
   val subtitleText: Signal[String] =
     (for {
-      video <- isVideoCall
-      state <- callState
-      dur   <- duration
-    } yield (video, state, dur)).map {
-      case (true,  SelfCalling,  _)  => cxt.getString(R.string.calling__header__outgoing_video_subtitle)
-      case (false, SelfCalling,  _)  => cxt.getString(R.string.calling__header__outgoing_subtitle)
-      case (true,  OtherCalling, _)  => cxt.getString(R.string.calling__header__incoming_subtitle__video)
-      case (false, OtherCalling, _)  => cxt.getString(R.string.calling__header__incoming_subtitle)
-      case (_,     SelfJoining,  _)  => cxt.getString(R.string.calling__header__joining)
-      case (_,     SelfConnected, d) => d
+      video      <- isVideoCall
+      state      <- callState
+      dur        <- duration
+      group      <- isGroupCall
+      callerId   <- callerId
+      callerName <- callingZms.flatMap(_.users.userSignal(callerId).map(_.getDisplayName).map(Option(_))).orElse(Signal.const(None))
+    } yield (video, state, dur, callerName.filter(_ => group))).map {
+      case (true,  SelfCalling,  _, _)  => cxt.getString(R.string.calling__header__outgoing_video_subtitle)
+      case (false, SelfCalling,  _, _)  => cxt.getString(R.string.calling__header__outgoing_subtitle)
+      case (_,     OtherCalling, _, Some(callerName)) => cxt.getString(R.string.calling__header__incoming_subtitle__group, callerName)
+      case (true,  OtherCalling, _, _)  => cxt.getString(R.string.calling__header__incoming_subtitle__video)
+      case (false, OtherCalling, _, _)  => cxt.getString(R.string.calling__header__incoming_subtitle)
+      case (_,     SelfJoining,  _, _)  => cxt.getString(R.string.calling__header__joining)
+      case (_,     SelfConnected, d, _) => d
       case _ => ""
     }
 
   def stateMessageText(userId: UserId): Signal[Option[String]] = Signal(callState, cameraFailed, allVideoReceiveStates.map(_.getOrElse(userId, Unknown))).map { vs =>
     verbose(s"Message Text: $vs")
     (vs match {
-      case (SelfCalling,   true, _)             => Some(R.string.calling__self_preview_unavailable_long)
-      case (SelfConnected, _,    BadConnection) => Some(R.string.ongoing__poor_connection_message)
-      case (SelfConnected, _,    Paused)        => Some(R.string.video_paused)
-      case _                                    => None
+      case (SelfCalling,   true, _)                  => Some(R.string.calling__self_preview_unavailable_long)
+      case (SelfConnected, _,    BadConnection)      => Some(R.string.ongoing__poor_connection_message)
+      case (SelfConnected, _,    Paused)             => Some(R.string.video_paused)
+      case (OtherCalling,  _,    NoCameraPermission) => Some(R.string.calling__cannot_start__no_camera_permission__message)
+      case _                                         => None
     }).map(getString)
   }
 
@@ -403,7 +416,6 @@ private class ScreenManager(implicit injector: Injector) extends Injectable {
 }
 
 object CallController {
-  val VideoCallMaxMembers:Int = 4
   case class CallParticipantInfo(userId: UserId,
                                  assetId: Option[AssetId],
                                  displayName: String,

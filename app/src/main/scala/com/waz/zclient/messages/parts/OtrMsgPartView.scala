@@ -21,11 +21,11 @@ import android.content.Context
 import android.util.AttributeSet
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
-import com.waz.threading.Threading
 import com.waz.utils.events.Signal
 import com.waz.utils.wrappers.AndroidURIUtil
 import com.waz.zclient.common.controllers.global.AccentColorController
 import com.waz.zclient.common.controllers.{BrowserController, ScreenController}
+import com.waz.zclient.messages.UsersController.DisplayName.{Me, Other}
 import com.waz.zclient.messages.{MessageViewPart, MsgPart, SystemMessageView, UsersController}
 import com.waz.zclient.participants.ParticipantsController
 import com.waz.zclient.participants.fragments.SingleParticipantFragment
@@ -49,7 +49,7 @@ class OtrMsgPartView(context: Context, attrs: AttributeSet, style: Int) extends 
 
   val msgType = message.map(_.msgType)
 
-  val affectedUserName = message.map(_.userId).flatMap(users.displayNameString).map(_.toUpperCase)
+  val affectedUserName = message.map(_.userId).flatMap(users.displayName)
 
   val memberNames = users.memberDisplayNames(message).map(_.toUpperCase)
 
@@ -64,27 +64,35 @@ class OtrMsgPartView(context: Context, attrs: AttributeSet, style: Int) extends 
   }
 
   val msgString = msgType.flatMap {
-    case HISTORY_LOST         => Signal const getString(R.string.content__otr__lost_history)
-    case STARTED_USING_DEVICE => Signal const getString(R.string.content__otr__start_this_device__message)
-    case OTR_VERIFIED         => Signal const getString(R.string.content__otr__all_fingerprints_verified)
-    case OTR_ERROR            => affectedUserName map { getString(R.string.content__otr__message_error, _) }
-    case OTR_IDENTITY_CHANGED => affectedUserName map { getString(R.string.content__otr__identity_changed_error, _) }
-    case OTR_UNVERIFIED       => memberIsJustSelf flatMap {
-      case true => Signal const getString(R.string.content__otr__your_unverified_device__message)
-      case false => memberNames map { getString(R.string.content__otr__unverified_device__message, _) }
-    }
-    case OTR_DEVICE_ADDED     => memberNames map { getString(R.string.content__otr__added_new_device__message, _) }
-    case OTR_MEMBER_ADDED     => Signal const getString(R.string.content__otr__new_member__message)
-    case _                    => Signal const ""
+    case HISTORY_LOST         => Signal.const(getString(R.string.content__otr__lost_history))
+    case STARTED_USING_DEVICE => Signal.const(getString(R.string.content__otr__start_this_device__message))
+    case OTR_VERIFIED         => Signal.const(getString(R.string.content__otr__all_fingerprints_verified))
+    case OTR_ERROR            => affectedUserName.map({
+      case Me          => getString(R.string.content__otr__message_error_you)
+      case Other(name) => getString(R.string.content__otr__message_error, name.toUpperCase)
+    })
+    case OTR_IDENTITY_CHANGED => affectedUserName.map({
+      case Me          => getString(R.string.content__otr__identity_changed_error_you)
+      case Other(name) => getString(R.string.content__otr__identity_changed_error, name.toUpperCase)
+    })
+    case OTR_UNVERIFIED => memberIsJustSelf.flatMap({
+      case true  => Signal const getString(R.string.content__otr__your_unverified_device__message)
+      case false => memberNames map {
+        getString(R.string.content__otr__unverified_device__message, _)
+      }
+    })
+    case OTR_DEVICE_ADDED => memberNames.map(getString(R.string.content__otr__added_new_device__message, _))
+    case OTR_MEMBER_ADDED => Signal.const(getString(R.string.content__otr__new_member__message))
+    case _                => Signal.const("")
   }
 
-  shieldIcon.on(Threading.Ui) {
+  shieldIcon.onUi {
     case None       => setIcon(null)
     case Some(icon) => setIcon(icon)
   }
 
-  Signal(message, msgString, accentColor.accentColor, memberIsJustSelf).on(Threading.Ui) {
-    case (msg, text, color, isMe) => setTextWithLink(text, color.getColor()) {
+  Signal(message, msgString, accentColor.accentColor, memberIsJustSelf).onUi {
+    case (msg, text, color, isMe) => setTextWithLink(text, color.getColor) {
       (msg.msgType, isMe) match {
         case (OTR_UNVERIFIED | OTR_DEVICE_ADDED | OTR_MEMBER_ADDED, true)  => screenController.openOtrDevicePreferences()
         case (OTR_UNVERIFIED | OTR_DEVICE_ADDED | OTR_MEMBER_ADDED, false) => participantsController.onShowParticipants ! Some(SingleParticipantFragment.TagDevices)

@@ -103,12 +103,10 @@
 
         <activity
             android:name="com.waz.zclient.calling.CallingActivity"
-            android:excludeFromRecents="true"
             android:hardwareAccelerated="true"
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
             android:showOnLockScreen="true"
-            android:taskAffinity=""
             android:theme="@style/Theme.Calling"
             android:windowSoftInputMode="stateHidden"
             />

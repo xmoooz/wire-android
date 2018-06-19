@@ -154,6 +154,9 @@ class FooterPartView(context: Context, attrs: AttributeSet, style: Int) extends 
   }
 
   override def set(msg: MessageAndLikes, part: Option[MessageContent], opts: Option[MsgBindOptions]): Unit = {
+    if (!controller.messageAndLikes.currentValue.map(_.message.id).contains(msg.message.id)) {
+      timeStampAndStatus.setText("")
+    }
     super.set(msg, part, opts)
     hideAnim.cancel()
     contentAnim.cancel()
