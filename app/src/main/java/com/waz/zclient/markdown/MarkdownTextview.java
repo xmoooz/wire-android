@@ -62,7 +62,7 @@ public class MarkdownTextview extends TypefaceTextView {
      * Re-applies all LinkSpan and ImageSpan objects.
      */
     public void refreshLinks() {
-        if (!(getText() instanceof SpannableString)) return;
+        if (!(getText() instanceof SpannableString)) { return; }
 
         SpannableString text = (SpannableString) getText();
         GroupSpan[] linkSpans = text.getSpans(0, text.length(), LinkSpan.class);
