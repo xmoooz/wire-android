@@ -65,6 +65,7 @@ class ParticipantsAdapter(numOfColumns: Int)(implicit context: Context, injector
 
   val onClick             = EventStream[UserId]()
   val onGuestOptionsClick = EventStream[Unit]()
+  val onEphemeralOptionsClick = EventStream[Unit]()
 
   lazy val users = for {
     z       <- zms
@@ -135,6 +136,10 @@ class ParticipantsAdapter(numOfColumns: Int)(implicit context: Context, injector
       returning(ConversationNameViewHolder(view, zms)) { vh =>
         convNameViewHolder = Option(vh)
       }
+    case EphemeralOptions =>
+      val view = LayoutInflater.from(parent.getContext).inflate(R.layout.list_options_button, parent, false)
+      view.onClick(onEphemeralOptionsClick ! {})
+      EphemeralOptionsButtonViewHolder(view)
     case _ => SeparatorViewHolder(getSeparatorView(parent))
   }
 
@@ -184,6 +189,7 @@ object ParticipantsAdapter {
   val BotsSeparator    = 2
   val GuestOptions     = 3
   val ConversationName = 4
+  val EphemeralOptions = 5
 
   case class ParticipantData(userData: UserData, isGuest: Boolean)
 
@@ -192,6 +198,14 @@ object ParticipantsAdapter {
     //view.setId(R.id.guest_options)
     view.findViewById[ImageView](R.id.icon).setImageDrawable(GuestIconWithColor(ContextUtils.getStyledColor(R.attr.wirePrimaryTextColor)))
     view.findViewById[TextView](R.id.name_text).setText(R.string.guest_options_title)
+    view.findViewById[ImageView](R.id.next_indicator).setImageDrawable(ForwardNavigationIcon(R.color.light_graphite_40))
+  }
+
+  case class EphemeralOptionsButtonViewHolder(view: View) extends ViewHolder(view) {
+    private implicit val ctx = view.getContext
+    //view.setId(R.id.guest_options)
+    view.findViewById[ImageView](R.id.icon).setImageDrawable(GuestIconWithColor(ContextUtils.getStyledColor(R.attr.wirePrimaryTextColor)))
+    view.findViewById[TextView](R.id.name_text).setText(R.string.ephemeral_options_title)
     view.findViewById[ImageView](R.id.next_indicator).setImageDrawable(ForwardNavigationIcon(R.color.light_graphite_40))
   }
 

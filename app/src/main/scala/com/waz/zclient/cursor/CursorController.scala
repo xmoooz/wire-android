@@ -26,8 +26,8 @@ import android.widget.Toast
 import com.google.android.gms.common.{ConnectionResult, GoogleApiAvailability}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api._
-import com.waz.content.UserPreferences
-import com.waz.model.{ConversationData, MessageData}
+import com.waz.content.{GlobalPreferences, UserPreferences}
+import com.waz.model.{MessageData, ConvExpiry}
 import com.waz.permissions.PermissionsService
 import com.waz.service.{NetworkModeService, ZMessaging}
 import com.waz.threading.{CancellableFuture, Threading}
@@ -38,7 +38,6 @@ import com.waz.zclient.controllers.camera.ICameraController
 import com.waz.zclient.controllers.drawing.IDrawingController
 import com.waz.zclient.controllers.giphy.IGiphyController
 import com.waz.zclient.controllers.location.ILocationController
-import com.waz.zclient.controllers.userpreferences.IUserPreferencesController
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversationlist.ConversationListController
 import com.waz.zclient.messages.MessageBottomSheetDialog.MessageAction
@@ -48,8 +47,6 @@ import com.waz.zclient.ui.cursor.{CursorMenuItem => JCursorMenuItem}
 import com.waz.zclient.ui.utils.KeyboardUtils
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.{Injectable, Injector, R}
-
-import java.util.concurrent.TimeUnit.MILLISECONDS
 
 import scala.concurrent.duration._
 
@@ -99,7 +96,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
 
   val onMessageSent = EventStream[MessageData]()
   val onMessageEdited = EventStream[MessageData]()
-  val onEphemeralExpirationSelected = EventStream[ConversationData]()
+  val onEphemeralExpirationSelected = EventStream[Option[FiniteDuration]]()
 
   val sendButtonEnabled: Signal[Boolean] = zms.map(_.userPrefs).flatMap(_.preference(UserPreferences.SendButtonEnabled).signal)
 
@@ -222,27 +219,40 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
       keyboard ! KeyboardState.Hidden
     }
 
-  lazy val userPreferences = inject[IUserPreferencesController]
+  lazy val globalPrefs = inject[GlobalPreferences]
+  val lastEphemeralValue = globalPrefs.preference(GlobalPreferences.LastEphemeralValue).signal
 
   def toggleEphemeralMode() = {
-    val lastExpiration = if (userPreferences.getLastEphemeralValue == 0) {
-      None
-    } else {
-      Some(Duration(userPreferences.getLastEphemeralValue, MILLISECONDS))
-    }
-    if (lastExpiration.isDefined) {
-      conv.head foreach { c =>
-        zms.head.flatMap { _.convsUi.setEphemeral(c.id, if (c.ephemeralExpiration.isEmpty) lastExpiration else None) } foreach {
-          case Some((prev, current)) if prev.ephemeralExpiration.isEmpty =>
-            onEphemeralExpirationSelected ! current
-          case _ => // ignore
+    for {
+      lastExpiration <- lastEphemeralValue.head
+      c              <- conv.head
+      z              <- zms.head
+      eph            = c.ephemeralExpiration
+    } yield {
+      if (lastExpiration.isDefined && (eph.isEmpty || !eph.get.isInstanceOf[ConvExpiry])) {
+        val current = if (eph.isEmpty) lastExpiration else None
+        z.convsUi.setEphemeral(c.id, current)
+        if (eph != lastExpiration) onEphemeralExpirationSelected ! current
+        keyboard mutate {
+          case KeyboardState.ExtendedCursor(_) => KeyboardState.Hidden
+          case state => state
         }
       }
-      keyboard mutate {
-        case KeyboardState.ExtendedCursor(_) => KeyboardState.Hidden
-        case state => state
-      }
     }
+
+    //lastEphemeralValue.head.foreach { lastExpiration =>
+    //  if (lastExpiration.isDefined) {
+    //    conv.head.foreach { c =>
+    //      if (!c.ephemeralExpiration.map(_.isInstanceOf[ConvExpiry]))
+    //      zms.head.flatMap { z =>
+    //        z.convsUi.setEphemeral(c.id, if (c.ephemeralExpiration.isEmpty) lastExpiration else None)
+    //        //case Some((prev, current)) if prev.ephemeralExpiration.isEmpty =>
+    //        //  onEphemeralExpirationSelected ! current
+    //        //case _ => // ignore
+    //      }
+    //    }
+    //  }
+    //}
   }
 
   lazy val drawingController = inject[IDrawingController]

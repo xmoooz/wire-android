@@ -32,6 +32,7 @@ import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
 import com.waz.api._
 import com.waz.api.impl.ContentUriAssetForUpload
+import com.waz.content.GlobalPreferences
 import com.waz.model.ConversationData.ConversationType
 import com.waz.model.{MessageContent => _, _}
 import com.waz.permissions.PermissionsService
@@ -100,6 +101,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
   private lazy val callController         = inject[CallController]
   private lazy val callStartController    = inject[CallStartController]
   private lazy val accountsController     = inject[UserAccountsController]
+  private lazy val globalPrefs            = inject[GlobalPreferences]
 
   private val previewShown = Signal(false)
   private lazy val convChange = convController.convChanged.filter { _.to.isDefined }
@@ -538,7 +540,13 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
 
       if (lastType == ExtendedCursorContainer.Type.EPHEMERAL)
         convController.currentConv.head.map {
-          _.ephemeralExpiration.map{exp => getControllerFactory.getUserPreferencesController.setLastEphemeralValue(exp.duration.toMillis)}
+          _.ephemeralExpiration.map { exp =>
+            val eph = exp.duration.toMillis match {
+              case 0 => None
+              case e => Some(e.millis)
+            }
+            globalPrefs.preference(GlobalPreferences.LastEphemeralValue) := eph
+          }
         }
 
       getControllerFactory.getGlobalLayoutController.resetScreenAwakeState()

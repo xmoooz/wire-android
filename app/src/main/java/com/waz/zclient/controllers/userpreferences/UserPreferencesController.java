@@ -46,7 +46,6 @@ public class UserPreferencesController implements IUserPreferencesController {
     private static final String USER_PREF_RECENT_EMOJIS = "USER_PREF_RECENT_EMOJIS";
     private static final String USER_PREF_UNSUPPORTED_EMOJIS = "USER_PREF_UNSUPPORTED_EMOJIS";
     private static final String USER_PREF_UNSUPPORTED_EMOJIS_CHECKED = "USER_PREF_UNSUPPORTED_EMOJIS_CHECKED";
-    private static final String USER_PREF_LAST_EPHEMERAL_VALUE = "USER_PREF_LAST_EPHEMERAL_VALUE";
 
     private static final String PREFS_DEVICE_ID = "com.waz.device.id";
 
@@ -177,15 +176,4 @@ public class UserPreferencesController implements IUserPreferencesController {
     public boolean hasCheckedForUnsupportedEmojis(int version) {
         return userPreferences.getInt(USER_PREF_UNSUPPORTED_EMOJIS_CHECKED, 0) >= version;
     }
-
-    @Override
-    public long getLastEphemeralValue() {
-        return userPreferences.getLong(USER_PREF_LAST_EPHEMERAL_VALUE, 0);
-    }
-
-    @Override
-    public void setLastEphemeralValue(long value) {
-        userPreferences.edit().putLong(USER_PREF_LAST_EPHEMERAL_VALUE, value).apply();
-    }
-
 }
