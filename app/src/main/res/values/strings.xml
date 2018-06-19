@@ -756,6 +756,9 @@
         <item quantity="other">Someone sent you %1$d messages</item>
     </plurals>
 
+    <string name="other_set_message_timer">[[%1$s:]]] set the time messages to [[%2$s:]]</string>
+    <string name="you_set_message_timer">[[You]]] set the time messages to [[%1$s:]]</string>
+
     <!-- Others -->
     <string name="app_name">Wire</string>
     <string name="content__system__item_separator">,</string>
