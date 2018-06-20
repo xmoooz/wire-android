@@ -45,8 +45,8 @@ import com.waz.zclient.common.controllers.{AssetsController, SharingController}
 import com.waz.zclient.common.views.ImageAssetDrawable.{RequestBuilder, ScaleType}
 import com.waz.zclient.common.views.ImageController.DataImage
 import com.waz.zclient.common.views._
+import com.waz.zclient.cursor.EphemeralLayout
 import com.waz.zclient.messages.{MessagesController, UsersController}
-import com.waz.zclient.pages.extendedcursor.ephemeral.EphemeralLayout
 import com.waz.zclient.ui.text.TypefaceTextView
 import com.waz.zclient.ui.utils.{ColorUtils, KeyboardUtils}
 import com.waz.zclient.ui.views.CursorIconButton
@@ -55,7 +55,6 @@ import com.waz.zclient.utils.ContextUtils.{getDimenPx, showToast}
 import com.waz.zclient.utils.{RichView, ViewUtils}
 
 import scala.util.Success
-import scala.concurrent.duration.FiniteDuration
 
 
 class ShareToMultipleFragment extends FragmentHelper with OnBackPressedListener {
@@ -194,14 +193,12 @@ class ShareToMultipleFragment extends FragmentHelper with OnBackPressedListener 
             bc.closedAnimated()
           case Some(false) =>
             returning(getLayoutInflater.inflate(R.layout.ephemeral_keyboard_layout, null, false).asInstanceOf[EphemeralLayout]) { l =>
-              sharingController.ephemeralExpiration.map{_.foreach{e => l.setSelectedExpiration(e)}}
-              l.setCallback(new EphemeralLayout.Callback() {
-                override def onEphemeralExpirationSelected(expiration: Option[FiniteDuration], close: Boolean): Unit = {
-                  sharingController.ephemeralExpiration ! expiration
-                  toggle.ephemeralExpiration ! expiration
-                  if (close) bc.closedAnimated()
-                }
-              })
+              sharingController.ephemeralExpiration.map(l.setSelectedExpiration)
+              l.expirationSelected.onUi { case (exp, close) =>
+                toggle.ephemeralExpiration ! exp
+                sharingController.ephemeralExpiration ! exp
+                if (close) bc.closedAnimated()
+              }
               bc.addView(l)
             }
             bc.openAnimated()

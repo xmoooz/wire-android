@@ -59,12 +59,11 @@ import com.waz.zclient.controllers.singleimage.SingleImageObserver
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.ConversationController.ConversationChange
 import com.waz.zclient.conversation.toolbar.AudioMessageRecordingView
-import com.waz.zclient.cursor.{CursorCallback, CursorController, CursorView}
+import com.waz.zclient.cursor.{CursorCallback, CursorController, CursorView, EphemeralLayout}
 import com.waz.zclient.messages.{MessagesController, MessagesListView}
 import com.waz.zclient.pages.BaseFragment
 import com.waz.zclient.pages.extendedcursor.ExtendedCursorContainer
 import com.waz.zclient.pages.extendedcursor.emoji.EmojiKeyboardLayout
-import com.waz.zclient.pages.extendedcursor.ephemeral.EphemeralLayout
 import com.waz.zclient.pages.extendedcursor.image.{CursorImagesLayout, ImagePreviewLayout}
 import com.waz.zclient.pages.extendedcursor.voicefilter.VoiceFilterLayout
 import com.waz.zclient.pages.main.conversation.{AssetIntentsManager, MessageStreamAnimation}
@@ -557,9 +556,10 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       case ExtendedCursorContainer.Type.NONE =>
       case ExtendedCursorContainer.Type.EMOJIS =>
         extendedCursorContainer.openEmojis(getControllerFactory.getUserPreferencesController.getRecentEmojis, getControllerFactory.getUserPreferencesController.getUnsupportedEmojis, emojiKeyboardLayoutCallback)
-      case ExtendedCursorContainer.Type.EPHEMERAL => convController.currentConv.head.map(_.ephemeralExpiration.map(_.duration)).map { duration =>
-        extendedCursorContainer.openEphemeral(ephemeralLayoutCallback, duration.get) //TODO: throw error here, .get is ugly
-      }
+      case ExtendedCursorContainer.Type.EPHEMERAL =>
+        convController.currentConv.head.map(_.ephemeralExpiration.map(_.duration)).map { duration =>
+          extendedCursorContainer.openEphemeral(ephemeralLayoutCallback, duration)
+        }
       case ExtendedCursorContainer.Type.VOICE_FILTER_RECORDING =>
         extendedCursorContainer.openVoiceFilter(voiceFilterLayoutCallback)
       case ExtendedCursorContainer.Type.IMAGES =>
