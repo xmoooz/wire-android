@@ -240,6 +240,9 @@ class SpanRenderer(private val styleSheet: StyleSheet) : AbstractVisitor(), Node
         var b2: Int? = null
 
         when {
+            // we need to add 1 to b1 because startOfSecondParagraph and startOfNestedList
+            // contain the index of the newline preceeding the paragraph/nestedlist. Adding 1
+            // simply includes the newline in the span (necessary for paragraph spans).
             startOfSecondParagraph != null && startOfNestedList == null -> {
                 // up to second paragraph, then to end
                 b1 = startOfSecondParagraph + 1
@@ -247,13 +250,13 @@ class SpanRenderer(private val styleSheet: StyleSheet) : AbstractVisitor(), Node
             }
             startOfSecondParagraph == null && startOfNestedList != null -> {
                 // up to nest list only
-                b1 = startOfNestedList
+                b1 = startOfNestedList + 1
                 b2 = null
             }
             startOfSecondParagraph != null && startOfNestedList != null -> {
                 if (startOfSecondParagraph == startOfNestedList) {
                     // up to nest list only
-                    b1 = startOfNestedList
+                    b1 = startOfNestedList + 1
                     b2 = null
                 } else {
                     // up to second paragraph, then to nested list
