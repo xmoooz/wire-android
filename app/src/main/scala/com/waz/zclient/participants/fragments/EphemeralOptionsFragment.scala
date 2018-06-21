@@ -61,8 +61,8 @@ class EphemeralOptionsFragment extends FragmentHelper {
       options.zipWithIndex.map { case (option, index) =>
         (option, v.getChildAt(index).asInstanceOf[LinearLayout].getChildAt(0).asInstanceOf[TypefaceTextView])
       }.foreach { case (option, r) =>
-        val text  = if (e.equals(option)) option.getOrElse("Off").toString + "    x" else option.getOrElse("Off").toString
-        r.setText(text)
+        r.setText(if (e.equals(option)) ConversationController.getEphemeralDisplayString(option) + "      x"
+          else ConversationController.getEphemeralDisplayString(option))
         r.onClick {
           for {
             z <- zms.head

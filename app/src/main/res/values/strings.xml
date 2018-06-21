@@ -1147,7 +1147,7 @@
     <string name="usernames__take_over__keep">KEEP THIS ONE</string>
     <string name="pref_account_username_empty_title">Add username</string>
 
-    <string name="ephemeral_message__timeout__off">OFF</string>
+    <string name="ephemeral_message__timeout__off">Off</string>
 
     <plurals name="unit_weeks">
         <item quantity="zero">%1$s weeks</item>
