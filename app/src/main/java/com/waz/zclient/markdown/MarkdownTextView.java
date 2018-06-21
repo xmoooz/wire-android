@@ -31,16 +31,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class MarkdownTextview extends TypefaceTextView {
-    public MarkdownTextview(Context context, AttributeSet attrs, int defStyle) {
+public class MarkdownTextView extends TypefaceTextView {
+    public MarkdownTextView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
     }
 
-    public MarkdownTextview(Context context, AttributeSet attrs) {
+    public MarkdownTextView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public MarkdownTextview(Context context) {
+    public MarkdownTextView(Context context) {
         super(context);
     }
 

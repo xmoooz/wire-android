@@ -29,13 +29,13 @@ import android.text.util.Linkify;
 import android.util.AttributeSet;
 
 import com.waz.zclient.R;
-import com.waz.zclient.markdown.MarkdownTextview;
+import com.waz.zclient.markdown.MarkdownTextView;
 
 /**
  * This view will automatically linkify the text passed to {@link LinkTextView#setTextLink(String)}, but will not steal
  * touch events that are not inside a URLSpan
  */
-public class LinkTextView extends MarkdownTextview {
+public class LinkTextView extends MarkdownTextView {
 
     @SuppressWarnings("unused")
     public LinkTextView(Context context) {
