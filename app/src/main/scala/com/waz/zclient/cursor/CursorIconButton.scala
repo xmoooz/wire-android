@@ -83,7 +83,7 @@ class CursorIconButton(context: Context, attrs: AttributeSet, defStyleAttr: Int)
 
   val background = defaultBackground
 
-  protected def defaultBackground: Signal[Drawable] = bgColor map { case (defaultColor, pressedColor) =>
+  protected def defaultBackground: Signal[Drawable] = bgColor.map { case (defaultColor, pressedColor) =>
     val alphaPressed = if (ThemeUtils.isDarkTheme(getContext)) PRESSED_ALPHA__DARK else PRESSED_ALPHA__LIGHT
     val avg = (Color.red(pressedColor) + Color.blue(pressedColor) + Color.green(pressedColor)) / (3 * 255.0f)
     val pressed = ColorUtils.injectAlpha(alphaPressed, if (avg > THRESHOLD) {

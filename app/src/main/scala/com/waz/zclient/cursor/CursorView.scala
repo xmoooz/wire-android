@@ -29,7 +29,7 @@ import android.widget.TextView.OnEditorActionListener
 import android.widget.{LinearLayout, TextView}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api._
-import com.waz.model.Availability
+import com.waz.model.{Availability, MessageExpiry}
 import com.waz.threading.Threading
 import com.waz.utils.events.Signal
 import com.waz.utils.returning
@@ -166,7 +166,7 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
   private lazy val transformer = TextTransform.get(ContextUtils.getString(R.string.single_image_message__name__font_transform))
 
   (for {
-    eph <- controller.convIsEphemeral
+    eph <- controller.isEphemeral
     av <- controller.convAvailability
     name <- controller.conv.map(_.displayName)
   } yield (eph, av, name)).onUi {
@@ -183,13 +183,12 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
   }
 
   (for {
-    eph <- controller.convIsEphemeral
-    av <- controller.convAvailability
-    ac <- accentColor
-  } yield (eph, av, ac)).onUi {
-    case (true, Availability.None, accent) => hintView.setTextColor(accent.getColor)
-    case _ => hintView.setTextColor(defaultHintTextColor)
-  }
+    Some(MessageExpiry(_)) <- controller.ephemeralExp
+    Availability.None      <- controller.convAvailability
+    ac                     <- accentColor
+  } yield ac.getColor)
+    .orElse(Signal.const(defaultHintTextColor))
+    .onUi(hintView.setTextColor)
 
   (controller.isEditingMessage.zip(controller.enteredText) map {
     case (editing, text) => !editing && text.isEmpty

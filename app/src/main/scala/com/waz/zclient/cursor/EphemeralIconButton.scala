@@ -21,6 +21,7 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.util.{AttributeSet, TypedValue}
 import android.view.Gravity
+import com.waz.model.ConvExpiry
 import com.waz.utils.events.Signal
 import com.waz.zclient.R
 import com.waz.zclient.cursor.CursorController.KeyboardState
@@ -49,30 +50,35 @@ class EphemeralIconButton(context: Context, attrs: AttributeSet, defStyleAttr: I
     }
   }
 
-  override val buttonColor = controller.convIsEphemeral.zip(controller.isEditingMessage).flatMap {
-    case (true, false) =>
-      accentColor.map(_.getColor).map(ColorStateList.valueOf)
-    case _ => defaultColor
-  }
+  override val buttonColor =
+    controller.ephemeralExp.flatMap {
+      case Some(ConvExpiry(_)) => Signal.const(ColorStateList.valueOf(R.color.graphite))
+      case Some(_)             => accentColor.map(_.getColor).map(ColorStateList.valueOf)
+      case _                   => defaultColor
+    }
 
-  val typeface = controller.convIsEphemeral.map {
-    case true => TypefaceUtils.getTypeface(getContext.getString(R.string.wire__typeface__regular))
+  val typeface = controller.isEphemeral.map {
+    case true => TypefaceUtils.getTypeface(getString(R.string.wire__typeface__regular))
     case false => TypefaceUtils.getTypeface(TypefaceUtils.getGlyphsTypefaceName)
   }
 
-  val textSize = controller.convIsEphemeral.map {
+  val textSize = controller.isEphemeral.map {
     case true => getDimenPx(R.dimen.wire__text_size__small)
     case false => getDimenPx(R.dimen.wire__text_size__regular)
   }
 
   override val glyph = Signal[Int]()
 
-  override val background = controller.convIsEphemeral.zip(accentColor) flatMap {
-    case (true, accent) =>
-      val bgColor = ColorUtils.injectAlpha(ResourceUtils.getResourceFloat(getResources, R.dimen.ephemeral__accent__timer_alpha), accent.getColor)
-      Signal.const(ColorUtils.getTintedDrawable(getContext, R.drawable.background__cursor__ephemeral_timer, bgColor))
-    case (false, _) =>
-      defaultBackground
+  override val background = controller.ephemeralExp.flatMap {
+    case Some(exp) =>
+      (exp match {
+        case ConvExpiry(_) => Signal.const(R.color.graphite)
+        case _             => accentColor.map(_.getColor)
+      }).map { c =>
+        val bgColor = ColorUtils.injectAlpha(ResourceUtils.getResourceFloat(getResources, R.dimen.ephemeral__accent__timer_alpha), c)
+        ColorUtils.getTintedDrawable(getContext, R.drawable.background__cursor__ephemeral_timer, bgColor)
+      }
+    case _ => defaultBackground
   }
 
   override def onFinishInflate(): Unit = {

@@ -27,7 +27,7 @@ import com.google.android.gms.common.{ConnectionResult, GoogleApiAvailability}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api._
 import com.waz.content.{GlobalPreferences, UserPreferences}
-import com.waz.model.{MessageData, ConvExpiry}
+import com.waz.model.{ConvExpiry, EphemeralDuration, MessageData}
 import com.waz.permissions.PermissionsService
 import com.waz.service.{NetworkModeService, ZMessaging}
 import com.waz.threading.{CancellableFuture, Threading}
@@ -81,16 +81,17 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
     case _ => Option.empty[CursorMenuItem]
   }
   val isEditingMessage = editingMsg.map(_.isDefined)
-  val ephemeralSelected = extendedCursor.map(_ == ExtendedCursorContainer.Type.EPHEMERAL)
+
+  val ephemeralExp = Signal.const[Option[EphemeralDuration]](Option(ConvExpiry(10.seconds))) //conv.map(_.ephemeralExpiration) TODO set back when done testing
+  val isEphemeral  = ephemeralExp.map(_.isDefined)
+
   val emojiKeyboardVisible = extendedCursor.map(_ == ExtendedCursorContainer.Type.EMOJIS)
-  val convIsEphemeral = conv.map(_.ephemeralExpiration.isDefined)
   val convAvailability = for {
     convId <- conv.map(_.id)
     av <- convListController.availability(convId)
   } yield av
 
   val convIsActive = conv.map(_.isActive)
-  val isEphemeralMode = convIsEphemeral.zip(ephemeralSelected) map { case (ephConv, selected) => ephConv || selected }
 
   val onCursorItemClick = EventStream[CursorMenuItem]()
 
@@ -106,7 +107,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
   }
   val ephemeralBtnVisible = Signal(isEditingMessage, convIsActive).flatMap {
     case (false, true) =>
-      isEphemeralMode.flatMap {
+      isEphemeral.flatMap {
         case true => Signal.const(true)
         case _ => sendButtonVisible.map(!_)
       }
