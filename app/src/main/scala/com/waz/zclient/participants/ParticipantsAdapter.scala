@@ -79,6 +79,7 @@ class ParticipantsAdapter(numOfColumns: Int)(implicit context: Context, injector
     users       <- users
     isTeam      <- participantsController.currentUserBelongsToConversationTeam
     guestButton <- shouldShowGuestButton
+    areWeAGuest <- participantsController.isCurrentUserGuest
   } yield {
     val (bots, people) = users.toList.partition(_.userData.isWireBot)
 
@@ -86,6 +87,9 @@ class ParticipantsAdapter(numOfColumns: Int)(implicit context: Context, injector
     (if (isTeam && guestButton) List(Right(GuestOptions))
       else Nil
       ) :::
+    (if (!areWeAGuest) List(Right(EphemeralOptions))
+      else Nil
+        ) :::
     (if (people.nonEmpty) List(Right(PeopleSeparator))
       else Nil
       ) ::: people.map(data => Left(data)) :::

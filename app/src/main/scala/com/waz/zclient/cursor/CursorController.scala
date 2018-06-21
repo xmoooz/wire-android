@@ -224,10 +224,9 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
       keyboard ! KeyboardState.Hidden
     }
 
-  lazy val globalPrefs = inject[GlobalPreferences]
-  val lastEphemeralValue = globalPrefs.preference(GlobalPreferences.LastEphemeralValue).signal
+  private val lastEphemeralValue = inject[GlobalPreferences].preference(GlobalPreferences.LastEphemeralValue).signal
 
-  def toggleEphemeralMode() = {
+  def toggleEphemeralMode(): Unit =
     for {
       lastExpiration <- lastEphemeralValue.head
       c              <- conv.head
@@ -244,21 +243,6 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
         }
       }
     }
-
-    //lastEphemeralValue.head.foreach { lastExpiration =>
-    //  if (lastExpiration.isDefined) {
-    //    conv.head.foreach { c =>
-    //      if (!c.ephemeralExpiration.map(_.isInstanceOf[ConvExpiry]))
-    //      zms.head.flatMap { z =>
-    //        z.convsUi.setEphemeral(c.id, if (c.ephemeralExpiration.isEmpty) lastExpiration else None)
-    //        //case Some((prev, current)) if prev.ephemeralExpiration.isEmpty =>
-    //        //  onEphemeralExpirationSelected ! current
-    //        //case _ => // ignore
-    //      }
-    //    }
-    //  }
-    //}
-  }
 
   lazy val drawingController = inject[IDrawingController]
   lazy val giphyController = inject[IGiphyController]
