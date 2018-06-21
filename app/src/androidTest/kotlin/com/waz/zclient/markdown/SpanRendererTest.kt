@@ -32,7 +32,7 @@ import org.junit.runner.RunWith
 import org.junit.Assert.*
 
 @RunWith(AndroidJUnit4::class)
-class SpanRendererTests {
+class SpanRendererTest {
 
     val parser = Parser.builder().build()
     val stylesheet = StyleSheet()
