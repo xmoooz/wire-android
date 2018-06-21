@@ -104,9 +104,13 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
   val sendButtonVisible = Signal(emojiKeyboardVisible, enteredTextEmpty, sendButtonEnabled, isEditingMessage) map {
     case (emoji, empty, enabled, editing) => enabled && (emoji || !empty) && !editing
   }
-  val ephemeralBtnVisible = Signal(isEditingMessage, convIsActive, enteredTextEmpty, sendButtonVisible) map {
-    case (false, true, true, false) => true
-    case _ => false
+  val ephemeralBtnVisible = Signal(isEditingMessage, convIsActive).flatMap {
+    case (false, true) =>
+      isEphemeralMode.flatMap {
+        case true => Signal.const(true)
+        case _ => sendButtonVisible.map(!_)
+      }
+    case _ => Signal.const(false)
   }
 
   val onShowTooltip = EventStream[(CursorMenuItem, View)]   // (item, anchor)

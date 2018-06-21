@@ -35,23 +35,22 @@
 package com.waz.zclient.cursor
 
 import android.content.Context
-import android.content.res.ColorStateList
 import android.graphics._
 import android.graphics.drawable.{Drawable, StateListDrawable}
+import android.support.v4.content.res.ResourcesCompat
 import android.util.AttributeSet
 import android.view.{HapticFeedbackConstants, MotionEvent, View}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api.AccentColor
 import com.waz.threading.Threading
 import com.waz.utils.events.Signal
-import com.waz.zclient.ViewHelper
-import com.waz.zclient.R
+import com.waz.zclient.{R, ViewHelper}
+import com.waz.zclient.common.controllers.ThemeController
 import com.waz.zclient.ui.text.GlyphTextView
 import com.waz.zclient.ui.theme.ThemeUtils
 import com.waz.zclient.ui.utils.ColorUtils
 import com.waz.zclient.ui.views.FilledCircularBackgroundDrawable
 import com.waz.zclient.utils._
-
 
 class CursorIconButton(context: Context, attrs: AttributeSet, defStyleAttr: Int) extends GlyphTextView(context, attrs, defStyleAttr) with ViewHelper {
   def this(context: Context, attrs: AttributeSet) { this(context, attrs, 0) }
@@ -66,23 +65,39 @@ class CursorIconButton(context: Context, attrs: AttributeSet, defStyleAttr: Int)
   val controller = inject[CursorController]
   val menuItem = Signal(Option.empty[CursorMenuItem])
 
-  val defaultTextColor = getCurrentTextColor
+  val diameter = getDimenPx(R.dimen.cursor__menu_button__diameter)
 
-  val diameter = getResources.getDimensionPixelSize(R.dimen.cursor__menu_button__diameter)
+  val glyph = menuItem.map(_.fold(R.string.empty_string)(_.glyphResId))
 
-  val glyph = for {
-    item <- menuItem
-    ephemeral <- controller.isEphemeralMode
-  } yield
-    item.fold(R.string.empty_string) { mi => if (ephemeral) mi.timedGlyphResId else mi.glyphResId }
-
-  val bgColor = menuItem flatMap {
-    case Some(CursorMenuItem.Dummy) => Signal const (Color.TRANSPARENT, Color.TRANSPARENT)
-    case Some(CursorMenuItem.Send) => accentColor map { ac => (ac.getColor, ac.getColor) }
-    case _ => Signal const (Color.TRANSPARENT, getColor(R.color.light_graphite))
+  val bgColor = menuItem.flatMap {
+    case Some(CursorMenuItem.Dummy) => Signal.const(Color.TRANSPARENT, Color.TRANSPARENT)
+    case Some(CursorMenuItem.Send)  => accentColor.map(ac => (ac.getColor, ac.getColor))
+    case _ => Signal.const(Color.TRANSPARENT, getColor(R.color.light_graphite))
   }
 
+  val buttonColor = defaultColor
+
+  protected def defaultColor = inject[ThemeController].darkThemeSet
+    .map(if (_) R.color.wire__text_color_primary_dark_selector else R.color.wire__text_color_primary_light_selector)
+    .map(ResourcesCompat.getColorStateList(getResources, _, null))
+
   val background = defaultBackground
+
+  protected def defaultBackground: Signal[Drawable] = bgColor map { case (defaultColor, pressedColor) =>
+    val alphaPressed = if (ThemeUtils.isDarkTheme(getContext)) PRESSED_ALPHA__DARK else PRESSED_ALPHA__LIGHT
+    val avg = (Color.red(pressedColor) + Color.blue(pressedColor) + Color.green(pressedColor)) / (3 * 255.0f)
+    val pressed = ColorUtils.injectAlpha(alphaPressed, if (avg > THRESHOLD) {
+      val darken = 1.0f - CursorIconButton.DARKEN_FACTOR
+      Color.rgb((Color.red(pressedColor) * darken).toInt, (Color.green(pressedColor) * darken).toInt, (Color.blue(pressedColor) * darken).toInt)
+    } else pressedColor)
+    val pressedBgColor = new FilledCircularBackgroundDrawable(pressed, getDimenPx(R.dimen.cursor__menu_button__diameter))
+    val states = new StateListDrawable
+    states.addState(Array(android.R.attr.state_pressed), pressedBgColor)
+    states.addState(Array(android.R.attr.state_focused), pressedBgColor)
+    states.addState(Array(-android.R.attr.state_enabled), pressedBgColor)
+    states.addState(Array[Int](), new FilledCircularBackgroundDrawable(defaultColor, getDimenPx(R.dimen.cursor__menu_button__diameter)))
+    states
+  }
 
   val selected = controller.selectedItem.zip(menuItem) map {
     case (Some(s), Some(i)) => s == i
@@ -90,7 +105,7 @@ class CursorIconButton(context: Context, attrs: AttributeSet, defStyleAttr: Int)
   }
 
   this.onClick {
-    menuItem.head foreach {
+    menuItem.head.foreach {
       case Some(item) => controller.onCursorItemClick ! item
       case None => // no item, ignoring
     }
@@ -127,38 +142,12 @@ class CursorIconButton(context: Context, attrs: AttributeSet, defStyleAttr: Int)
 
   override def onFinishInflate(): Unit = {
     super.onFinishInflate()
-    initTextColor(accentColor.currentValue.map(_.getColor).getOrElse(R.color.text__primary_light))
-    background.on(Threading.Ui) { setBackground }
 
-    glyph.on(Threading.Ui) { setText }
-    selected.on(Threading.Ui) { setSelected }
-  }
+    background.onUi(setBackground)
+    glyph.onUi(setText)
+    selected.onUi(setSelected)
+    buttonColor.onUi(setTextColor)
 
-  private def initTextColor(selectedColor: Int): Unit = {
-    val dark = ThemeUtils.isDarkTheme(getContext)
-    val enabledColor = getColor(if (dark) R.color.text__primary_dark else R.color.text__primary_light)
-    val pressedColor = getColor(if (dark) R.color.text__primary_dark_40 else R.color.text__primary_light__40)
-    val disabledColor = getColor(if (dark) R.color.text__primary_dark_16 else R.color.text__primary_light_16)
-    val focusedColor = pressedColor
-    val colors = Array(pressedColor, focusedColor, selectedColor, enabledColor, disabledColor)
-    val states = Array(Array(android.R.attr.state_pressed), Array(android.R.attr.state_focused), Array(android.R.attr.state_selected), Array(android.R.attr.state_enabled), Array(-android.R.attr.state_enabled))
-    setTextColor(new ColorStateList(states, colors))
-  }
-
-  protected def defaultBackground: Signal[Drawable] = bgColor map { case (defaultColor, pressedColor) =>
-    val alphaPressed = if (ThemeUtils.isDarkTheme(getContext)) PRESSED_ALPHA__DARK else PRESSED_ALPHA__LIGHT
-    val avg = (Color.red(pressedColor) + Color.blue(pressedColor) + Color.green(pressedColor)) / (3 * 255.0f)
-    val pressed = ColorUtils.injectAlpha(alphaPressed, if (avg > THRESHOLD) {
-      val darken = 1.0f - CursorIconButton.DARKEN_FACTOR
-      Color.rgb((Color.red(pressedColor) * darken).toInt, (Color.green(pressedColor) * darken).toInt, (Color.blue(pressedColor) * darken).toInt)
-    } else pressedColor)
-    val pressedBgColor = new FilledCircularBackgroundDrawable(pressed, getDimenPx(R.dimen.cursor__menu_button__diameter))
-    val states = new StateListDrawable
-    states.addState(Array(android.R.attr.state_pressed), pressedBgColor)
-    states.addState(Array(android.R.attr.state_focused), pressedBgColor)
-    states.addState(Array(-android.R.attr.state_enabled), pressedBgColor)
-    states.addState(Array[Int](), new FilledCircularBackgroundDrawable(defaultColor, getDimenPx(R.dimen.cursor__menu_button__diameter)))
-    states
   }
 }
 

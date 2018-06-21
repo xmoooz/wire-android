@@ -18,6 +18,7 @@
 package com.waz.zclient.cursor
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.util.{AttributeSet, TypedValue}
 import android.view.Gravity
 import com.waz.utils.events.Signal
@@ -48,6 +49,12 @@ class EphemeralIconButton(context: Context, attrs: AttributeSet, defStyleAttr: I
     }
   }
 
+  override val buttonColor = controller.convIsEphemeral.zip(controller.isEditingMessage).flatMap {
+    case (true, false) =>
+      accentColor.map(_.getColor).map(ColorStateList.valueOf)
+    case _ => defaultColor
+  }
+
   val typeface = controller.convIsEphemeral.map {
     case true => TypefaceUtils.getTypeface(getContext.getString(R.string.wire__typeface__regular))
     case false => TypefaceUtils.getTypeface(TypefaceUtils.getGlyphsTypefaceName)
@@ -59,10 +66,11 @@ class EphemeralIconButton(context: Context, attrs: AttributeSet, defStyleAttr: I
   }
 
   override val glyph = Signal[Int]()
+
   override val background = controller.convIsEphemeral.zip(accentColor) flatMap {
     case (true, accent) =>
       val bgColor = ColorUtils.injectAlpha(ResourceUtils.getResourceFloat(getResources, R.dimen.ephemeral__accent__timer_alpha), accent.getColor)
-      Signal const ColorUtils.getTintedDrawable(getContext, R.drawable.background__cursor__ephemeral_timer, bgColor)
+      Signal.const(ColorUtils.getTintedDrawable(getContext, R.drawable.background__cursor__ephemeral_timer, bgColor))
     case (false, _) =>
       defaultBackground
   }
