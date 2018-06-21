@@ -924,55 +924,39 @@ class SpanRendererTests {
             "3.\tOuter three"
         )
 
-        // check that the nested list is indented, i.e it has a leading margin span where the
-        // the first line indent and the rest indent is equal to the item content margin.
-        // note: the nested list range begins with a trailing newline.
-        val rangeOfNestedList = 25..50
-        val leadingMarginSpansOnNestedList = result.spansInRange(rangeOfNestedList, LeadingMarginSpan::class.java)
-        assertEquals(1, leadingMarginSpansOnNestedList.size)
+        /* The indentation spans are applied to each paragraph in a list item. Here each item
+         * only has one paragraph each, but we still need to check them separately.
+         */
 
-        val leadingMarginSpan = leadingMarginSpansOnNestedList.first()
-        assertEquals(leadingMarginSpan.getLeadingMargin(true), leadingMarginSpan.getLeadingMargin(false))
-        assertEquals(leadingMarginSpan.getLeadingMargin(true), stylesheet.listItemContentMargin)
-
-        // check that each outer item span contains a tab stop and leading margin span
-        // and each inner span does not (because they inherit them from the outer).
-        val rangesOfOuterItems = listOf(0..13, 13..50, 50..64)
+        val rangesOfOuterItemLines = listOf(0..13, 13..26, 50..64)
         val rangesOfInnerItems = listOf(26..38, 38..50)
 
-        for (range in rangesOfOuterItems) {
-            // one outer item span on this range
-            val spans = result.spansInRange(range, ListItemSpan::class.java)
-            assertEquals(1, spans.size)
+        for (range in rangesOfOuterItemLines) {
+            val marginSpans = result.spansInRange(range, LeadingMarginSpan.Standard::class.java)
+            assertEquals(1, marginSpans.size)
+            assertEquals(0, marginSpans.first().getLeadingMargin(true))
+            assertEquals(stylesheet.listItemContentMargin, marginSpans.first().getLeadingMargin(false))
 
-            // it groups two spans
-            val outerItemSpan = spans.first()
-            assertEquals(2, outerItemSpan.spans.size)
-
-            for (componentSpan in outerItemSpan.spans) {
-                when (componentSpan) {
-                    is TabStopSpan -> {
-                        assertEquals(stylesheet.listItemContentMargin, componentSpan.tabStop)
-                    }
-                    is LeadingMarginSpan -> {
-                        // first line has no indentation (handled by tab stop)
-                        assertEquals(0, componentSpan.getLeadingMargin(true))
-                        // rest of the lines have indentation
-                        assertEquals(stylesheet.listItemContentMargin, componentSpan.getLeadingMargin(false))
-                    }
-                    else -> fail()
-                }
-            }
+            val tabStopSpans = result.spansInRange(range, TabStopSpan.Standard::class.java)
+            assertEquals(1, tabStopSpans.size)
+            assertEquals(stylesheet.listItemContentMargin, tabStopSpans.first().tabStop)
         }
 
-        for (range in rangesOfInnerItems) {
-            // one inner item span on this range
-            val spans = result.spansInRange(range, ListItemSpan::class.java)
-            assertEquals(1, spans.size)
+        // the nested list has addition indentation
+        val indentation = stylesheet.listItemContentMargin
 
-            // it does not have any component spans
-            val innerItemSpan = spans.first()
-            assertEquals(0, innerItemSpan.spans.size)
+        for (range in rangesOfInnerItems) {
+            val marginSpans = result.spansInRange(range, LeadingMarginSpan.Standard::class.java)
+            assertEquals(1, marginSpans.size)
+            assertEquals(indentation, marginSpans.first().getLeadingMargin(true))
+            assertEquals(indentation + stylesheet.listItemContentMargin, marginSpans.first().getLeadingMargin(false))
+
+            val tabStopSpans = result.spansInRange(range, TabStopSpan.Standard::class.java)
+            assertEquals(1, tabStopSpans.size)
+
+            // the tabStop doesn't have the additional indentation because the leading margin
+            // is already indented
+            assertEquals( stylesheet.listItemContentMargin, tabStopSpans.first().tabStop)
         }
 
         // finally check that each prefix has a span
@@ -1011,12 +995,12 @@ class SpanRendererTests {
         assertEquals(expected, result.toString())
 
         // there is an ordered list span
-        val orderedListResults = result.spanResults(BulletListSpan::class.java)
-        check(orderedListResults, expected)
+        val bulletListResults = result.spanResults(BulletListSpan::class.java)
+        check(bulletListResults, expected)
 
         // there is a (nested) bullet list span (and it includes a leading newline)
-        val bulletListResults = result.spanResults(OrderedListSpan::class.java)
-        check(bulletListResults,
+        val orderedListResults = result.spanResults(OrderedListSpan::class.java)
+        check(orderedListResults,
             """
                     |
                     |1.${"\t"}Inner one
@@ -1041,60 +1025,107 @@ class SpanRendererTests {
             "•\tOuter three"
         )
 
-        // check that the nested list is indented, i.e it has a leading margin span where the
-        // the first line indent and the rest indent is equal to the item content margin.
-        // note: the nested list range begins with a trailing newline.
-        val rangeOfNestedList = 23..50
-        val leadingMarginSpansOnNestedList = result.spansInRange(rangeOfNestedList, LeadingMarginSpan::class.java)
-        assertEquals(1, leadingMarginSpansOnNestedList.size)
+        /* The indentation spans are applied to each paragraph in a list item. Here each item
+         * only has one paragraph each, but we still need to check them separately.
+         */
 
-        val leadingMarginSpan = leadingMarginSpansOnNestedList.first()
-        assertEquals(leadingMarginSpan.getLeadingMargin(true), leadingMarginSpan.getLeadingMargin(false))
-        assertEquals(leadingMarginSpan.getLeadingMargin(true), stylesheet.listItemContentMargin)
-
-        // check that each outer item span contains a tab stop and leading margin span
-        // and each inner span does not (because they inherit them from the outer).
-        val rangesOfOuterItems = listOf(0..12, 12..50, 50..63)
+        val rangesOfOuterItemLines = listOf(0..12, 12..24, 50..63)
         val rangesOfInnerItems = listOf(24..37, 37..50)
 
-        for (range in rangesOfOuterItems) {
-            // one outer item span on this range
-            val spans = result.spansInRange(range, ListItemSpan::class.java)
-            assertEquals(1, spans.size)
+        for (range in rangesOfOuterItemLines) {
+            val marginSpans = result.spansInRange(range, LeadingMarginSpan.Standard::class.java)
+            assertEquals(1, marginSpans.size)
+            assertEquals(0, marginSpans.first().getLeadingMargin(true))
+            assertEquals(stylesheet.listItemContentMargin, marginSpans.first().getLeadingMargin(false))
 
-            // it groups two spans
-            val outerItemSpan = spans.first()
-            assertEquals(2, outerItemSpan.spans.size)
-
-            for (componentSpan in outerItemSpan.spans) {
-                when (componentSpan) {
-                    is TabStopSpan -> {
-                        assertEquals(stylesheet.listItemContentMargin, componentSpan.tabStop)
-                    }
-                    is LeadingMarginSpan -> {
-                        // first line has no indentation (handled by tab stop)
-                        assertEquals(0, componentSpan.getLeadingMargin(true))
-                        // rest of the lines have indentation
-                        assertEquals(stylesheet.listItemContentMargin, componentSpan.getLeadingMargin(false))
-                    }
-                    else -> fail()
-                }
-            }
+            val tabStopSpans = result.spansInRange(range, TabStopSpan.Standard::class.java)
+            assertEquals(1, tabStopSpans.size)
+            assertEquals(stylesheet.listItemContentMargin, tabStopSpans.first().tabStop)
         }
 
-        for (range in rangesOfInnerItems) {
-            // one inner item span on this range
-            val spans = result.spansInRange(range, ListItemSpan::class.java)
-            assertEquals(1, spans.size)
+        // the nested list has addition indentation
+        val indentation = stylesheet.listItemContentMargin
 
-            // it does not have any component spans
-            val innerItemSpan = spans.first()
-            assertEquals(0, innerItemSpan.spans.size)
+        for (range in rangesOfInnerItems) {
+            val marginSpans = result.spansInRange(range, LeadingMarginSpan.Standard::class.java)
+            assertEquals(1, marginSpans.size)
+            assertEquals(indentation, marginSpans.first().getLeadingMargin(true))
+            assertEquals(indentation + stylesheet.listItemContentMargin, marginSpans.first().getLeadingMargin(false))
+
+            val tabStopSpans = result.spansInRange(range, TabStopSpan.Standard::class.java)
+            assertEquals(1, tabStopSpans.size)
+
+            // the tabStop doesn't have the additional indentation because the leading margin
+            // is already indented
+            assertEquals( stylesheet.listItemContentMargin, tabStopSpans.first().tabStop)
         }
 
         // finally check that each prefix has a span
         val prefixResults = result.spanResults(ListPrefixSpan::class.java)
         check(prefixResults, "1.", "2.", "•", "•", "•")
+    }
+
+    @Test
+    fun testThatItRenders_Complex_NestedList_Triple() {
+        // given
+        val sut = sut()
+
+        val input =
+            """
+                    |1. Outer
+                    |    - Inner
+                    |       1. Inner Inner
+                    |""".trimMargin()
+
+        val expected =
+            """
+                    |1.${"\t"}Outer
+                    |•${"\t"}Inner
+                    |1.${"\t"}Inner Inner
+                    """.trimMargin()
+
+        // when
+        parse(input).accept(sut)
+        val result = sut.spannableString
+
+        // then
+        assertEquals(expected, result.toString())
+
+        // there are two ordered list spans
+        val orderedListResults = result.spanResults(OrderedListSpan::class.java)
+        check(orderedListResults, expected, "\n1.\tInner Inner")
+
+        // there is one bullet list span (and it includes a leading newline)
+        val bulletListResults = result.spanResults(BulletListSpan::class.java)
+        check(bulletListResults, "\n•\tInner\n1.\tInner Inner")
+
+        // there is an item span for each item (note: nested lists are within items)
+        val itemResults = result.spanResults(ListItemSpan::class.java)
+        check(itemResults, expected, "•\tInner\n1.\tInner Inner", "1.\tInner Inner")
+
+        // now check the indentation of each item
+        val rangesOfItems = listOf(0..9, 9..17, 17..31)
+        val indentation = stylesheet.listItemContentMargin
+
+        for ((idx, range) in rangesOfItems.withIndex()) {
+            val marginSpans = result.spansInRange(range, LeadingMarginSpan.Standard::class.java)
+            assertEquals(1, marginSpans.size)
+
+            // the depth of the list item increases its indentation
+            assertEquals(idx * indentation, marginSpans.first().getLeadingMargin(true))
+            assertEquals((idx + 1) * indentation, marginSpans.first().getLeadingMargin(false))
+
+            val tabStopSpans = result.spansInRange(range, TabStopSpan.Standard::class.java)
+            assertEquals(1, tabStopSpans.size)
+
+            // but the depth of the list item doesn't affect its tabstop (because the
+            // leading margins are already indented)
+            assertEquals(stylesheet.listItemContentMargin, tabStopSpans.first().tabStop)
+        }
+
+        // finally check the prefixes
+        val prefixResults = result.spanResults(ListPrefixSpan::class.java)
+        check(prefixResults, "1.", "•", "1.")
     }
 
     @Test
@@ -1138,13 +1169,12 @@ class SpanRendererTests {
         val listResults = result.spanResults(OrderedListSpan::class.java)
         check(listResults, expected)
 
-        // there are two leading margin spans on the second list item, one that covers the whole
-        // item with 0 indentation on the first line, but indentation on all the rest, and the
-        // other that covers from the line break to the end of the item, that only has first line
-        // indentation.
+        /* There are two leading margin spans to check, one for the first paragraph of the list
+         * item, and one for the rest of the paragraphs up until the end of the item.
+         */
 
         // leading margin spans on the whole second item
-        var spans = result.spansInRange(12..42, LeadingMarginSpan::class.java)
+        var spans = result.spansInRange(12..25, LeadingMarginSpan::class.java)
         assertEquals(1, spans.size)
 
         // it should have 0 indentation for the first line, but indentation for the rest
@@ -1152,12 +1182,12 @@ class SpanRendererTests {
         assertEquals(stylesheet.listItemContentMargin, spans.first().getLeadingMargin(false))
 
         // leading margin spans from the linebreak to the end of the item
-        spans = result.spansInRange(24..42, LeadingMarginSpan::class.java)
+        spans = result.spansInRange(25..42, LeadingMarginSpan::class.java)
         assertEquals(1, spans.size)
 
         // it should have indentation for the first line, but 0 for the rest
         assertEquals(stylesheet.listItemContentMargin, spans.first().getLeadingMargin(true))
-        assertEquals(0, spans.first().getLeadingMargin(false))
+        assertEquals(stylesheet.listItemContentMargin, spans.first().getLeadingMargin(false))
     }
 
     @Test
@@ -1218,13 +1248,12 @@ class SpanRendererTests {
                     """.trimMargin()
         )
 
-        /* There are three leading margin spans on the second item: one for the whole list item,
-         * one for the content after the soft line break in the item up to the start of the
-         * nested list, and one for the whole nested list.
-         * */
+        /* There are two leading margins spans to check, one for the first paragraph of the item,
+         * and one for the rest of the paragraphs up to the nested list.
+         */
 
         // leading margin span for the whole second list item
-        var spans = result.spansInRange(12..87, LeadingMarginSpan::class.java)
+        var spans = result.spansInRange(12..25, LeadingMarginSpan::class.java)
         assertEquals(1, spans.size)
 
         // it should have 0 indentation for the first line, but indentation for the rest
@@ -1232,18 +1261,10 @@ class SpanRendererTests {
         assertEquals(stylesheet.listItemContentMargin, spans.first().getLeadingMargin(false))
 
         // leading margin span from the soft line break, up to the start of the nested list
-        spans = result.spansInRange(24..41, LeadingMarginSpan::class.java)
+        spans = result.spansInRange(25..41, LeadingMarginSpan::class.java)
         assertEquals(1, spans.size)
 
-        // it should have indentation for the first line, but 0 for the rest
-        assertEquals(stylesheet.listItemContentMargin, spans.first().getLeadingMargin(true))
-        assertEquals(0, spans.first().getLeadingMargin(false))
-
-        // the leading margin span on the nested list
-        spans = result.spansInRange(41..87, LeadingMarginSpan::class.java)
-        assertEquals(1, spans.size)
-
-        // it should have indentation equal on all lines
+        // it should have indentation for the all lines
         assertEquals(stylesheet.listItemContentMargin, spans.first().getLeadingMargin(true))
         assertEquals(stylesheet.listItemContentMargin, spans.first().getLeadingMargin(false))
     }
