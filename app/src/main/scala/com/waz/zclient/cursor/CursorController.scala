@@ -27,7 +27,7 @@ import com.google.android.gms.common.{ConnectionResult, GoogleApiAvailability}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api._
 import com.waz.content.{GlobalPreferences, UserPreferences}
-import com.waz.model.{ConvExpiry, EphemeralDuration, MessageData}
+import com.waz.model.{ConvExpiry, MessageData}
 import com.waz.permissions.PermissionsService
 import com.waz.service.{NetworkModeService, ZMessaging}
 import com.waz.threading.{CancellableFuture, Threading}
@@ -82,7 +82,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
   }
   val isEditingMessage = editingMsg.map(_.isDefined)
 
-  val ephemeralExp = Signal.const[Option[EphemeralDuration]](Option(ConvExpiry(10.seconds))) //conv.map(_.ephemeralExpiration) TODO set back when done testing
+  val ephemeralExp = conv.map(_.ephemeralExpiration)
   val isEphemeral  = ephemeralExp.map(_.isDefined)
 
   val emojiKeyboardVisible = extendedCursor.map(_ == ExtendedCursorContainer.Type.EMOJIS)

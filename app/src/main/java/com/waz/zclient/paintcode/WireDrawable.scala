@@ -137,3 +137,28 @@ case class ConversationIcon(colorRes: Int)(implicit context: Context) extends Wi
   setColor(getColor(colorRes))
   override def draw(canvas: Canvas) = drawConversation(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
 }
+
+case class EphemeralSecondIcon(color: Int)(implicit context: Context) extends WireDrawable {
+  setColor(color)
+  override def draw(canvas: Canvas) = drawSecond(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
+}
+
+case class EphemeralMinuteIcon(color: Int)(implicit context: Context) extends WireDrawable {
+  setColor(color)
+  override def draw(canvas: Canvas) = drawMinute(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
+}
+
+case class EphemeralHourIcon(color: Int)(implicit context: Context) extends WireDrawable {
+  setColor(color)
+  override def draw(canvas: Canvas) = drawHour(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
+}
+
+case class EphemeralDayIcon(color: Int)(implicit context: Context) extends WireDrawable {
+  setColor(color)
+  override def draw(canvas: Canvas) = drawDay(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
+}
+
+case class EphemeralWeekIcon(color: Int)(implicit context: Context) extends WireDrawable {
+  setColor(color)
+  override def draw(canvas: Canvas) = drawWeek(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
+}

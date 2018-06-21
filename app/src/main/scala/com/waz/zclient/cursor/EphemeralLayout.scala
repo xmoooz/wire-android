@@ -25,10 +25,11 @@ import android.widget.{LinearLayout, NumberPicker}
 import com.waz.ZLog
 import com.waz.ZLog.ImplicitTag._
 import com.waz.utils.events.{EventStream, Subscription}
-import com.waz.zclient.{R, ViewHelper}
+import com.waz.zclient.conversation.ConversationController._
 import com.waz.zclient.utils.ContextUtils._
+import com.waz.zclient.{R, ViewHelper}
 
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration.FiniteDuration
 
 class EphemeralLayout(context: Context, attrs: AttributeSet, defStyleAttr: Int) extends LinearLayout(context, attrs, defStyleAttr) with ViewHelper {
   import EphemeralLayout._
@@ -47,7 +48,7 @@ class EphemeralLayout(context: Context, attrs: AttributeSet, defStyleAttr: Int) 
     super.onFinishInflate()
     numberPicker.setMinValue(0)
     numberPicker.setMaxValue(PredefinedExpirations.size - 1)
-    numberPicker.setDisplayedValues(PredefinedExpirations.map(getEphemeralString).toArray)
+    numberPicker.setDisplayedValues(PredefinedExpirations.map(getEphemeralDisplayString).toArray)
     numberPicker.setOnClickListener(new View.OnClickListener() {
       override def onClick(v: View): Unit =
         expirationSelected ! (PredefinedExpirations(numberPicker.getValue), true)
@@ -69,7 +70,6 @@ class EphemeralLayout(context: Context, attrs: AttributeSet, defStyleAttr: Int) 
     addView(numberPicker)
   }
 
-
   private var subscription = Option.empty[Subscription]
   def setCallback(cb: Callback): Unit = {
     subscription.foreach(_.destroy())
@@ -84,28 +84,4 @@ object EphemeralLayout {
   trait Callback {
     def onEphemeralExpirationSelected(expiration: Option[FiniteDuration], close: Boolean): Unit
   }
-
-  lazy val PredefinedExpirations = Seq(
-    None,
-    Some(10.seconds),
-    Some(5.minutes),
-    Some(1.hour),
-    Some(1.day),
-    Some(7.days),
-    Some(28.days)
-  )
-
-  //TODO - find a way to convert these to strings in a less repetitive manner
-  def getEphemeralString(exp: Option[FiniteDuration])(implicit context: Context) =
-    exp.toString
-//    exp match {
-//      case None                        => getString(R.string.ephemeral_message__timeout__off)
-//      case Some(Duration(5, SECONDS))  => getString(R.string.ephemeral_message__timeout__5_sec)
-//      case Some(Duration(10, SECONDS)) => getString(R.string.ephemeral_message__timeout__15_sec)
-//      case Some(Duration(30, SECONDS)) => getString(R.string.ephemeral_message__timeout__30_sec)
-//      case Some(Duration(1, MINUTES))  => getString(R.string.ephemeral_message__timeout__1_min)
-//      case Some(Duration(5, MINUTES))  => getString(R.string.ephemeral_message__timeout__5_min)
-//      case Some(Duration(1, DAYS))     => getString(R.string.ephemeral_message__timeout__1_day)
-//      case Some(d)                     => d.toString()
-//    }
 }

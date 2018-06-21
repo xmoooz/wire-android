@@ -19,13 +19,15 @@ package com.waz.zclient.cursor
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.drawable.Drawable
 import android.util.{AttributeSet, TypedValue}
 import android.view.Gravity
-import com.waz.model.ConvExpiry
+import com.waz.model.{ConvExpiry, MessageExpiry}
 import com.waz.utils.events.Signal
 import com.waz.zclient.R
 import com.waz.zclient.cursor.CursorController.KeyboardState
 import com.waz.zclient.pages.extendedcursor.ExtendedCursorContainer
+import com.waz.zclient.paintcode._
 import com.waz.zclient.ui.utils._
 import com.waz.zclient.ui.views.OnDoubleClickListener
 import com.waz.zclient.utils.ContextUtils._
@@ -34,21 +36,6 @@ import com.waz.zclient.utils._
 class EphemeralIconButton(context: Context, attrs: AttributeSet, defStyleAttr: Int) extends CursorIconButton(context, attrs, defStyleAttr) { view =>
   def this(context: Context, attrs: AttributeSet) { this(context, attrs, 0) }
   def this(context: Context) { this(context, null) }
-
-  import java.util.concurrent.TimeUnit.{DAYS, MINUTES}
-
-  val timeString = controller.conv.map(_.ephemeralExpiration.map(_.duration)).map { expiration =>
-    expiration.map { duration =>
-      duration.unit match {
-        case DAYS =>
-          getString(R.string.cursor__ephemeral_message__timer_days, duration.toDays.toString)
-        case MINUTES =>
-          getString(R.string.cursor__ephemeral_message__timer_min, duration.toMinutes.toString)
-        case _ =>
-          getString(R.string.cursor__ephemeral_message__timer_seconds, duration.toSeconds.toString)
-      }
-    }
-  }
 
   override val buttonColor =
     controller.ephemeralExp.flatMap {
@@ -69,14 +56,20 @@ class EphemeralIconButton(context: Context, attrs: AttributeSet, defStyleAttr: I
 
   override val glyph = Signal[Int]()
 
-  override val background = controller.ephemeralExp.flatMap {
+  override val background: Signal[Drawable] = controller.ephemeralExp.flatMap {
     case Some(exp) =>
       (exp match {
-        case ConvExpiry(_) => Signal.const(R.color.graphite)
-        case _             => accentColor.map(_.getColor)
-      }).map { c =>
-        val bgColor = ColorUtils.injectAlpha(ResourceUtils.getResourceFloat(getResources, R.dimen.ephemeral__accent__timer_alpha), c)
-        ColorUtils.getTintedDrawable(getContext, R.drawable.background__cursor__ephemeral_timer, bgColor)
+        case ConvExpiry(d)    => Signal.const((exp.display._2, getColor(R.color.graphite)))
+        case MessageExpiry(d) => accentColor.map(_.getColor).map((exp.display._2, _))
+      }).map { case (unit, color) =>
+        import com.waz.model.EphemeralDuration._
+        unit match {
+          case Second => EphemeralSecondIcon(color)
+          case Minute => EphemeralMinuteIcon(color)
+          case Hour   => EphemeralHourIcon(color)
+          case Day    => EphemeralDayIcon(color)
+          case Week   => EphemeralWeekIcon(color)
+        }
       }
     case _ => defaultBackground
   }
@@ -89,7 +82,7 @@ class EphemeralIconButton(context: Context, attrs: AttributeSet, defStyleAttr: I
     typeface.onUi(setTypeface)
     textSize.onUi(setTextSize(TypedValue.COMPLEX_UNIT_PX, _))
 
-    timeString.onUi {
+    controller.conv.map(_.ephemeralExpiration.map(_.display._1)).map(_.map(_.toString)).onUi {
       case Some(t) => setText(t)
       case _       => setText(R.string.glyph__hourglass)
     }

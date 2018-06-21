@@ -37,6 +37,7 @@ import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
 import com.waz.zclient.utils.Callback
 import com.waz.zclient.{Injectable, Injector, R}
 import org.threeten.bp.Instant
+import com.waz.zclient.utils.ContextUtils._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -260,6 +261,28 @@ object ConversationController {
         conv.convType != IConversation.Type.INCOMING_CONNECTION)
       error(s"unexpected call, most likely UI error", new UnsupportedOperationException(s"Can't get other participant for: ${conv.convType} conversation"))
     UserId(conv.id.str) // one-to-one conversation has the same id as the other user, so we can access it directly
+  }
+
+  lazy val PredefinedExpirations = Seq(
+    None,
+    Some(10.seconds),
+    Some(5.minutes),
+    Some(1.hour),
+    Some(1.day),
+    Some(7.days),
+    Some(28.days)
+  )
+
+  import com.waz.model.EphemeralDuration._
+  def getEphemeralDisplayString(exp: Option[FiniteDuration])(implicit context: Context): String = {
+    exp.map(EphemeralDuration(_)) match {
+      case None              => getString(R.string.ephemeral_message__timeout__off)
+      case Some((l, Second)) => getQuantityString(R.plurals.unit_seconds, l.toInt, l.toString)
+      case Some((l, Minute)) => getQuantityString(R.plurals.unit_minutes, l.toInt, l.toString)
+      case Some((l, Hour))   => getQuantityString(R.plurals.unit_hours,   l.toInt, l.toString)
+      case Some((l, Day))    => getQuantityString(R.plurals.unit_days,    l.toInt, l.toString)
+      case Some((l, Week))   => getQuantityString(R.plurals.unit_weeks,   l.toInt, l.toString)
+    }
   }
 
 }
