@@ -30,6 +30,7 @@ import com.waz.zclient.ui.text.GlyphTextView
 import com.waz.zclient.ui.utils.TextViewUtils
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.{R, ViewHelper}
+import com.waz.zclient.utils.RichView
 
 /**
   * View implementing system message layout: row containing icon, text and expandable line.
@@ -45,11 +46,13 @@ class SystemMessageView(context: Context, attrs: AttributeSet, style: Int) exten
 
   val textMargin = getDimenPx(R.dimen.wire__padding__12)
   val paddingTop = getDimenPx(R.dimen.wire__padding__small)
-  val stroke = getDimenPx(R.dimen.wire__divider__height)
+  val stroke     = getDimenPx(R.dimen.wire__divider__height)
+
   val dividerColor = {
     val a = context.obtainStyledAttributes(Array(R.attr.wireDividerColor))
     returning(a.getColor(0, getColor(R.color.separator_dark))) { _ => a.recycle() }
   }
+
   val paint = returning(new Paint()) { p =>
     p.setColor(dividerColor)
     p.setStrokeWidth(stroke)
@@ -58,7 +61,15 @@ class SystemMessageView(context: Context, attrs: AttributeSet, style: Int) exten
   val iconView: GlyphTextView = findById(R.id.gtv__system_message__icon)
   val textView: LinkTextView = findById(R.id.ttv__system_message__text)
 
-  setWillNotDraw(false)
+
+  private var hasDivider = true
+  setHasDivider(true)
+
+  def setHasDivider(hasDivider: Boolean) = {
+    this.hasDivider = hasDivider
+    textView.setMarginRight(getDimenPx(if (hasDivider) R.dimen.content__padding_left else R.dimen.wire__padding__24))
+    setWillNotDraw(!hasDivider)
+  }
 
   def setText(text: String) = {
     textView.setText(text)
@@ -91,7 +102,7 @@ class SystemMessageView(context: Context, attrs: AttributeSet, style: Int) exten
   override def onDraw(canvas: Canvas): Unit = {
     super.onDraw(canvas)
 
-    if (textView.getText.length() > 0) {
+    if (hasDivider && textView.getText.length() > 0) {
       val y = paddingTop + stroke / 2f
       val w = getWidth - start - textView.getWidth - textMargin
       val l = if (getLayoutDirection == View.LAYOUT_DIRECTION_RTL) 0 else getWidth - w

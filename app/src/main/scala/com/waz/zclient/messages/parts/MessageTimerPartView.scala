@@ -20,10 +20,12 @@ package com.waz.zclient.messages.parts
 import android.content.Context
 import android.util.AttributeSet
 import android.widget.LinearLayout
+import com.waz.utils.returning
+import com.waz.zclient.conversation.ConversationController._
 import com.waz.zclient.messages.UsersController.DisplayName.{Me, Other}
 import com.waz.zclient.messages.{MessageViewPart, MsgPart, SystemMessageView, UsersController}
-import com.waz.zclient.{R, ViewHelper}
 import com.waz.zclient.utils.ContextUtils._
+import com.waz.zclient.{R, ViewHelper}
 
 class MessageTimerPartView (context: Context, attrs: AttributeSet, style: Int) extends LinearLayout(context, attrs, style) with MessageViewPart with ViewHelper {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
@@ -33,16 +35,16 @@ class MessageTimerPartView (context: Context, attrs: AttributeSet, style: Int) e
 
   inflate(R.layout.message_msg_timer_changed_content)
 
-  val msgView = findById[SystemMessageView](R.id.message_view)
+  val msgView = returning(findById[SystemMessageView](R.id.message_view))(_.setHasDivider(false))
 
   msgView.setIconGlyph(R.string.glyph__hourglass)
 
   (for {
     n <- message.map(_.userId).flatMap(inject[UsersController].displayName)
-    d <- message.map(_.duration)
+    d <- message.map(_.duration).map(getEphemeralDisplayString)
   } yield n match {
-    case Me          => getString(R.string.you_set_message_timer, d.toString)
-    case Other(name) => getString(R.string.other_set_message_timer, name, d.toString)
+    case Me          => getString(R.string.you_set_message_timer, d)
+    case Other(name) => getString(R.string.other_set_message_timer, name, d)
   }).onUi(msgView.setText)
 
 }

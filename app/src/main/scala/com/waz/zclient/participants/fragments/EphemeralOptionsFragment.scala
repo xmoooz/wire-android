@@ -27,6 +27,7 @@ import com.waz.zclient.ui.text.TypefaceTextView
 import com.waz.ZLog.ImplicitTag._
 import com.waz.utils.returning
 import com.waz.zclient.conversation.ConversationController
+import com.waz.zclient.conversation.ConversationController._
 import com.waz.zclient.{FragmentHelper, R}
 
 import scala.concurrent.duration._
@@ -34,16 +35,6 @@ import scala.concurrent.duration._
 class EphemeralOptionsFragment extends FragmentHelper {
 
   import com.waz.threading.Threading.Implicits.Ui
-
-  private val options: Seq[Option[FiniteDuration]] = Seq(
-    None,
-    Some(10.seconds),
-    Some(5.minutes),
-    Some(1.hour),
-    Some(1.day),
-    Some(7.days),
-    Some(28.days)
-  )
 
   private lazy val zms = inject[Signal[ZMessaging]]
   private lazy val convController = inject[ConversationController]
@@ -58,7 +49,7 @@ class EphemeralOptionsFragment extends FragmentHelper {
 
   private def setNewValue(e: Option[FiniteDuration]): Unit = {
     optionsList.foreach { v =>
-      options.zipWithIndex.map { case (option, index) =>
+      PredefinedExpirations.zipWithIndex.map { case (option, index) =>
         (option, v.getChildAt(index).asInstanceOf[LinearLayout].getChildAt(0).asInstanceOf[TypefaceTextView])
       }.foreach { case (option, r) =>
         r.setText(if (e.equals(option)) ConversationController.getEphemeralDisplayString(option) + "      x"
@@ -76,7 +67,7 @@ class EphemeralOptionsFragment extends FragmentHelper {
 
   override def onViewCreated(view: View, savedInstanceState: Bundle): Unit = {
     optionsList.foreach { v =>
-      options.foreach { _ =>
+      PredefinedExpirations.foreach { _ =>
         getLayoutInflater.inflate(R.layout.conversation_option_item, v, true)
       }
     }

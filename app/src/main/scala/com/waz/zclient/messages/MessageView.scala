@@ -241,7 +241,8 @@ object MessageView {
              OtrMessage |
              Rename |
              WirelessLink |
-             ConversationStart => SystemLike
+             ConversationStart |
+             MessageTimer => SystemLike
         case MsgPart.MissedCall => MissedCall
         case _ => Other
       }

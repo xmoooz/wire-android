@@ -45,7 +45,6 @@
         android:lineSpacingExtra="@dimen/wire__text_spacing__medium"
         android:textColor="?wirePrimaryTextColor"
         android:textSize="@dimen/wire__text_size__small"
-        app:w_font="@string/wire__typeface__light"
-        android:layout_marginEnd="@dimen/content__padding_left"/>
+        app:w_font="@string/wire__typeface__light"/>
 
 </merge>

@@ -35,7 +35,7 @@ import com.waz.zclient.conversation.ConversationController.ConversationChange
 import com.waz.zclient.conversationlist.ConversationListController
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
 import com.waz.zclient.utils.Callback
-import com.waz.zclient.{Injectable, Injector, R}
+import com.waz.zclient.{BuildConfig, Injectable, Injector, R}
 import org.threeten.bp.Instant
 import com.waz.zclient.utils.ContextUtils._
 
@@ -263,15 +263,19 @@ object ConversationController {
     UserId(conv.id.str) // one-to-one conversation has the same id as the other user, so we can access it directly
   }
 
-  lazy val PredefinedExpirations = Seq(
-    None,
-    Some(10.seconds),
-    Some(5.minutes),
-    Some(1.hour),
-    Some(1.day),
-    Some(7.days),
-    Some(28.days)
-  )
+  lazy val PredefinedExpirations = {
+    val es = Seq(
+      None,
+      Some(10.seconds),
+      Some(5.minutes),
+      Some(1.hour),
+      Some(1.day),
+      Some(7.days),
+      Some(28.days)
+    )
+
+    if (BuildConfig.DEVELOPER_FEATURES_ENABLED) es :+ Some((7 * 99).days) else es
+  }
 
   import com.waz.model.EphemeralDuration._
   def getEphemeralDisplayString(exp: Option[FiniteDuration])(implicit context: Context): String = {
