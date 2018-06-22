@@ -557,8 +557,9 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       case ExtendedCursorContainer.Type.EMOJIS =>
         extendedCursorContainer.openEmojis(getControllerFactory.getUserPreferencesController.getRecentEmojis, getControllerFactory.getUserPreferencesController.getUnsupportedEmojis, emojiKeyboardLayoutCallback)
       case ExtendedCursorContainer.Type.EPHEMERAL =>
-        convController.currentConv.head.map(_.ephemeralExpiration.map(_.duration)).map { duration =>
-          extendedCursorContainer.openEphemeral(ephemeralLayoutCallback, duration)
+        convController.currentConv.map(_.ephemeralExpiration).head.foreach {
+          case Some(ConvExpiry(_)) => //do nothing - global timer is set
+          case exp => extendedCursorContainer.openEphemeral(ephemeralLayoutCallback, exp.map(_.duration))
         }
       case ExtendedCursorContainer.Type.VOICE_FILTER_RECORDING =>
         extendedCursorContainer.openVoiceFilter(voiceFilterLayoutCallback)
