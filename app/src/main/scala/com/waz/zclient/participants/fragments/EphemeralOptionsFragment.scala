@@ -40,8 +40,6 @@ class EphemeralOptionsFragment extends FragmentHelper {
   private lazy val zms = inject[Signal[ZMessaging]]
   private lazy val convController = inject[ConversationController]
 
-  private var firstRun = true
-
   private lazy val optionsList = returning(view[LinearLayout](R.id.list_view)) { _ =>
     convController.currentConv.map(_.ephemeralExpiration).map {
       case Some(ConvExpiry(e)) => Some(e)
@@ -79,7 +77,6 @@ class EphemeralOptionsFragment extends FragmentHelper {
       }
       if (!PredefinedExpirations.contains(e)) {
         val textView = unrecognizedOption.getChildAt(0).asInstanceOf[TypefaceTextView]
-        val check = unrecognizedOption.getChildAt(1).asInstanceOf[GlyphTextView]
         textView.setText(ConversationController.getEphemeralDisplayString(e))
         check.setVisible(true)
       }
