@@ -199,7 +199,7 @@ object ParticipantsAdapter {
 
   case class GuestOptionsButtonViewHolder(view: View) extends ViewHolder(view) {
     private implicit val ctx = view.getContext
-    //view.setId(R.id.guest_options)
+    view.setId(R.id.guest_options)
     view.findViewById[ImageView](R.id.icon).setImageDrawable(GuestIconWithColor(ContextUtils.getStyledColor(R.attr.wirePrimaryTextColor)))
     view.findViewById[TextView](R.id.name_text).setText(R.string.guest_options_title)
     view.findViewById[ImageView](R.id.next_indicator).setImageDrawable(ForwardNavigationIcon(R.color.light_graphite_40))
@@ -207,7 +207,7 @@ object ParticipantsAdapter {
 
   case class EphemeralOptionsButtonViewHolder(view: View) extends ViewHolder(view) {
     private implicit val ctx = view.getContext
-    //view.setId(R.id.guest_options)
+    view.setId(R.id.timed_messages_options)
     view.findViewById[ImageView](R.id.icon).setImageDrawable(GuestIconWithColor(ContextUtils.getStyledColor(R.attr.wirePrimaryTextColor)))
     view.findViewById[TextView](R.id.name_text).setText(R.string.ephemeral_options_title)
     view.findViewById[ImageView](R.id.next_indicator).setImageDrawable(ForwardNavigationIcon(R.color.light_graphite_40))
