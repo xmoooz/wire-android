@@ -19,6 +19,7 @@ package com.waz.zclient.markdown.spans.custom
 
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.text.Spanned
 import android.text.style.ParagraphStyle
 import android.text.style.ReplacementSpan
 
@@ -39,10 +40,14 @@ class ListPrefixSpan(
     }
 
     override fun draw(canvas: Canvas?, text: CharSequence?, start: Int, end: Int, x: Float, top: Int, y: Int, bottom: Int, paint: Paint?) {
+        // ensure this span is attached to the text
+        val spanned = text as Spanned
+        if (!(spanned.getSpanStart(this) == start && spanned.getSpanEnd(this) == end)) return
+
         if (canvas == null || text == null || paint == null) return
 
         // the list prefix
-        val prefix = text.subSequence(start..end)
+        val prefix = text.subSequence(start until end)
 
         // total container width
         val totalWidth = (digits * digitWidth).toFloat()
