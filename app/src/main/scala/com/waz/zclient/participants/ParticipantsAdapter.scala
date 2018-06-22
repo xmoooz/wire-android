@@ -37,11 +37,11 @@ import com.waz.zclient.common.controllers.ThemeController
 import com.waz.zclient.common.controllers.ThemeController.Theme
 import com.waz.zclient.common.views.SingleUserRowView
 import com.waz.zclient.conversation.ConversationController
-import com.waz.zclient.paintcode.{ForwardNavigationIcon, GuestIconWithColor}
+import com.waz.zclient.paintcode.{ForwardNavigationIcon, GuestIconWithColor, HourGlassIcon}
 import com.waz.zclient.ui.text.TypefaceEditText.OnSelectionChangedListener
 import com.waz.zclient.ui.text.{GlyphTextView, TypefaceEditText}
 import com.waz.zclient.utils.ContextUtils._
-import com.waz.zclient.utils.{ContextUtils, RichView, ViewUtils}
+import com.waz.zclient.utils.{RichView, ViewUtils}
 import com.waz.zclient.{Injectable, Injector, R}
 
 import scala.concurrent.duration._
@@ -200,7 +200,7 @@ object ParticipantsAdapter {
   case class GuestOptionsButtonViewHolder(view: View) extends ViewHolder(view) {
     private implicit val ctx = view.getContext
     view.setId(R.id.guest_options)
-    view.findViewById[ImageView](R.id.icon).setImageDrawable(GuestIconWithColor(ContextUtils.getStyledColor(R.attr.wirePrimaryTextColor)))
+    view.findViewById[ImageView](R.id.icon).setImageDrawable(GuestIconWithColor(getStyledColor(R.attr.wirePrimaryTextColor)))
     view.findViewById[TextView](R.id.name_text).setText(R.string.guest_options_title)
     view.findViewById[ImageView](R.id.next_indicator).setImageDrawable(ForwardNavigationIcon(R.color.light_graphite_40))
   }
@@ -208,7 +208,7 @@ object ParticipantsAdapter {
   case class EphemeralOptionsButtonViewHolder(view: View) extends ViewHolder(view) {
     private implicit val ctx = view.getContext
     view.setId(R.id.timed_messages_options)
-    view.findViewById[ImageView](R.id.icon).setImageDrawable(GuestIconWithColor(ContextUtils.getStyledColor(R.attr.wirePrimaryTextColor)))
+    view.findViewById[ImageView](R.id.icon).setImageDrawable(HourGlassIcon(getStyledColor(R.attr.wirePrimaryTextColor)))
     view.findViewById[TextView](R.id.name_text).setText(R.string.ephemeral_options_title)
     view.findViewById[ImageView](R.id.next_indicator).setImageDrawable(ForwardNavigationIcon(R.color.light_graphite_40))
   }

@@ -162,3 +162,8 @@ case class EphemeralWeekIcon(color: Int)(implicit context: Context) extends Wire
   setColor(color)
   override def draw(canvas: Canvas) = drawWeek(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
 }
+
+case class HourGlassIcon(color: Int)(implicit context: Context) extends WireDrawable {
+  setColor(color)
+  override def draw(canvas: Canvas) = drawTimedMessages(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
+}
