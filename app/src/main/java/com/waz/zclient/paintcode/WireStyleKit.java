@@ -1,20 +1,3 @@
-/**
- * Wire
- * Copyright (C) 2018 Wire Swiss GmbH
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
 package com.waz.zclient.paintcode;
 
 import android.graphics.Paint;
@@ -1060,31 +1043,31 @@ public class WireStyleKit {
         
         // Bezier 2
         RectF bezier2Rect = CacheForMinute.bezier2Rect;
-        bezier2Rect.set(42.89f, 16f, 59f, 27f);
+        bezier2Rect.set(42.89f, 14f, 64f, 28f);
         Path bezier2Path = CacheForMinute.bezier2Path;
         bezier2Path.reset();
-        bezier2Path.moveTo(42.89f, 27f);
-        bezier2Path.lineTo(42.89f, 16.22f);
-        bezier2Path.lineTo(45.36f, 16.22f);
-        bezier2Path.lineTo(45.36f, 17.96f);
-        bezier2Path.lineTo(45.53f, 17.96f);
-        bezier2Path.cubicTo(46.02f, 16.73f, 47.17f, 16f, 48.67f, 16f);
-        bezier2Path.cubicTo(50.22f, 16f, 51.31f, 16.75f, 51.78f, 17.96f);
-        bezier2Path.lineTo(51.96f, 17.96f);
-        bezier2Path.cubicTo(52.51f, 16.78f, 53.81f, 16f, 55.38f, 16f);
-        bezier2Path.cubicTo(57.64f, 16f, 59f, 17.35f, 59f, 19.59f);
-        bezier2Path.lineTo(59f, 27f);
-        bezier2Path.lineTo(56.45f, 27f);
-        bezier2Path.lineTo(56.45f, 20.21f);
-        bezier2Path.cubicTo(56.45f, 18.82f, 55.76f, 18.13f, 54.39f, 18.13f);
-        bezier2Path.cubicTo(53.06f, 18.13f, 52.18f, 19.06f, 52.18f, 20.29f);
-        bezier2Path.lineTo(52.18f, 27f);
-        bezier2Path.lineTo(49.7f, 27f);
-        bezier2Path.lineTo(49.7f, 20.03f);
-        bezier2Path.cubicTo(49.7f, 18.85f, 48.91f, 18.13f, 47.66f, 18.13f);
-        bezier2Path.cubicTo(46.39f, 18.13f, 45.45f, 19.12f, 45.45f, 20.45f);
-        bezier2Path.lineTo(45.45f, 27f);
-        bezier2Path.lineTo(42.89f, 27f);
+        bezier2Path.moveTo(42.89f, 28f);
+        bezier2Path.lineTo(42.89f, 14.28f);
+        bezier2Path.lineTo(46.12f, 14.28f);
+        bezier2Path.lineTo(46.12f, 16.5f);
+        bezier2Path.lineTo(46.35f, 16.5f);
+        bezier2Path.cubicTo(46.99f, 14.93f, 48.5f, 14f, 50.46f, 14f);
+        bezier2Path.cubicTo(52.5f, 14f, 53.92f, 14.95f, 54.54f, 16.5f);
+        bezier2Path.lineTo(54.77f, 16.5f);
+        bezier2Path.cubicTo(55.5f, 14.99f, 57.2f, 14f, 59.26f, 14f);
+        bezier2Path.cubicTo(62.22f, 14f, 64f, 15.72f, 64f, 18.57f);
+        bezier2Path.lineTo(64f, 28f);
+        bezier2Path.lineTo(60.66f, 28f);
+        bezier2Path.lineTo(60.66f, 19.36f);
+        bezier2Path.cubicTo(60.66f, 17.59f, 59.76f, 16.71f, 57.96f, 16.71f);
+        bezier2Path.cubicTo(56.22f, 16.71f, 55.07f, 17.89f, 55.07f, 19.46f);
+        bezier2Path.lineTo(55.07f, 28f);
+        bezier2Path.lineTo(51.81f, 28f);
+        bezier2Path.lineTo(51.81f, 19.13f);
+        bezier2Path.cubicTo(51.81f, 17.63f, 50.78f, 16.71f, 49.13f, 16.71f);
+        bezier2Path.cubicTo(47.47f, 16.71f, 46.24f, 17.98f, 46.24f, 19.66f);
+        bezier2Path.lineTo(46.24f, 28f);
+        bezier2Path.lineTo(42.89f, 28f);
         bezier2Path.close();
         
         paint.reset();
@@ -1096,21 +1079,21 @@ public class WireStyleKit {
         
         // Bezier 3
         RectF bezier3Rect = CacheForMinute.bezier3Rect;
-        bezier3Rect.set(10f, 10f, 54f, 54f);
+        bezier3Rect.set(4f, 4f, 60f, 60f);
         Path bezier3Path = CacheForMinute.bezier3Path;
         bezier3Path.reset();
-        bezier3Path.moveTo(40.3f, 16.02f);
-        bezier3Path.cubicTo(37.82f, 14.73f, 34.99f, 14f, 32f, 14f);
-        bezier3Path.cubicTo(22.06f, 14f, 14f, 22.06f, 14f, 32f);
-        bezier3Path.cubicTo(14f, 41.94f, 22.06f, 50f, 32f, 50f);
-        bezier3Path.cubicTo(41.94f, 50f, 50f, 41.94f, 50f, 32f);
-        bezier3Path.lineTo(54f, 32f);
-        bezier3Path.cubicTo(54f, 44.15f, 44.15f, 54f, 32f, 54f);
-        bezier3Path.cubicTo(19.85f, 54f, 10f, 44.15f, 10f, 32f);
-        bezier3Path.cubicTo(10f, 19.85f, 19.85f, 10f, 32f, 10f);
-        bezier3Path.cubicTo(35.62f, 10f, 39.03f, 10.87f, 42.04f, 12.42f);
-        bezier3Path.cubicTo(41.46f, 13.63f, 40.88f, 14.83f, 40.3f, 16.01f);
-        bezier3Path.lineTo(40.3f, 16.02f);
+        bezier3Path.moveTo(42.56f, 11.67f);
+        bezier3Path.cubicTo(39.4f, 10.02f, 35.81f, 9.09f, 32f, 9.09f);
+        bezier3Path.cubicTo(19.35f, 9.09f, 9.09f, 19.35f, 9.09f, 32f);
+        bezier3Path.cubicTo(9.09f, 44.65f, 19.35f, 54.91f, 32f, 54.91f);
+        bezier3Path.cubicTo(44.65f, 54.91f, 54.91f, 44.65f, 54.91f, 32f);
+        bezier3Path.lineTo(60f, 32f);
+        bezier3Path.cubicTo(60f, 47.46f, 47.46f, 60f, 32f, 60f);
+        bezier3Path.cubicTo(16.54f, 60f, 4f, 47.46f, 4f, 32f);
+        bezier3Path.cubicTo(4f, 16.54f, 16.54f, 4f, 32f, 4f);
+        bezier3Path.cubicTo(36.6f, 4f, 40.94f, 5.11f, 44.77f, 7.08f);
+        bezier3Path.cubicTo(44.04f, 8.62f, 43.3f, 10.15f, 42.57f, 11.65f);
+        bezier3Path.lineTo(42.56f, 11.67f);
         bezier3Path.close();
         
         paint.reset();
@@ -1150,20 +1133,20 @@ public class WireStyleKit {
         
         // Bezier 2
         RectF bezier2Rect = CacheForYear.bezier2Rect;
-        bezier2Rect.set(10f, 10f, 54f, 54f);
+        bezier2Rect.set(4f, 4f, 60f, 60f);
         Path bezier2Path = CacheForYear.bezier2Path;
         bezier2Path.reset();
-        bezier2Path.moveTo(32f, 14f);
-        bezier2Path.cubicTo(22.06f, 14f, 14f, 22.06f, 14f, 32f);
-        bezier2Path.cubicTo(14f, 41.94f, 22.06f, 50f, 32f, 50f);
-        bezier2Path.cubicTo(41.94f, 50f, 50f, 41.94f, 50f, 32f);
-        bezier2Path.lineTo(54f, 32f);
-        bezier2Path.cubicTo(54f, 44.15f, 44.15f, 54f, 32f, 54f);
-        bezier2Path.cubicTo(19.85f, 54f, 10f, 44.15f, 10f, 32f);
-        bezier2Path.cubicTo(10f, 19.85f, 19.85f, 10f, 32f, 10f);
-        bezier2Path.cubicTo(33.33f, 10f, 34.63f, 10.12f, 35.89f, 10.34f);
-        bezier2Path.cubicTo(35.66f, 11.65f, 35.43f, 12.97f, 35.19f, 14.28f);
-        bezier2Path.cubicTo(34.16f, 14.1f, 33.09f, 14f, 32f, 14f);
+        bezier2Path.moveTo(32f, 9.09f);
+        bezier2Path.cubicTo(19.35f, 9.09f, 9.09f, 19.35f, 9.09f, 32f);
+        bezier2Path.cubicTo(9.09f, 44.65f, 19.35f, 54.91f, 32f, 54.91f);
+        bezier2Path.cubicTo(44.65f, 54.91f, 54.91f, 44.65f, 54.91f, 32f);
+        bezier2Path.lineTo(60f, 32f);
+        bezier2Path.cubicTo(60f, 47.46f, 47.46f, 60f, 32f, 60f);
+        bezier2Path.cubicTo(16.54f, 60f, 4f, 47.46f, 4f, 32f);
+        bezier2Path.cubicTo(4f, 16.54f, 16.54f, 4f, 32f, 4f);
+        bezier2Path.cubicTo(33.69f, 4f, 35.35f, 4.15f, 36.96f, 4.44f);
+        bezier2Path.cubicTo(36.66f, 6.1f, 36.36f, 7.77f, 36.06f, 9.45f);
+        bezier2Path.cubicTo(34.74f, 9.21f, 33.39f, 9.09f, 32f, 9.09f);
         bezier2Path.close();
         
         paint.reset();
@@ -1175,23 +1158,23 @@ public class WireStyleKit {
         
         // Bezier
         RectF bezierRect = CacheForYear.bezierRect;
-        bezierRect.set(40.35f, 14f, 53f, 30.33f);
+        bezierRect.set(45.35f, 9f, 60f, 28.33f);
         Path bezierPath = CacheForYear.bezierPath;
         bezierPath.reset();
-        bezierPath.moveTo(42.88f, 30.33f);
-        bezierPath.cubicTo(42.7f, 30.33f, 41.9f, 30.32f, 41.71f, 30.28f);
-        bezierPath.lineTo(41.71f, 28.06f);
-        bezierPath.cubicTo(41.88f, 28.09f, 42.32f, 28.1f, 42.52f, 28.1f);
-        bezierPath.cubicTo(43.77f, 28.1f, 44.47f, 27.67f, 44.85f, 26.56f);
-        bezierPath.lineTo(45.01f, 26.03f);
-        bezierPath.lineTo(40.35f, 14f);
-        bezierPath.lineTo(43.59f, 14f);
-        bezierPath.lineTo(46.64f, 23.35f);
-        bezierPath.lineTo(46.84f, 23.35f);
-        bezierPath.lineTo(49.88f, 14f);
-        bezierPath.lineTo(53f, 14f);
-        bezierPath.lineTo(48.3f, 26.36f);
-        bezierPath.cubicTo(47.19f, 29.34f, 45.79f, 30.33f, 42.88f, 30.33f);
+        bezierPath.moveTo(48.28f, 28.33f);
+        bezierPath.cubicTo(48.07f, 28.33f, 47.14f, 28.31f, 46.92f, 28.27f);
+        bezierPath.lineTo(46.92f, 25.64f);
+        bezierPath.cubicTo(47.12f, 25.68f, 47.63f, 25.69f, 47.86f, 25.69f);
+        bezierPath.cubicTo(49.31f, 25.69f, 50.12f, 25.18f, 50.57f, 23.87f);
+        bezierPath.lineTo(50.74f, 23.25f);
+        bezierPath.lineTo(45.35f, 9f);
+        bezierPath.lineTo(49.1f, 9f);
+        bezierPath.lineTo(52.63f, 20.07f);
+        bezierPath.lineTo(52.87f, 20.07f);
+        bezierPath.lineTo(56.39f, 9f);
+        bezierPath.lineTo(60f, 9f);
+        bezierPath.lineTo(54.55f, 23.63f);
+        bezierPath.cubicTo(53.27f, 27.16f, 51.66f, 28.33f, 48.28f, 28.33f);
         bezierPath.close();
         
         paint.reset();
@@ -1231,26 +1214,26 @@ public class WireStyleKit {
         
         // Bezier 2
         RectF bezier2Rect = CacheForWeek.bezier2Rect;
-        bezier2Rect.set(40.38f, 16f, 56f, 27f);
+        bezier2Rect.set(41.38f, 12f, 61f, 26f);
         Path bezier2Path = CacheForWeek.bezier2Path;
         bezier2Path.reset();
-        bezier2Path.moveTo(56f, 16f);
-        bezier2Path.lineTo(53.02f, 27f);
-        bezier2Path.lineTo(50.4f, 27f);
-        bezier2Path.lineTo(48.25f, 19.08f);
-        bezier2Path.lineTo(48.08f, 19.08f);
-        bezier2Path.lineTo(45.95f, 27f);
-        bezier2Path.lineTo(43.35f, 27f);
-        bezier2Path.lineTo(40.38f, 16f);
-        bezier2Path.lineTo(42.89f, 16f);
-        bezier2Path.lineTo(44.72f, 24.21f);
-        bezier2Path.lineTo(44.89f, 24.21f);
-        bezier2Path.lineTo(47.01f, 16f);
-        bezier2Path.lineTo(49.39f, 16f);
-        bezier2Path.lineTo(51.52f, 24.21f);
-        bezier2Path.lineTo(51.69f, 24.21f);
-        bezier2Path.lineTo(53.51f, 16f);
-        bezier2Path.lineTo(56f, 16f);
+        bezier2Path.moveTo(61f, 12f);
+        bezier2Path.lineTo(57.26f, 26f);
+        bezier2Path.lineTo(53.96f, 26f);
+        bezier2Path.lineTo(51.27f, 15.92f);
+        bezier2Path.lineTo(51.05f, 15.92f);
+        bezier2Path.lineTo(48.38f, 26f);
+        bezier2Path.lineTo(45.12f, 26f);
+        bezier2Path.lineTo(41.38f, 12f);
+        bezier2Path.lineTo(44.53f, 12f);
+        bezier2Path.lineTo(46.83f, 22.46f);
+        bezier2Path.lineTo(47.05f, 22.46f);
+        bezier2Path.lineTo(49.7f, 12f);
+        bezier2Path.lineTo(52.7f, 12f);
+        bezier2Path.lineTo(55.38f, 22.46f);
+        bezier2Path.lineTo(55.59f, 22.46f);
+        bezier2Path.lineTo(57.88f, 12f);
+        bezier2Path.lineTo(61f, 12f);
         bezier2Path.close();
         
         paint.reset();
@@ -1262,20 +1245,20 @@ public class WireStyleKit {
         
         // Bezier
         RectF bezierRect = CacheForWeek.bezierRect;
-        bezierRect.set(10f, 10f, 54f, 54f);
+        bezierRect.set(4f, 4f, 60f, 60f);
         Path bezierPath = CacheForWeek.bezierPath;
         bezierPath.reset();
-        bezierPath.moveTo(32f, 14f);
-        bezierPath.cubicTo(22.06f, 14f, 14f, 22.06f, 14f, 32f);
-        bezierPath.cubicTo(14f, 41.94f, 22.06f, 50f, 32f, 50f);
-        bezierPath.cubicTo(41.94f, 50f, 50f, 41.94f, 50f, 32f);
-        bezierPath.lineTo(54f, 32f);
-        bezierPath.cubicTo(54f, 44.15f, 44.15f, 54f, 32f, 54f);
-        bezierPath.cubicTo(19.85f, 54f, 10f, 44.15f, 10f, 32f);
-        bezierPath.cubicTo(10f, 19.85f, 19.85f, 10f, 32f, 10f);
-        bezierPath.cubicTo(33.33f, 10f, 34.63f, 10.12f, 35.89f, 10.34f);
-        bezierPath.cubicTo(35.66f, 11.65f, 35.43f, 12.97f, 35.19f, 14.28f);
-        bezierPath.cubicTo(34.16f, 14.1f, 33.09f, 14f, 32f, 14f);
+        bezierPath.moveTo(32f, 9.09f);
+        bezierPath.cubicTo(19.35f, 9.09f, 9.09f, 19.35f, 9.09f, 32f);
+        bezierPath.cubicTo(9.09f, 44.65f, 19.35f, 54.91f, 32f, 54.91f);
+        bezierPath.cubicTo(44.65f, 54.91f, 54.91f, 44.65f, 54.91f, 32f);
+        bezierPath.lineTo(60f, 32f);
+        bezierPath.cubicTo(60f, 47.46f, 47.46f, 60f, 32f, 60f);
+        bezierPath.cubicTo(16.54f, 60f, 4f, 47.46f, 4f, 32f);
+        bezierPath.cubicTo(4f, 16.54f, 16.54f, 4f, 32f, 4f);
+        bezierPath.cubicTo(33.69f, 4f, 35.35f, 4.15f, 36.96f, 4.44f);
+        bezierPath.cubicTo(36.66f, 6.1f, 36.36f, 7.77f, 36.06f, 9.45f);
+        bezierPath.cubicTo(34.74f, 9.21f, 33.39f, 9.09f, 32f, 9.09f);
         bezierPath.close();
         
         paint.reset();
@@ -1315,23 +1298,23 @@ public class WireStyleKit {
         
         // Bezier 3
         RectF bezier3Rect = CacheForHour.bezier3Rect;
-        bezier3Rect.set(42f, 11f, 52f, 27f);
+        bezier3Rect.set(43f, 7.5f, 55f, 27f);
         Path bezier3Path = CacheForHour.bezier3Path;
         bezier3Path.reset();
-        bezier3Path.moveTo(42f, 27f);
-        bezier3Path.lineTo(42f, 11f);
-        bezier3Path.lineTo(44.52f, 11f);
-        bezier3Path.lineTo(44.52f, 17.33f);
-        bezier3Path.lineTo(44.7f, 17.33f);
-        bezier3Path.cubicTo(45.24f, 16.03f, 46.44f, 15.25f, 48.12f, 15.25f);
-        bezier3Path.cubicTo(50.54f, 15.25f, 52f, 16.81f, 52f, 19.55f);
-        bezier3Path.lineTo(52f, 27f);
-        bezier3Path.lineTo(49.44f, 27f);
-        bezier3Path.lineTo(49.44f, 20.18f);
-        bezier3Path.cubicTo(49.44f, 18.43f, 48.66f, 17.53f, 47.18f, 17.53f);
-        bezier3Path.cubicTo(45.49f, 17.53f, 44.56f, 18.65f, 44.56f, 20.3f);
-        bezier3Path.lineTo(44.56f, 27f);
-        bezier3Path.lineTo(42f, 27f);
+        bezier3Path.moveTo(43f, 27f);
+        bezier3Path.lineTo(43f, 7.5f);
+        bezier3Path.lineTo(46.02f, 7.5f);
+        bezier3Path.lineTo(46.02f, 15.21f);
+        bezier3Path.lineTo(46.24f, 15.21f);
+        bezier3Path.cubicTo(46.88f, 13.63f, 48.33f, 12.68f, 50.35f, 12.68f);
+        bezier3Path.cubicTo(53.24f, 12.68f, 55f, 14.58f, 55f, 17.92f);
+        bezier3Path.lineTo(55f, 27f);
+        bezier3Path.lineTo(51.93f, 27f);
+        bezier3Path.lineTo(51.93f, 18.68f);
+        bezier3Path.cubicTo(51.93f, 16.55f, 50.99f, 15.46f, 49.21f, 15.46f);
+        bezier3Path.cubicTo(47.19f, 15.46f, 46.07f, 16.82f, 46.07f, 18.84f);
+        bezier3Path.lineTo(46.07f, 27f);
+        bezier3Path.lineTo(43f, 27f);
         bezier3Path.close();
         
         paint.reset();
@@ -1343,20 +1326,20 @@ public class WireStyleKit {
         
         // Bezier
         RectF bezierRect = CacheForHour.bezierRect;
-        bezierRect.set(10f, 10f, 54f, 54f);
+        bezierRect.set(4f, 4f, 60f, 60f);
         Path bezierPath = CacheForHour.bezierPath;
         bezierPath.reset();
-        bezierPath.moveTo(32f, 14f);
-        bezierPath.cubicTo(22.06f, 14f, 14f, 22.06f, 14f, 32f);
-        bezierPath.cubicTo(14f, 41.94f, 22.06f, 50f, 32f, 50f);
-        bezierPath.cubicTo(41.94f, 50f, 50f, 41.94f, 50f, 32f);
-        bezierPath.lineTo(54f, 32f);
-        bezierPath.cubicTo(54f, 44.15f, 44.15f, 54f, 32f, 54f);
-        bezierPath.cubicTo(19.85f, 54f, 10f, 44.15f, 10f, 32f);
-        bezierPath.cubicTo(10f, 19.85f, 19.85f, 10f, 32f, 10f);
-        bezierPath.cubicTo(33.33f, 10f, 34.63f, 10.12f, 35.89f, 10.34f);
-        bezierPath.cubicTo(35.66f, 11.65f, 35.43f, 12.97f, 35.19f, 14.28f);
-        bezierPath.cubicTo(34.16f, 14.1f, 33.09f, 14f, 32f, 14f);
+        bezierPath.moveTo(32f, 9.09f);
+        bezierPath.cubicTo(19.35f, 9.09f, 9.09f, 19.35f, 9.09f, 32f);
+        bezierPath.cubicTo(9.09f, 44.65f, 19.35f, 54.91f, 32f, 54.91f);
+        bezierPath.cubicTo(44.65f, 54.91f, 54.91f, 44.65f, 54.91f, 32f);
+        bezierPath.lineTo(60f, 32f);
+        bezierPath.cubicTo(60f, 47.46f, 47.46f, 60f, 32f, 60f);
+        bezierPath.cubicTo(16.54f, 60f, 4f, 47.46f, 4f, 32f);
+        bezierPath.cubicTo(4f, 16.54f, 16.54f, 4f, 32f, 4f);
+        bezierPath.cubicTo(33.69f, 4f, 35.35f, 4.15f, 36.96f, 4.44f);
+        bezierPath.cubicTo(36.66f, 6.1f, 36.36f, 7.77f, 36.06f, 9.45f);
+        bezierPath.cubicTo(34.74f, 9.21f, 33.39f, 9.09f, 32f, 9.09f);
         bezierPath.close();
         
         paint.reset();
@@ -1396,27 +1379,27 @@ public class WireStyleKit {
         
         // Bezier 2
         RectF bezier2Rect = CacheForDay.bezier2Rect;
-        bezier2Rect.set(44.53f, 11f, 55f, 27.1f);
+        bezier2Rect.set(44.53f, 6f, 58f, 27.1f);
         Path bezier2Path = CacheForDay.bezier2Path;
         bezier2Path.reset();
-        bezier2Path.moveTo(49.03f, 27.1f);
-        bezier2Path.cubicTo(46.26f, 27.1f, 44.53f, 24.81f, 44.53f, 21.16f);
-        bezier2Path.cubicTo(44.53f, 17.53f, 46.27f, 15.25f, 49.03f, 15.25f);
-        bezier2Path.cubicTo(50.53f, 15.25f, 51.77f, 16f, 52.35f, 17.26f);
-        bezier2Path.lineTo(52.52f, 17.26f);
-        bezier2Path.lineTo(52.52f, 11f);
-        bezier2Path.lineTo(55f, 11f);
-        bezier2Path.lineTo(55f, 26.91f);
-        bezier2Path.lineTo(52.6f, 26.91f);
-        bezier2Path.lineTo(52.6f, 25.09f);
-        bezier2Path.lineTo(52.43f, 25.09f);
-        bezier2Path.cubicTo(51.81f, 26.35f, 50.55f, 27.1f, 49.03f, 27.1f);
+        bezier2Path.moveTo(50.32f, 27.1f);
+        bezier2Path.cubicTo(46.75f, 27.1f, 44.53f, 24.1f, 44.53f, 19.32f);
+        bezier2Path.cubicTo(44.53f, 14.56f, 46.77f, 11.57f, 50.32f, 11.57f);
+        bezier2Path.cubicTo(52.25f, 11.57f, 53.84f, 12.56f, 54.59f, 14.21f);
+        bezier2Path.lineTo(54.81f, 14.21f);
+        bezier2Path.lineTo(54.81f, 6f);
+        bezier2Path.lineTo(58f, 6f);
+        bezier2Path.lineTo(58f, 26.85f);
+        bezier2Path.lineTo(54.91f, 26.85f);
+        bezier2Path.lineTo(54.91f, 24.47f);
+        bezier2Path.lineTo(54.69f, 24.47f);
+        bezier2Path.cubicTo(53.89f, 26.12f, 52.27f, 27.1f, 50.32f, 27.1f);
         bezier2Path.close();
-        bezier2Path.moveTo(49.8f, 17.46f);
-        bezier2Path.cubicTo(48.11f, 17.46f, 47.07f, 18.86f, 47.07f, 21.17f);
-        bezier2Path.cubicTo(47.07f, 23.49f, 48.1f, 24.88f, 49.8f, 24.88f);
-        bezier2Path.cubicTo(51.51f, 24.88f, 52.55f, 23.48f, 52.55f, 21.17f);
-        bezier2Path.cubicTo(52.55f, 18.89f, 51.5f, 17.46f, 49.8f, 17.46f);
+        bezier2Path.moveTo(51.31f, 14.47f);
+        bezier2Path.cubicTo(49.13f, 14.47f, 47.8f, 16.31f, 47.8f, 19.33f);
+        bezier2Path.cubicTo(47.8f, 22.37f, 49.12f, 24.2f, 51.31f, 24.2f);
+        bezier2Path.cubicTo(53.51f, 24.2f, 54.85f, 22.36f, 54.85f, 19.33f);
+        bezier2Path.cubicTo(54.85f, 16.34f, 53.5f, 14.47f, 51.31f, 14.47f);
         bezier2Path.close();
         
         paint.reset();
@@ -1428,21 +1411,21 @@ public class WireStyleKit {
         
         // Bezier
         RectF bezierRect = CacheForDay.bezierRect;
-        bezierRect.set(10f, 10f, 54f, 54f);
+        bezierRect.set(4f, 4f, 60f, 60f);
         Path bezierPath = CacheForDay.bezierPath;
         bezierPath.reset();
-        bezierPath.moveTo(40.3f, 16.02f);
-        bezierPath.cubicTo(37.82f, 14.73f, 34.99f, 14f, 32f, 14f);
-        bezierPath.cubicTo(22.06f, 14f, 14f, 22.06f, 14f, 32f);
-        bezierPath.cubicTo(14f, 41.94f, 22.06f, 50f, 32f, 50f);
-        bezierPath.cubicTo(41.94f, 50f, 50f, 41.94f, 50f, 32f);
-        bezierPath.lineTo(54f, 32f);
-        bezierPath.cubicTo(54f, 44.15f, 44.15f, 54f, 32f, 54f);
-        bezierPath.cubicTo(19.85f, 54f, 10f, 44.15f, 10f, 32f);
-        bezierPath.cubicTo(10f, 19.85f, 19.85f, 10f, 32f, 10f);
-        bezierPath.cubicTo(35.62f, 10f, 39.03f, 10.87f, 42.04f, 12.42f);
-        bezierPath.cubicTo(41.46f, 13.63f, 40.88f, 14.83f, 40.3f, 16.01f);
-        bezierPath.lineTo(40.3f, 16.02f);
+        bezierPath.moveTo(42.56f, 11.67f);
+        bezierPath.cubicTo(39.4f, 10.02f, 35.81f, 9.09f, 32f, 9.09f);
+        bezierPath.cubicTo(19.35f, 9.09f, 9.09f, 19.35f, 9.09f, 32f);
+        bezierPath.cubicTo(9.09f, 44.65f, 19.35f, 54.91f, 32f, 54.91f);
+        bezierPath.cubicTo(44.65f, 54.91f, 54.91f, 44.65f, 54.91f, 32f);
+        bezierPath.lineTo(60f, 32f);
+        bezierPath.cubicTo(60f, 47.46f, 47.46f, 60f, 32f, 60f);
+        bezierPath.cubicTo(16.54f, 60f, 4f, 47.46f, 4f, 32f);
+        bezierPath.cubicTo(4f, 16.54f, 16.54f, 4f, 32f, 4f);
+        bezierPath.cubicTo(36.6f, 4f, 40.94f, 5.11f, 44.77f, 7.08f);
+        bezierPath.cubicTo(44.04f, 8.62f, 43.3f, 10.15f, 42.57f, 11.65f);
+        bezierPath.lineTo(42.56f, 11.67f);
         bezierPath.close();
         
         paint.reset();
@@ -1482,21 +1465,21 @@ public class WireStyleKit {
         
         // Bezier
         RectF bezierRect = CacheForSecond.bezierRect;
-        bezierRect.set(10f, 10f, 54f, 54f);
+        bezierRect.set(4f, 4f, 60f, 60f);
         Path bezierPath = CacheForSecond.bezierPath;
         bezierPath.reset();
-        bezierPath.moveTo(40.3f, 16.02f);
-        bezierPath.cubicTo(37.82f, 14.73f, 34.99f, 14f, 32f, 14f);
-        bezierPath.cubicTo(22.06f, 14f, 14f, 22.06f, 14f, 32f);
-        bezierPath.cubicTo(14f, 41.94f, 22.06f, 50f, 32f, 50f);
-        bezierPath.cubicTo(41.94f, 50f, 50f, 41.94f, 50f, 32f);
-        bezierPath.lineTo(54f, 32f);
-        bezierPath.cubicTo(54f, 44.15f, 44.15f, 54f, 32f, 54f);
-        bezierPath.cubicTo(19.85f, 54f, 10f, 44.15f, 10f, 32f);
-        bezierPath.cubicTo(10f, 19.85f, 19.85f, 10f, 32f, 10f);
-        bezierPath.cubicTo(35.62f, 10f, 39.03f, 10.87f, 42.04f, 12.42f);
-        bezierPath.cubicTo(41.46f, 13.63f, 40.88f, 14.83f, 40.3f, 16.01f);
-        bezierPath.lineTo(40.3f, 16.02f);
+        bezierPath.moveTo(42.56f, 11.67f);
+        bezierPath.cubicTo(39.4f, 10.02f, 35.81f, 9.09f, 32f, 9.09f);
+        bezierPath.cubicTo(19.35f, 9.09f, 9.09f, 19.35f, 9.09f, 32f);
+        bezierPath.cubicTo(9.09f, 44.65f, 19.35f, 54.91f, 32f, 54.91f);
+        bezierPath.cubicTo(44.65f, 54.91f, 54.91f, 44.65f, 54.91f, 32f);
+        bezierPath.lineTo(60f, 32f);
+        bezierPath.cubicTo(60f, 47.46f, 47.46f, 60f, 32f, 60f);
+        bezierPath.cubicTo(16.54f, 60f, 4f, 47.46f, 4f, 32f);
+        bezierPath.cubicTo(4f, 16.54f, 16.54f, 4f, 32f, 4f);
+        bezierPath.cubicTo(36.6f, 4f, 40.94f, 5.11f, 44.77f, 7.08f);
+        bezierPath.cubicTo(44.04f, 8.62f, 43.3f, 10.15f, 42.57f, 11.65f);
+        bezierPath.lineTo(42.56f, 11.67f);
         bezierPath.close();
         
         paint.reset();
@@ -1508,26 +1491,26 @@ public class WireStyleKit {
         
         // Bezier 2
         RectF bezier2Rect = CacheForSecond.bezier2Rect;
-        bezier2Rect.set(43.53f, 16f, 53f, 27.12f);
+        bezier2Rect.set(48.53f, 11.5f, 60.5f, 26.12f);
         Path bezier2Path = CacheForSecond.bezier2Path;
         bezier2Path.reset();
-        bezier2Path.moveTo(43.82f, 19.27f);
-        bezier2Path.cubicTo(43.82f, 17.34f, 45.65f, 16f, 48.28f, 16f);
-        bezier2Path.cubicTo(50.92f, 16f, 52.58f, 17.12f, 52.77f, 19.07f);
-        bezier2Path.lineTo(50.39f, 19.07f);
-        bezier2Path.cubicTo(50.21f, 18.32f, 49.47f, 17.84f, 48.29f, 17.84f);
-        bezier2Path.cubicTo(47.14f, 17.84f, 46.27f, 18.36f, 46.27f, 19.14f);
-        bezier2Path.cubicTo(46.27f, 19.74f, 46.8f, 20.11f, 47.92f, 20.36f);
-        bezier2Path.lineTo(49.88f, 20.79f);
-        bezier2Path.cubicTo(52.01f, 21.25f, 53f, 22.13f, 53f, 23.7f);
-        bezier2Path.cubicTo(53f, 25.75f, 51.04f, 27.12f, 48.26f, 27.12f);
-        bezier2Path.cubicTo(45.48f, 27.12f, 43.73f, 25.97f, 43.53f, 24.02f);
-        bezier2Path.lineTo(46.03f, 24.02f);
-        bezier2Path.cubicTo(46.27f, 24.81f, 47.05f, 25.28f, 48.32f, 25.28f);
-        bezier2Path.cubicTo(49.59f, 25.28f, 50.48f, 24.74f, 50.48f, 23.95f);
-        bezier2Path.cubicTo(50.48f, 23.35f, 50f, 22.97f, 48.94f, 22.74f);
-        bezier2Path.lineTo(46.96f, 22.3f);
-        bezier2Path.cubicTo(44.82f, 21.83f, 43.82f, 20.88f, 43.82f, 19.27f);
+        bezier2Path.moveTo(48.89f, 15.8f);
+        bezier2Path.cubicTo(48.89f, 13.26f, 51.21f, 11.5f, 54.53f, 11.5f);
+        bezier2Path.cubicTo(57.87f, 11.5f, 59.97f, 12.98f, 60.2f, 15.53f);
+        bezier2Path.lineTo(57.21f, 15.53f);
+        bezier2Path.cubicTo(56.97f, 14.54f, 56.03f, 13.91f, 54.54f, 13.91f);
+        bezier2Path.cubicTo(53.09f, 13.91f, 51.99f, 14.61f, 51.99f, 15.62f);
+        bezier2Path.cubicTo(51.99f, 16.42f, 52.66f, 16.91f, 54.08f, 17.23f);
+        bezier2Path.lineTo(56.56f, 17.79f);
+        bezier2Path.cubicTo(59.25f, 18.4f, 60.5f, 19.55f, 60.5f, 21.62f);
+        bezier2Path.cubicTo(60.5f, 24.32f, 58.02f, 26.12f, 54.5f, 26.12f);
+        bezier2Path.cubicTo(50.99f, 26.12f, 48.78f, 24.6f, 48.53f, 22.05f);
+        bezier2Path.lineTo(51.68f, 22.05f);
+        bezier2Path.cubicTo(51.99f, 23.09f, 52.98f, 23.7f, 54.58f, 23.7f);
+        bezier2Path.cubicTo(56.19f, 23.7f, 57.31f, 23f, 57.31f, 21.96f);
+        bezier2Path.cubicTo(57.31f, 21.16f, 56.7f, 20.66f, 55.37f, 20.36f);
+        bezier2Path.lineTo(52.87f, 19.79f);
+        bezier2Path.cubicTo(50.17f, 19.17f, 48.89f, 17.92f, 48.89f, 15.8f);
         bezier2Path.close();
         
         paint.reset();
@@ -1567,26 +1550,26 @@ public class WireStyleKit {
         
         // Bezier
         RectF bezierRect = CacheForMonth.bezierRect;
-        bezierRect.set(40.04f, 12f, 55f, 27f);
+        bezierRect.set(44.04f, 7f, 64f, 27f);
         Path bezierPath = CacheForMonth.bezierPath;
         bezierPath.reset();
-        bezierPath.moveTo(55f, 27f);
-        bezierPath.lineTo(52.59f, 27f);
-        bezierPath.lineTo(52.59f, 16.45f);
-        bezierPath.lineTo(52.45f, 16.45f);
-        bezierPath.lineTo(48.45f, 26.42f);
-        bezierPath.lineTo(46.6f, 26.42f);
-        bezierPath.lineTo(42.59f, 16.45f);
-        bezierPath.lineTo(42.45f, 16.45f);
-        bezierPath.lineTo(42.45f, 27f);
-        bezierPath.lineTo(40.04f, 27f);
-        bezierPath.lineTo(40.04f, 12f);
-        bezierPath.lineTo(43.07f, 12f);
-        bezierPath.lineTo(47.43f, 22.93f);
-        bezierPath.lineTo(47.61f, 22.93f);
-        bezierPath.lineTo(51.97f, 12f);
-        bezierPath.lineTo(55f, 12f);
-        bezierPath.lineTo(55f, 27f);
+        bezierPath.moveTo(64f, 27f);
+        bezierPath.lineTo(60.79f, 27f);
+        bezierPath.lineTo(60.79f, 12.93f);
+        bezierPath.lineTo(60.6f, 12.93f);
+        bezierPath.lineTo(55.25f, 26.22f);
+        bezierPath.lineTo(52.79f, 26.22f);
+        bezierPath.lineTo(47.45f, 12.93f);
+        bezierPath.lineTo(47.26f, 12.93f);
+        bezierPath.lineTo(47.26f, 27f);
+        bezierPath.lineTo(44.04f, 27f);
+        bezierPath.lineTo(44.04f, 7f);
+        bezierPath.lineTo(48.09f, 7f);
+        bezierPath.lineTo(53.9f, 21.57f);
+        bezierPath.lineTo(54.14f, 21.57f);
+        bezierPath.lineTo(59.96f, 7f);
+        bezierPath.lineTo(64f, 7f);
+        bezierPath.lineTo(64f, 27f);
         bezierPath.close();
         
         paint.reset();
@@ -1598,20 +1581,20 @@ public class WireStyleKit {
         
         // Bezier 2
         RectF bezier2Rect = CacheForMonth.bezier2Rect;
-        bezier2Rect.set(10f, 10f, 54f, 54f);
+        bezier2Rect.set(4f, 4f, 60f, 60f);
         Path bezier2Path = CacheForMonth.bezier2Path;
         bezier2Path.reset();
-        bezier2Path.moveTo(32f, 14f);
-        bezier2Path.cubicTo(22.06f, 14f, 14f, 22.06f, 14f, 32f);
-        bezier2Path.cubicTo(14f, 41.94f, 22.06f, 50f, 32f, 50f);
-        bezier2Path.cubicTo(41.94f, 50f, 50f, 41.94f, 50f, 32f);
-        bezier2Path.lineTo(54f, 32f);
-        bezier2Path.cubicTo(54f, 44.15f, 44.15f, 54f, 32f, 54f);
-        bezier2Path.cubicTo(19.85f, 54f, 10f, 44.15f, 10f, 32f);
-        bezier2Path.cubicTo(10f, 19.85f, 19.85f, 10f, 32f, 10f);
-        bezier2Path.cubicTo(33.33f, 10f, 34.63f, 10.12f, 35.89f, 10.34f);
-        bezier2Path.cubicTo(35.66f, 11.65f, 35.43f, 12.97f, 35.19f, 14.28f);
-        bezier2Path.cubicTo(34.16f, 14.1f, 33.09f, 14f, 32f, 14f);
+        bezier2Path.moveTo(32f, 9.09f);
+        bezier2Path.cubicTo(19.35f, 9.09f, 9.09f, 19.35f, 9.09f, 32f);
+        bezier2Path.cubicTo(9.09f, 44.65f, 19.35f, 54.91f, 32f, 54.91f);
+        bezier2Path.cubicTo(44.65f, 54.91f, 54.91f, 44.65f, 54.91f, 32f);
+        bezier2Path.lineTo(60f, 32f);
+        bezier2Path.cubicTo(60f, 47.46f, 47.46f, 60f, 32f, 60f);
+        bezier2Path.cubicTo(16.54f, 60f, 4f, 47.46f, 4f, 32f);
+        bezier2Path.cubicTo(4f, 16.54f, 16.54f, 4f, 32f, 4f);
+        bezier2Path.cubicTo(33.69f, 4f, 35.35f, 4.15f, 36.96f, 4.44f);
+        bezier2Path.cubicTo(36.66f, 6.1f, 36.36f, 7.77f, 36.06f, 9.45f);
+        bezier2Path.cubicTo(34.74f, 9.21f, 33.39f, 9.09f, 32f, 9.09f);
         bezier2Path.close();
         
         paint.reset();
