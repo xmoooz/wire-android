@@ -40,6 +40,8 @@ class EphemeralOptionsFragment extends FragmentHelper {
   private lazy val zms = inject[Signal[ZMessaging]]
   private lazy val convController = inject[ConversationController]
 
+  private var firstRun = true
+
   private lazy val optionsList = returning(view[LinearLayout](R.id.list_view)) { _ =>
     convController.currentConv.map(_.ephemeralExpiration).map {
       case Some(ConvExpiry(e)) => Some(e)
@@ -53,6 +55,12 @@ class EphemeralOptionsFragment extends FragmentHelper {
 
   private def setNewValue(e: Option[FiniteDuration]): Unit = {
     optionsList.foreach { v =>
+
+      val unrecognizedOption = v.getChildAt(PredefinedExpirations.size).asInstanceOf[LinearLayout]
+        .getChildAt(0).asInstanceOf[LinearLayout]
+      val check = unrecognizedOption.getChildAt(1).asInstanceOf[GlyphTextView]
+      if (PredefinedExpirations.contains(e) && check.isVisible) unrecognizedOption.setVisible(false)
+
       PredefinedExpirations.zipWithIndex.map { case (option, index) =>
         (option, v.getChildAt(index).asInstanceOf[LinearLayout]
           .getChildAt(0).asInstanceOf[LinearLayout])
@@ -69,6 +77,12 @@ class EphemeralOptionsFragment extends FragmentHelper {
           } yield {}
         }
       }
+      if (!PredefinedExpirations.contains(e)) {
+        val textView = unrecognizedOption.getChildAt(0).asInstanceOf[TypefaceTextView]
+        val check = unrecognizedOption.getChildAt(1).asInstanceOf[GlyphTextView]
+        textView.setText(ConversationController.getEphemeralDisplayString(e))
+        check.setVisible(true)
+      }
     }
   }
 
@@ -77,6 +91,7 @@ class EphemeralOptionsFragment extends FragmentHelper {
       PredefinedExpirations.foreach { _ =>
         getLayoutInflater.inflate(R.layout.conversation_option_item, v, true)
       }
+      getLayoutInflater.inflate(R.layout.conversation_option_item, v, true)
     }
   }
 
