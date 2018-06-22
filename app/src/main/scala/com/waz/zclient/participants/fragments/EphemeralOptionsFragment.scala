@@ -49,14 +49,9 @@ class EphemeralOptionsFragment extends FragmentHelper {
 
   private def setNewValue(e: Option[FiniteDuration]): Unit = {
     optionsList.foreach { v =>
-<<<<<<< Updated upstream
-      PredefinedExpirations.zipWithIndex.map { case (option, index) =>
-        (option, v.getChildAt(index).asInstanceOf[LinearLayout].getChildAt(0).asInstanceOf[TypefaceTextView])
-=======
-      options.zipWithIndex.map { case (option, index) =>
+    PredefinedExpirations.zipWithIndex.map { case (option, index) =>
         (option, v.getChildAt(index).asInstanceOf[LinearLayout]
           .getChildAt(0).asInstanceOf[LinearLayout])
->>>>>>> Stashed changes
       }.foreach { case (option, r) =>
         val textView = r.getChildAt(0).asInstanceOf[TypefaceTextView]
         val check = r.getChildAt(1).asInstanceOf[GlyphTextView]

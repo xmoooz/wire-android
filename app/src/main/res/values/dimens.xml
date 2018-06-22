@@ -802,12 +802,12 @@
     <dimen name="typing_indicator_pen_glyph_padding">2dp</dimen>
     <dimen name="typing_indicator_name_top_margin">-1dp</dimen>
 
-    <dimen name="ephemeral__animating_dots__width">10dp</dimen>
-    <dimen name="ephemeral__animating_dots__height">25dp</dimen>
+    <dimen name="ephemeral__animating_dots__width">12dp</dimen>
+    <dimen name="ephemeral__animating_dots__height">12dp</dimen>
     <dimen name="ephemeral__animating_dots__padding_top">3dp</dimen>
     <dimen name="ephemeral__animating_dots__padding_bottom">3dp</dimen>
     <dimen name="ephemeral__animating_dots__space_between">1dp</dimen>
-    <dimen name="ephemeral__animating_dots__right_margin">5dp</dimen>
+    <dimen name="ephemeral__animating_dots__right_margin">8dp</dimen>
     <dimen name="ephemeral__animating_dots__image_top_margin">7dp</dimen>
 
     <dimen name="usernames__take_over__side_margin">28dp</dimen>
