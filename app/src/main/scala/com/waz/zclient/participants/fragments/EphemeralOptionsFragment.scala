@@ -25,6 +25,7 @@ import com.waz.service.ZMessaging
 import com.waz.utils.events.Signal
 import com.waz.zclient.ui.text.{GlyphTextView, TypefaceTextView}
 import com.waz.ZLog.ImplicitTag._
+import com.waz.model.ConvExpiry
 import com.waz.utils.returning
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.ConversationController._
@@ -40,7 +41,10 @@ class EphemeralOptionsFragment extends FragmentHelper {
   private lazy val convController = inject[ConversationController]
 
   private lazy val optionsList = returning(view[LinearLayout](R.id.list_view)) { _ =>
-    convController.currentConv.map(_.ephemeralExpiration.map(_.duration)).onUi(setNewValue)
+    convController.currentConv.map(_.ephemeralExpiration).map {
+      case Some(ConvExpiry(e)) => Some(e)
+      case _                   => None
+    }.onUi(setNewValue)
   }
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle) = {
@@ -49,7 +53,7 @@ class EphemeralOptionsFragment extends FragmentHelper {
 
   private def setNewValue(e: Option[FiniteDuration]): Unit = {
     optionsList.foreach { v =>
-    PredefinedExpirations.zipWithIndex.map { case (option, index) =>
+      PredefinedExpirations.zipWithIndex.map { case (option, index) =>
         (option, v.getChildAt(index).asInstanceOf[LinearLayout]
           .getChildAt(0).asInstanceOf[LinearLayout])
       }.foreach { case (option, r) =>
