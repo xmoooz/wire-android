@@ -50,6 +50,7 @@
             app:w_font="@string/wire__typeface__regular"
             android:textSize="@dimen/wire__text_size__small"
             />
+
     </LinearLayout>
 
 </ScrollView>
