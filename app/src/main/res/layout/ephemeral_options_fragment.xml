@@ -28,6 +28,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:layout_marginTop="@dimen/participants_options_button_margin_top"
         android:id="@+id/ephemeral_options_list_view">
 
         <LinearLayout
