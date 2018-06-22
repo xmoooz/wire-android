@@ -25,6 +25,7 @@ import android.text.SpannableString
 import android.text.Spanned
 import com.waz.zclient.markdown.spans.custom.CustomQuoteSpan
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.*
 
@@ -38,6 +39,13 @@ class CustomQuoteSpanTest {
     private val canvas = mock(Canvas::class.java)
     private val paint = mock(Paint::class.java)
     private val text = SpannableString("while she was able to see, her eyes were on mine.")
+
+    @Before
+    fun setup() {
+        // define some arbitary values for paint
+        `when`(paint.style).thenReturn(Paint.Style.FILL_AND_STROKE)
+        `when`(paint.color).thenReturn(Color.GREEN)
+    }
 
     @Test
     fun testThatItReturnsCorrectLeadingMargin() {
@@ -63,11 +71,18 @@ class CustomQuoteSpanTest {
         // when
         sut.drawLeadingMargin(canvas, paint, x, dir, top, 0, bottom, text, 0, text.length, true, mock(Layout::class.java))
 
-        // then: check correct canvas & paint methods called in correct order
+        // then check correct canvas & paint methods called in correct order
         val inOrder = inOrder(paint, canvas)
-        inOrder.verify(paint).style = eq<Paint.Style>(Paint.Style.FILL)
+        // sets the style and color
+        inOrder.verify(paint).style = eq(Paint.Style.FILL)
         inOrder.verify(paint).color = color
+
+        // draws stripe
         inOrder.verify(canvas).drawRect(eq(x.toFloat()), eq(top.toFloat()), eq(x + dir * stripeWidth * density), eq(bottom.toFloat()), eq(paint))
+
+        // resets the paints
+        inOrder.verify(paint).style = eq(Paint.Style.FILL_AND_STROKE)
+        inOrder.verify(paint).color = eq(Color.GREEN)
     }
 
     @Test
