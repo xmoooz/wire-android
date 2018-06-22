@@ -54,6 +54,20 @@ class EphemeralIconButton(context: Context, attrs: AttributeSet, defStyleAttr: I
     case false => getDimenPx(R.dimen.wire__text_size__regular)
   }
 
+
+  val unitAndValue = controller.conv.map(_.ephemeralExpiration.map(_.display))
+
+  val display = unitAndValue.map(_.map(_._1.toString)).map {
+    case Some(t) => t
+    case None    => getString(R.string.glyph__hourglass)
+  }
+
+  //For QA testing
+  val contentDescription = unitAndValue.map {
+    case Some((l, unit)) => s"$l$unit"
+    case None => "off"
+  }
+
   override val glyph = Signal[Int]()
 
   override val background: Signal[Drawable] = controller.ephemeralExp.flatMap {
@@ -82,10 +96,8 @@ class EphemeralIconButton(context: Context, attrs: AttributeSet, defStyleAttr: I
     typeface.onUi(setTypeface)
     textSize.onUi(setTextSize(TypedValue.COMPLEX_UNIT_PX, _))
 
-    controller.conv.map(_.ephemeralExpiration.map(_.display._1)).map(_.map(_.toString)).onUi {
-      case Some(t) => setText(t)
-      case _       => setText(R.string.glyph__hourglass)
-    }
+    display.onUi(setText)
+    contentDescription.onUi(setContentDescription)
 
     controller.ephemeralBtnVisible.onUi(view.setVisible)
   }
