@@ -756,8 +756,11 @@
         <item quantity="other">Someone sent you %1$d messages</item>
     </plurals>
 
-    <string name="other_set_message_timer">[[%1$s:]] set the time messages to [[%2$s]]</string>
-    <string name="you_set_message_timer">[[You]] set the time messages to [[%1$s]]</string>
+    <string name="other_set_message_timer">[[%1$s]] set the message timer to [[%2$s]]</string>
+    <string name="you_set_message_timer">[[You]] set the message timer to [[%1$s]]</string>
+
+    <string name="other_turned_off_message_timer">[[%1$s]] turned off the message timer</string>
+    <string name="you_turned_off_message_timer">[[You]] turned off the message timer</string>
 
     <!-- Others -->
     <string name="app_name">Wire</string>

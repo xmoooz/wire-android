@@ -41,10 +41,12 @@ class MessageTimerPartView (context: Context, attrs: AttributeSet, style: Int) e
 
   (for {
     n <- message.map(_.userId).flatMap(inject[UsersController].displayName)
-    d <- message.map(_.duration).map(getEphemeralDisplayString)
-  } yield n match {
-    case Me          => getString(R.string.you_set_message_timer, d)
-    case Other(name) => getString(R.string.other_set_message_timer, name, d)
+    d <- message.map(_.duration)
+  } yield (n, d) match {
+    case (Me, None)               => getString(R.string.you_turned_off_message_timer)
+    case (Other(name), None)      => getString(R.string.other_turned_off_message_timer, name)
+    case (Me, d@Some(_))          => getString(R.string.you_set_message_timer, getEphemeralDisplayString(d))
+    case (Other(name), d@Some(_)) => getString(R.string.other_set_message_timer, name, getEphemeralDisplayString(d))
   }).onUi(msgView.setText)
 
 }
