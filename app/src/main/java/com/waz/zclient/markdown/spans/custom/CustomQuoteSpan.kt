@@ -20,6 +20,7 @@ package com.waz.zclient.markdown.spans.custom
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.text.Layout
+import android.text.Spanned
 import android.text.style.QuoteSpan
 
 /**
@@ -34,13 +35,17 @@ class CustomQuoteSpan(
 ) : QuoteSpan(color) {
 
     override fun getLeadingMargin(first: Boolean): Int {
-        return (stripeWidth + gapWidth * density).toInt()
+        return ((stripeWidth + gapWidth) * density).toInt()
     }
 
     override fun drawLeadingMargin(
         c: Canvas?, p: Paint?, x: Int, dir: Int, top: Int, baseline: Int, bottom: Int,
         text: CharSequence?, start: Int, end: Int, first: Boolean, layout: Layout?
     ) {
+        // ensure this span is attached to the text
+        val spanned = text as Spanned
+        if (!(spanned.getSpanStart(this) == start && spanned.getSpanEnd(this) == end)) return
+
         if (c == null || p == null) return
 
         // save paint state
@@ -49,7 +54,6 @@ class CustomQuoteSpan(
 
         p.style = Paint.Style.FILL
         p.color = this.color
-
         c.drawRect(x.toFloat(), top.toFloat(), (x + dir * stripeWidth * density).toFloat(), bottom.toFloat(), p)
 
         // reset paint
