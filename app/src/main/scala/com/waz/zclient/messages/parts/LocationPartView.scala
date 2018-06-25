@@ -18,11 +18,11 @@
 package com.waz.zclient.messages.parts
 
 import android.content.Context
+import android.graphics.Canvas
 import android.graphics.drawable.ColorDrawable
-import android.support.v7.widget.CardView
 import android.util.AttributeSet
 import android.view.View
-import android.widget.TextView
+import android.widget.{FrameLayout, TextView}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api.NetworkMode
 import com.waz.model.{AssetId, Dim2}
@@ -40,7 +40,7 @@ import com.waz.zclient.common.views.ImageAssetDrawable.State
 import com.waz.zclient.common.views.ImageController.{DataImage, ImageSource, WireImage}
 import com.waz.zclient.{R, ViewHelper}
 
-class LocationPartView(context: Context, attrs: AttributeSet, style: Int) extends CardView(context, attrs, style) with ClickableViewPart with ViewHelper with EphemeralPartView {
+class LocationPartView(context: Context, attrs: AttributeSet, style: Int) extends FrameLayout(context, attrs, style) with ClickableViewPart with ViewHelper with EphemeralPartView with EphemeralIndicatorPartView {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null, 0)
 
@@ -112,5 +112,9 @@ class LocationPartView(context: Context, attrs: AttributeSet, style: Int) extend
     super.onLayout(changed, left, top, right, bottom)
 
     imageSize ! Dim2(imageView.getWidth, imageView.getHeight)
+  }
+
+  override def onDraw(canvas: Canvas): Unit = {
+    super.onDraw(canvas)
   }
 }

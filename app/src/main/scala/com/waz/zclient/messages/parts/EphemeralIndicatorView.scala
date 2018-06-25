@@ -19,18 +19,20 @@ package com.waz.zclient.messages.parts
 
 import android.content.Context
 import android.graphics._
-import android.graphics.drawable.Drawable
+import android.util.AttributeSet
+import android.view.View
 import com.waz.ZLog.ImplicitTag._
 import com.waz.model.MessageId
 import com.waz.service.ZMessaging
 import com.waz.threading.Threading
-import com.waz.utils.events.{ClockSignal, EventContext, Signal}
+import com.waz.utils.events.{ClockSignal, Signal}
 import com.waz.utils.returning
 import com.waz.zclient.utils.ContextUtils._
-import com.waz.zclient.{Injectable, Injector}
-import com.waz.zclient.R
+import com.waz.zclient.{R, ViewHelper}
 
-class EphemeralIndicatorDrawable(implicit injector: Injector, ctx: Context, ec: EventContext) extends Drawable with Injectable {
+class EphemeralIndicatorView(context: Context, attrs: AttributeSet, style: Int) extends View(context, attrs, style) with ViewHelper {
+  def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
+  def this(context: Context) = this(context, null, 0)
 
   private val zms = inject[Signal[ZMessaging]]
   private val msgId = Signal[MessageId]()
@@ -63,18 +65,14 @@ class EphemeralIndicatorDrawable(implicit injector: Injector, ctx: Context, ec: 
     angle <- timerAngle
   } yield (ephemeral, angle)
 
-  state.on(Threading.Ui) { _ => invalidateSelf() }
+  state.on(Threading.Ui) { _ => invalidate() }
 
-  override def setColorFilter(colorFilter: ColorFilter): Unit = paint.setColorFilter(colorFilter)
 
-  override def setAlpha(alpha: Int): Unit = paint.setAlpha(alpha)
-
-  override def getOpacity: Int = PixelFormat.TRANSLUCENT
-
-  override def draw(canvas: Canvas): Unit = state.currentValue match {
+  override def onDraw(canvas: Canvas): Unit = state.currentValue match {
     case Some((true, angle)) if canvas != null && canvas.getHeight > 0 =>
-      canvas.drawArc(0, 0, canvas.getWidth, canvas.getHeight, 0, 360, true, bgPaint)
-      canvas.drawArc(0, 0, canvas.getWidth, canvas.getHeight, -90, -angle, true, paint)
+      val size = Math.min(canvas.getWidth, canvas.getHeight)
+      canvas.drawArc(0, 0, size, size, 0, 360, true, bgPaint)
+      canvas.drawArc(0, 0, size, size, -90, -angle, true, paint)
     case _ => // nothing to draw, not ephemeral or not loaded
   }
 

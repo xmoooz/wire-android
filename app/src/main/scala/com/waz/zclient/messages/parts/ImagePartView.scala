@@ -48,8 +48,6 @@ class ImagePartView(context: Context, attrs: AttributeSet, style: Int) extends F
 
   private val imageIcon = findById[View](R.id.image_icon)
 
-  padding.on(Threading.Ui)(m => imageIcon.setMargin(m))
-
   val noWifi = imageDrawable.state.map {
     case Failed(_, Some(DownloadOnWifiOnlyException)) => true
     case _ => false
@@ -64,6 +62,8 @@ class ImagePartView(context: Context, attrs: AttributeSet, style: Int) extends F
     message.currentValue foreach (assets.openDrawingFragment(_, drawingMethod))
 
   onClicked { _ => message.head.map(assets.showSingleImage(_, this))(Threading.Ui) }
+
+  override def onInflated(): Unit = {}
 }
 
 class WifiWarningPartView(context: Context, attrs: AttributeSet, style: Int) extends LinearLayout(context, attrs, style) with MessageViewPart with ViewHelper {

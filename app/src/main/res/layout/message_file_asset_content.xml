@@ -25,6 +25,9 @@
               android:layout_height="match_parent"
               android:baselineAligned="false"
               android:orientation="horizontal"
+              android:layout_marginEnd="@dimen/content__padding_right"
+              android:layout_marginStart="@dimen/content__padding_left"
+              android:paddingEnd="@dimen/wire__padding__12"
     >
 
     <FrameLayout
