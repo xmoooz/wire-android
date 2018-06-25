@@ -29,7 +29,8 @@ import com.waz.model.ConvExpiry
 import com.waz.utils.returning
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.ConversationController._
-import com.waz.zclient.{FragmentHelper, R}
+import com.waz.zclient.utils.ContextUtils._
+import com.waz.zclient.{FragmentHelper, R, SpinnerController}
 
 import scala.concurrent.duration._
 
@@ -39,27 +40,25 @@ class EphemeralOptionsFragment extends FragmentHelper {
 
   private lazy val zms = inject[Signal[ZMessaging]]
   private lazy val convController = inject[ConversationController]
+  private lazy val spinner = inject[SpinnerController]
 
-  private lazy val optionsList = returning(view[LinearLayout](R.id.list_view)) { _ =>
+  private lazy val optionsListLayout = returning(view[LinearLayout](R.id.list_view)) { _ =>
     convController.currentConv.map(_.ephemeralExpiration).map {
       case Some(ConvExpiry(e)) => Some(e)
       case _                   => None
-    }.onUi(setNewValue)
+    }.map { value =>
+      (if (PredefinedExpirations.contains(value)) PredefinedExpirations else PredefinedExpirations :+ value, value)
+    }.onUi((setNewValue _).tupled)
   }
 
-  override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle) = {
+  override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle) =
     inflater.inflate(R.layout.ephemeral_options_fragment, container, false)
-  }
 
-  private def setNewValue(e: Option[FiniteDuration]): Unit = {
-    optionsList.foreach { v =>
-
-      val unrecognizedOption = v.getChildAt(PredefinedExpirations.size).asInstanceOf[LinearLayout]
-        .getChildAt(0).asInstanceOf[LinearLayout]
-      val check = unrecognizedOption.getChildAt(1).asInstanceOf[GlyphTextView]
-      if (PredefinedExpirations.contains(e) && check.isVisible) unrecognizedOption.setVisible(false)
-
-      PredefinedExpirations.zipWithIndex.map { case (option, index) =>
+  private def setNewValue(optionsList: Seq[Option[FiniteDuration]], e: Option[FiniteDuration]): Unit = {
+    optionsListLayout.foreach { v =>
+      v.removeAllViews()
+      optionsList.zipWithIndex.map { case (option, index) =>
+        getLayoutInflater.inflate(R.layout.conversation_option_item, v, true)
         (option, v.getChildAt(index).asInstanceOf[LinearLayout]
           .getChildAt(0).asInstanceOf[LinearLayout])
       }.foreach { case (option, r) =>
@@ -67,37 +66,31 @@ class EphemeralOptionsFragment extends FragmentHelper {
         val check = r.getChildAt(1).asInstanceOf[GlyphTextView]
         textView.setText(ConversationController.getEphemeralDisplayString(option))
         check.setVisible(e.equals(option))
-        textView.onClick {
-          for {
-            z <- zms.head
-            Some(convId) <- z.convsStats.selectedConversationId.head
-            _ <- z.convsUi.setEphemeralGlobal(convId, option)
-          } yield {}
+        if (PredefinedExpirations.contains(option)) {
+          textView.onClick {
+            spinner.showSpinner(true)
+            (for {
+              z <- zms.head
+              Some(convId) <- z.convsStats.selectedConversationId.head
+              _ <- z.convsUi.setEphemeralGlobal(convId, option)
+            } yield {
+            }).onComplete { res =>
+              if (res.isFailure) showToast(getString(R.string.generic_error_message))
+              spinner.showSpinner(false)
+              this.getFragmentManager.popBackStack()
+            }
+          }
+        } else {
+          textView.setTextColor(R.color.text__primary_disabled_light)
+          check.setTextColor(R.color.text__primary_disabled_light)
         }
-      }
-      if (!PredefinedExpirations.contains(e)) {
-        val textView = unrecognizedOption.getChildAt(0).asInstanceOf[TypefaceTextView]
-        textView.setText(ConversationController.getEphemeralDisplayString(e))
-        check.setVisible(true)
       }
     }
   }
 
   override def onViewCreated(view: View, savedInstanceState: Bundle): Unit = {
-    optionsList.foreach { v =>
-      PredefinedExpirations.foreach { _ =>
-        getLayoutInflater.inflate(R.layout.conversation_option_item, v, true)
-      }
-      getLayoutInflater.inflate(R.layout.conversation_option_item, v, true)
-    }
-  }
-
-  override def onResume() = {
-    super.onResume()
-  }
-
-  override def onStop() = {
-    super.onStop()
+    super.onViewCreated(view, savedInstanceState)
+    optionsListLayout
   }
 }
 
