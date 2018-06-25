@@ -18,49 +18,46 @@
 package com.waz.zclient.cursor
 
 import android.content.Context
-import android.content.res.ColorStateList
 import android.graphics.drawable.Drawable
 import android.util.{AttributeSet, TypedValue}
 import android.view.Gravity
+import com.waz.api.AccentColor
 import com.waz.model.{ConvExpiry, MessageExpiry}
 import com.waz.utils.events.Signal
-import com.waz.zclient.R
 import com.waz.zclient.cursor.CursorController.KeyboardState
 import com.waz.zclient.pages.extendedcursor.ExtendedCursorContainer
 import com.waz.zclient.paintcode._
-import com.waz.zclient.ui.utils._
+import com.waz.zclient.ui.text.ThemedTextView
 import com.waz.zclient.ui.views.OnDoubleClickListener
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils._
+import com.waz.zclient.{R, ViewHelper}
 
-class EphemeralIconButton(context: Context, attrs: AttributeSet, defStyleAttr: Int) extends CursorIconButton(context, attrs, defStyleAttr) { view =>
+class EphemeralIconButton(context: Context, attrs: AttributeSet, defStyleAttr: Int) extends ThemedTextView(context, attrs, defStyleAttr) with ViewHelper {
   def this(context: Context, attrs: AttributeSet) { this(context, attrs, 0) }
   def this(context: Context) { this(context, null) }
 
-  override val buttonColor =
+  val accentColor = inject[Signal[AccentColor]]
+  val controller = inject[CursorController]
+
+  setTextSize(TypedValue.COMPLEX_UNIT_PX, getDimenPx(R.dimen.wire__text_size__small))
+
+  val color =
     controller.ephemeralExp.flatMap {
-      case Some(ConvExpiry(_)) => Signal.const(ColorStateList.valueOf(R.color.graphite))
-      case Some(_)             => accentColor.map(_.getColor).map(ColorStateList.valueOf)
-      case _                   => defaultColor
+      case Some(MessageExpiry(_)) => accentColor.map(_.getColor)
+      case Some(ConvExpiry(_)) => Signal.const(getColor(R.color.light_graphite))
+      case _ => Signal.const(getStyledColor(R.attr.wirePrimaryTextColor))
     }
 
-  val typeface = controller.isEphemeral.map {
-    case true => TypefaceUtils.getTypeface(getString(R.string.wire__typeface__regular))
-    case false => TypefaceUtils.getTypeface(TypefaceUtils.getGlyphsTypefaceName)
-  }
-
-  val textSize = controller.isEphemeral.map {
-    case true => getDimenPx(R.dimen.wire__text_size__small)
-    case false => getDimenPx(R.dimen.wire__text_size__regular)
-  }
-
+  //TODO a bit hacky - maybe the icons should take a size and draw themselves centred on the canvas
+  val iconSize = controller.ephemeralExp.map {
+    case Some(_) => R.dimen.wire__padding__24
+    case _       => R.dimen.wire__padding__16
+    }.map(getDimenPx)
 
   val unitAndValue = controller.conv.map(_.ephemeralExpiration.map(_.display))
 
-  val display = unitAndValue.map(_.map(_._1.toString)).map {
-    case Some(t) => t
-    case None    => getString(R.string.glyph__hourglass)
-  }
+  val display = unitAndValue.map(_.map(_._1.toString).getOrElse(""))
 
   //For QA testing
   val contentDescription = unitAndValue.map {
@@ -68,38 +65,40 @@ class EphemeralIconButton(context: Context, attrs: AttributeSet, defStyleAttr: I
     case None => "off"
   }
 
-  override val glyph = Signal[Int]()
 
-  override val background: Signal[Drawable] = controller.ephemeralExp.flatMap {
-    case Some(exp) =>
-      (exp match {
-        case ConvExpiry(d)    => Signal.const((exp.display._2, getColor(R.color.graphite)))
-        case MessageExpiry(d) => accentColor.map(_.getColor).map((exp.display._2, _))
-      }).map { case (unit, color) =>
-        import com.waz.model.EphemeralDuration._
-        unit match {
-          case Second => EphemeralSecondIcon(color)
-          case Minute => EphemeralMinuteIcon(color)
-          case Hour   => EphemeralHourIcon(color)
-          case Day    => EphemeralDayIcon(color)
-          case Week   => EphemeralWeekIcon(color)
-        }
+  val drawable: Signal[Drawable] =
+    for {
+      color <- color
+      unit  <- controller.ephemeralExp.map(_.map(_.display._2))
+    } yield {
+      import com.waz.model.EphemeralDuration._
+      unit match {
+        case Some(Second) => EphemeralSecondIcon(color)
+        case Some(Minute) => EphemeralMinuteIcon(color)
+        case Some(Hour)   => EphemeralHourIcon(color)
+        case Some(Day)    => EphemeralDayIcon(color)
+        case Some(Week)   => EphemeralWeekIcon(color)
+        case _            => HourGlassIcon(color)
       }
-    case _ => defaultBackground
-  }
+    }
 
   override def onFinishInflate(): Unit = {
     super.onFinishInflate()
 
     setGravity(Gravity.CENTER)
 
-    typeface.onUi(setTypeface)
-    textSize.onUi(setTextSize(TypedValue.COMPLEX_UNIT_PX, _))
-
     display.onUi(setText)
+
+    drawable.onUi(setBackgroundDrawable)
     contentDescription.onUi(setContentDescription)
 
-    controller.ephemeralBtnVisible.onUi(view.setVisible)
+    setLetterSpacing(-0.1f)
+
+    color.onUi(setTextColor)
+    iconSize.onUi { size =>
+      this.setWidthAndHeight(Some(size), Some(size))
+    }
+    controller.ephemeralBtnVisible.onUi(this.setVisible)
   }
 
   setOnClickListener(new OnDoubleClickListener() {

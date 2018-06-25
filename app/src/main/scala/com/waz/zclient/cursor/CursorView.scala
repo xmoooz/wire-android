@@ -65,16 +65,16 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
     f.setPadding(left, 0, left, 0)
   }
 
-  val cursorEditText   = findById[CursorEditText]  (R.id.cet__cursor)
-  val mainToolbar      = findById[CursorToolbar]   (R.id.c__cursor__main)
-  val secondaryToolbar = findById[CursorToolbar]   (R.id.c__cursor__secondary)
-  val topBorder        = findById[View]            (R.id.v__top_bar__cursor)
-  val hintView         = findById[TextView]        (R.id.ttv__cursor_hint)
-  val dividerView      = findById[View]            (R.id.v__cursor__divider)
-  val emojiButton      = findById[CursorIconButton](R.id.cib__emoji)
-  val keyboardButton   = findById[CursorIconButton](R.id.cib__keyboard)
-  val sendButton       = findById[CursorIconButton](R.id.cib__send)
-  val ephemeralButton  = findById[CursorIconButton](R.id.cib__ephemeral)
+  val cursorEditText   = findById[CursorEditText]     (R.id.cet__cursor)
+  val mainToolbar      = findById[CursorToolbar]      (R.id.c__cursor__main)
+  val secondaryToolbar = findById[CursorToolbar]      (R.id.c__cursor__secondary)
+  val topBorder        = findById[View]               (R.id.v__top_bar__cursor)
+  val hintView         = findById[TextView]           (R.id.ttv__cursor_hint)
+  val dividerView      = findById[View]               (R.id.v__cursor__divider)
+  val emojiButton      = findById[CursorIconButton]   (R.id.cib__emoji)
+  val keyboardButton   = findById[CursorIconButton]   (R.id.cib__keyboard)
+  val sendButton       = findById[CursorIconButton]   (R.id.cib__send)
+  val ephemeralButton  = findById[EphemeralIconButton](R.id.cib__ephemeral)
 
   val defaultHintTextColor = hintView.getTextColors.getDefaultColor
 

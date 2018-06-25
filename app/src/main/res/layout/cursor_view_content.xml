@@ -107,9 +107,11 @@
             </FrameLayout>
 
             <com.waz.zclient.cursor.EphemeralIconButton android:id="@+id/cib__ephemeral"
-                                                        android:layout_width="@dimen/cursor__menu_button__diameter"
-                                                        android:layout_height="@dimen/cursor__menu_button__diameter"
+                                                        android:layout_width="@dimen/wire__margin__24"
+                                                        android:layout_height="@dimen/wire__margin__24"
                                                         android:layout_gravity="center"
+                                                        android:includeFontPadding="false"
+                                                        android:gravity="center_vertical"
                                                         style="?cursorIconButton"/>
 
             <com.waz.zclient.cursor.SendButton android:id="@+id/cib__send"
