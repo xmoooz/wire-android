@@ -136,21 +136,19 @@ class FooterViewController(implicit inj: Injector, context: Context, ec: EventCo
     }
 
   private def ephemeralTimeoutString(timestamp: String, remaining: FiniteDuration) = {
-    val stringBuilder = new StringBuilder
-    if (remaining > 1.day) {
+
+    lazy val hours   = remaining.toHours % 24
+    lazy val minutes = remaining.toMinutes % 60
+    lazy val seconds = remaining.toSeconds % 60
+
+    val remainingTimeStamp = if (remaining > 1.day) {
       val days = remaining.toDays.toInt
-      stringBuilder.append(getQuantityString(R.plurals.message_footer__expire__days, days, Integer.valueOf(days))).append(", ")
-    }
-    if (remaining > 1.hour) {
-      val hours = remaining.toHours.toInt % 24
-      stringBuilder.append(getQuantityString(R.plurals.message_footer__expire__hours, hours, Integer.valueOf(hours))).append(", ")
-    }
-    if (remaining > 1.minute) {
-      val minutes = remaining.toMinutes.toInt % 60
-      stringBuilder.append(getQuantityString(R.plurals.message_footer__expire__minutes, minutes, Integer.valueOf(minutes))).append(", ")
-    }
-    val seconds = remaining.toSeconds.toInt % 60
-    stringBuilder.append(getQuantityString(R.plurals.message_footer__expire__seconds, seconds, Integer.valueOf(seconds)))
-    getString(R.string.message_footer__status__ephemeral_summary, timestamp, stringBuilder.toString)
+      getQuantityString(R.plurals.message_footer__expire__greater_than_day, days, days.toString, f"$hours:$minutes%02d")
+    } else if (remaining > 1.minute)
+      getString(R.string.message_footer__expire_less_than_day, if (remaining > 1.hour) f"$hours:$minutes%02d" else f"$minutes:$seconds%02d")
+    else
+      getString(R.string.message_footer__expire_seconds_remaining, seconds.toString)
+
+    s"$timestamp \u30FB $remainingTimeStamp"
   }
 }
