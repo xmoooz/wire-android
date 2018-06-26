@@ -1150,6 +1150,9 @@
     <string name="pref_account_username_empty_title">Add username</string>
 
     <string name="ephemeral_message__timeout__off">Off</string>
+    <string name="ephemeral_message__options_header">TIMED MESSAGES</string>
+
+    <string name="guests_option_on">On</string>
 
     <plurals name="unit_weeks">
         <item quantity="zero">%1$s weeks</item>

@@ -127,9 +127,9 @@ class ParticipantsAdapter(numOfColumns: Int)(implicit context: Context, injector
 
   override def onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = viewType match {
     case GuestOptions =>
-      val view = LayoutInflater.from(parent.getContext).inflate(R.layout.list_options_button, parent, false)
+      val view = LayoutInflater.from(parent.getContext).inflate(R.layout.list_options_button_with_value_label, parent, false)
       view.onClick(onGuestOptionsClick ! {})
-      GuestOptionsButtonViewHolder(view)
+      GuestOptionsButtonViewHolder(view, convController)
     case UserRow =>
       val view = LayoutInflater.from(parent.getContext).inflate(R.layout.single_user_row, parent, false).asInstanceOf[SingleUserRowView]
       view.showArrow(true)
@@ -141,9 +141,9 @@ class ParticipantsAdapter(numOfColumns: Int)(implicit context: Context, injector
         convNameViewHolder = Option(vh)
       }
     case EphemeralOptions =>
-      val view = LayoutInflater.from(parent.getContext).inflate(R.layout.list_options_button, parent, false)
+      val view = LayoutInflater.from(parent.getContext).inflate(R.layout.list_options_button_with_value_label, parent, false)
       view.onClick(onEphemeralOptionsClick ! {})
-      EphemeralOptionsButtonViewHolder(view)
+      EphemeralOptionsButtonViewHolder(view, convController)
     case _ => SeparatorViewHolder(getSeparatorView(parent))
   }
 
@@ -197,20 +197,32 @@ object ParticipantsAdapter {
 
   case class ParticipantData(userData: UserData, isGuest: Boolean)
 
-  case class GuestOptionsButtonViewHolder(view: View) extends ViewHolder(view) {
+  case class GuestOptionsButtonViewHolder(view: View, convController: ConversationController)(implicit eventContext: EventContext) extends ViewHolder(view) {
     private implicit val ctx = view.getContext
     view.setId(R.id.guest_options)
     view.findViewById[ImageView](R.id.icon).setImageDrawable(GuestIconWithColor(getStyledColor(R.attr.wirePrimaryTextColor)))
     view.findViewById[TextView](R.id.name_text).setText(R.string.guest_options_title)
+    convController.currentConv.map(_.isTeamOnly).map {
+      case true => getString(R.string.ephemeral_message__timeout__off)
+      case false => getString(R.string.guests_option_on)
+    }.onUi(setValueText(view, _))
     view.findViewById[ImageView](R.id.next_indicator).setImageDrawable(ForwardNavigationIcon(R.color.light_graphite_40))
   }
 
-  case class EphemeralOptionsButtonViewHolder(view: View) extends ViewHolder(view) {
+  private def setValueText(view: View, text: String): Unit = {
+    val valueText = view.findViewById[TextView](R.id.value_text)
+    valueText.setTextColor(R.color.text__primary_disabled_dark)
+    valueText.setText(text)
+  }
+
+  case class EphemeralOptionsButtonViewHolder(view: View, convController: ConversationController)(implicit eventContext: EventContext) extends ViewHolder(view) {
     private implicit val ctx = view.getContext
     view.setId(R.id.timed_messages_options)
     view.findViewById[ImageView](R.id.icon).setImageDrawable(HourGlassIcon(getStyledColor(R.attr.wirePrimaryTextColor)))
     view.findViewById[TextView](R.id.name_text).setText(R.string.ephemeral_options_title)
     view.findViewById[ImageView](R.id.next_indicator).setImageDrawable(ForwardNavigationIcon(R.color.light_graphite_40))
+    convController.currentConv.map(_.ephemeralExpiration.map(_.duration))
+      .onUi(text => setValueText(view, ConversationController.getEphemeralDisplayString(text)))
   }
 
   case class SeparatorViewHolder(separator: View) extends ViewHolder(separator) {

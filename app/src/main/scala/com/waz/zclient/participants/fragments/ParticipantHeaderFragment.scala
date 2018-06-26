@@ -96,6 +96,8 @@ class ParticipantHeaderFragment extends FragmentHelper {
       case Some(GroupParticipantsFragment.Tag |
                 GuestOptionsFragment.Tag) => Signal.const(getString(R.string.participants_details_header_title))
 
+      case Some(EphemeralOptionsFragment.Tag) => Signal.const(getString(R.string.ephemeral_message__options_header))
+
       case Some(AddParticipantsFragment.Tag) => newConvController.users.map(_.size).map {
         case 0 => getString(R.string.add_people_empty_header)
         case x => getString(R.string.add_people_count_header, x.toString)
