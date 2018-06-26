@@ -206,6 +206,7 @@ object ParticipantsAdapter {
   case class GuestOptionsButtonViewHolder(view: View, convController: ConversationController)(implicit eventContext: EventContext) extends ViewHolder(view) {
     private implicit val ctx = view.getContext
     view.setId(R.id.guest_options)
+    view.findViewById[TextView](R.id.options_divider).setVisibility(View.VISIBLE)
     view.findViewById[ImageView](R.id.icon).setImageDrawable(GuestIconWithColor(getStyledColor(R.attr.wirePrimaryTextColor)))
     view.findViewById[TextView](R.id.name_text).setText(R.string.guest_options_title)
     convController.currentConv.map(_.isTeamOnly).map {

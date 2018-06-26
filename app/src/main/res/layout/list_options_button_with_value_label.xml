@@ -18,67 +18,79 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 -->
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              xmlns:tools="http://schemas.android.com/tools"
-              android:layout_width="match_parent"
-              android:layout_height="@dimen/menu_item_height"
-              style="?wireBackground"
-              android:layout_marginTop="@dimen/wire__padding__8"
-    >
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="57dp"
+    android:orientation="vertical"
+    style="?wireBackground">
 
-    <ImageView
-        android:id="@+id/icon"
-        android:layout_width="@dimen/guest_options_icon_size"
-        android:layout_height="@dimen/guest_options_icon_size"
-        android:layout_alignParentStart="true"
-        android:layout_centerVertical="true"
-        android:layout_marginStart="@dimen/wire__padding__big"
-        android:layout_marginEnd="@dimen/wire__padding__big"
-        android:scaleType="centerInside"
-        />
+    <RelativeLayout android:layout_width="match_parent"
+                  android:layout_height="@dimen/menu_item_height"
+                  style="?wireBackground">
 
-    <ImageView
-        android:id="@+id/next_indicator"
-        android:layout_width="@dimen/next_indicator_size"
-        android:layout_height="@dimen/next_indicator_size"
-        android:layout_gravity="center_vertical"
-        android:layout_marginStart="@dimen/wire__padding__regular"
-        android:layout_marginEnd="@dimen/wire__padding__regular"
-        android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"
-        />
+        <ImageView
+            android:id="@+id/icon"
+            android:layout_width="@dimen/guest_options_icon_size"
+            android:layout_height="@dimen/guest_options_icon_size"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="@dimen/wire__padding__big"
+            android:layout_marginEnd="@dimen/wire__padding__big"
+            android:scaleType="centerInside"
+            />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:orientation="horizontal"
-        android:layout_toEndOf="@id/icon"
-        android:layout_toStartOf="@id/next_indicator">
+        <ImageView
+            android:id="@+id/next_indicator"
+            android:layout_width="@dimen/next_indicator_size"
+            android:layout_height="@dimen/next_indicator_size"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="@dimen/wire__padding__regular"
+            android:layout_marginEnd="@dimen/wire__padding__regular"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            />
 
-        <com.waz.zclient.ui.text.TypefaceTextView
-            android:id="@+id/name_text"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:drawablePadding="@dimen/wire__padding__6"
-            app:w_font="@string/wire__typeface__light"
-            style="?startUiUserRowLabel"
-            android:layout_gravity="start"/>
+            android:layout_centerVertical="true"
+            android:orientation="horizontal"
+            android:layout_toEndOf="@id/icon"
+            android:layout_toStartOf="@id/next_indicator">
 
-        <com.waz.zclient.ui.text.TypefaceTextView
-            android:id="@+id/value_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:drawablePadding="@dimen/wire__padding__6"
-            app:w_font="@string/wire__typeface__light"
-            style="?startUiUserRowLabel"
-            android:layout_gravity="end"/>
-    </LinearLayout>
+            <com.waz.zclient.ui.text.TypefaceTextView
+                android:id="@+id/name_text"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:drawablePadding="@dimen/wire__padding__6"
+                app:w_font="@string/wire__typeface__light"
+                style="?startUiUserRowLabel"
+                android:layout_gravity="start"/>
 
-</RelativeLayout>
+            <com.waz.zclient.ui.text.TypefaceTextView
+                android:id="@+id/value_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:drawablePadding="@dimen/wire__padding__6"
+                android:textColor="@color/text__primary_disabled_dark"
+                app:w_font="@string/wire__typeface__light"
+                style="?startUiUserRowLabel"
+                android:layout_gravity="end"/>
+        </LinearLayout>
+
+    </RelativeLayout>
+    <View
+    android:id="@+id/options_divider"
+    android:visibility="gone"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/wire__divider__height__thin"
+    android:background="?thinDividerColor"/>
+
+</LinearLayout>
