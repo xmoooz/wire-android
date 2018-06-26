@@ -195,6 +195,12 @@ object ParticipantsAdapter {
   val ConversationName = 4
   val EphemeralOptions = 5
 
+  private def setValueText(view: View, text: String): Unit = {
+    val valueText = view.findViewById[TextView](R.id.value_text)
+    valueText.setTextColor(R.color.text__primary_disabled_dark)
+    valueText.setText(text)
+  }
+
   case class ParticipantData(userData: UserData, isGuest: Boolean)
 
   case class GuestOptionsButtonViewHolder(view: View, convController: ConversationController)(implicit eventContext: EventContext) extends ViewHolder(view) {
@@ -207,12 +213,6 @@ object ParticipantsAdapter {
       case false => getString(R.string.guests_option_on)
     }.onUi(setValueText(view, _))
     view.findViewById[ImageView](R.id.next_indicator).setImageDrawable(ForwardNavigationIcon(R.color.light_graphite_40))
-  }
-
-  private def setValueText(view: View, text: String): Unit = {
-    val valueText = view.findViewById[TextView](R.id.value_text)
-    valueText.setTextColor(R.color.text__primary_disabled_dark)
-    valueText.setText(text)
   }
 
   case class EphemeralOptionsButtonViewHolder(view: View, convController: ConversationController)(implicit eventContext: EventContext) extends ViewHolder(view) {
