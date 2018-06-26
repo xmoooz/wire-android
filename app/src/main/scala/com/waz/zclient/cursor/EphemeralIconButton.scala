@@ -65,20 +65,14 @@ class EphemeralIconButton(context: Context, attrs: AttributeSet, defStyleAttr: I
     case None => "off"
   }
 
-
   val drawable: Signal[Drawable] =
     for {
       color <- color
       unit  <- controller.ephemeralExp.map(_.map(_.display._2))
     } yield {
-      import com.waz.model.EphemeralDuration._
       unit match {
-        case Some(Second) => EphemeralSecondIcon(color)
-        case Some(Minute) => EphemeralMinuteIcon(color)
-        case Some(Hour)   => EphemeralHourIcon(color)
-        case Some(Day)    => EphemeralDayIcon(color)
-        case Some(Week)   => EphemeralWeekIcon(color)
-        case _            => HourGlassIcon(color)
+        case Some(u) => EphemeralIcon(color, u)
+        case _       => HourGlassIcon(color)
       }
     }
 

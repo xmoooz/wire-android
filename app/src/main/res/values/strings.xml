@@ -1154,6 +1154,11 @@
 
     <string name="guests_option_on">On</string>
 
+    <plurals name="unit_years">
+        <item quantity="zero">%1$s years</item>
+        <item quantity="one">%1$s year</item>
+        <item quantity="other">%1$s years</item>
+    </plurals>
     <plurals name="unit_weeks">
         <item quantity="zero">%1$s weeks</item>
         <item quantity="one">%1$s week</item>
@@ -1180,12 +1185,8 @@
         <item quantity="other">%1$s seconds</item>
     </plurals>
 
-    <plurals name="message_footer__expire__greater_than_day">
-        <item quantity="one">%1$s day and %2$s remaining</item>
-        <item quantity="other">%1$s days and %2$s remaining</item>
-    </plurals>
-    <string name="message_footer__expire_less_than_day">%1$s remaining</string>
-    <string name="message_footer__expire_seconds_remaining">%1$s seconds remaining</string>
+    <string name="ephemeral_message_footer_multiple_units">%1$s and %2$s remaining</string>
+    <string name="ephemeral_message_footer_single_unit">%1$s remaining</string>
 
     <string name="collection_header_all">COLLECTION</string>
     <string name="collection_header_pictures">PICTURES</string>

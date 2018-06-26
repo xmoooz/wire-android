@@ -286,6 +286,7 @@ object ConversationController {
       case Some((l, Hour))   => getQuantityString(R.plurals.unit_hours,   l.toInt, l.toString)
       case Some((l, Day))    => getQuantityString(R.plurals.unit_days,    l.toInt, l.toString)
       case Some((l, Week))   => getQuantityString(R.plurals.unit_weeks,   l.toInt, l.toString)
+      case Some((l, Year))   => getQuantityString(R.plurals.unit_years,   l.toInt, l.toString)
     }
   }
 

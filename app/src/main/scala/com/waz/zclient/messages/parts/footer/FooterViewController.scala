@@ -18,6 +18,7 @@
 package com.waz.zclient.messages.parts.footer
 
 import android.content.Context
+import com.waz.ZLog.ImplicitTag._
 import com.waz.api.Message
 import com.waz.api.Message.Status
 import com.waz.model.MessageData
@@ -26,15 +27,14 @@ import com.waz.service.messages.MessageAndLikes
 import com.waz.threading.CancellableFuture
 import com.waz.utils._
 import com.waz.utils.events.{ClockSignal, EventContext, Signal}
-import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.common.controllers.global.AccentColorController
+import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.messages.MessageView.MsgBindOptions
 import com.waz.zclient.messages.{LikesController, UsersController}
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.ZTimeFormatter
 import com.waz.zclient.{Injectable, Injector, R}
 import org.threeten.bp.{DateTimeUtils, Instant}
-import com.waz.ZLog.ImplicitTag._
 
 import scala.concurrent.duration._
 
@@ -137,17 +137,26 @@ class FooterViewController(implicit inj: Injector, context: Context, ec: EventCo
 
   private def ephemeralTimeoutString(timestamp: String, remaining: FiniteDuration) = {
 
-    lazy val hours   = remaining.toHours % 24
-    lazy val minutes = remaining.toMinutes % 60
-    lazy val seconds = remaining.toSeconds % 60
+    def unitString(resId: Int, quantity: Long) =
+      getQuantityString(resId, quantity.toInt, quantity.toString)
 
-    val remainingTimeStamp = if (remaining > 1.day) {
-      val days = remaining.toDays.toInt
-      getQuantityString(R.plurals.message_footer__expire__greater_than_day, days, days.toString, f"$hours:$minutes%02d")
-    } else if (remaining > 1.minute)
-      getString(R.string.message_footer__expire_less_than_day, if (remaining > 1.hour) f"$hours:$minutes%02d" else f"$minutes:$seconds%02d")
-    else
-      getString(R.string.message_footer__expire_seconds_remaining, seconds.toString)
+    lazy val years    = unitString(R.plurals.unit_years, remaining.toDays / 365)
+    lazy val weeks    = unitString(R.plurals.unit_weeks,  (remaining.toDays % 365) / 7)
+    lazy val days     = unitString(R.plurals.unit_days,  remaining.toDays % 7)
+    lazy val hours    = f"${remaining.toHours % 24}:${remaining.toMinutes % 60}%02d"
+    lazy val minutes  = unitString(R.plurals.unit_minutes, remaining.toMinutes % 60)
+    lazy val seconds  = unitString(R.plurals.unit_seconds, remaining.toSeconds % 60)
+
+    lazy val weeksNotZero    = Option((remaining.toDays % 365) / 7).filter(_ > 0).map(unitString(R.plurals.unit_weeks,  _))
+    lazy val daysNotZero     = Option(remaining.toDays % 7).filter(_ > 0).map(unitString(R.plurals.unit_days,  _))
+
+    val remainingTimeStamp =
+      if (remaining > 365.days)      weeksNotZero.fold(getString(R.string.ephemeral_message_footer_single_unit, years))(getString(R.string.ephemeral_message_footer_multiple_units, years, _))
+      else if (remaining > 7.days)   daysNotZero.fold(getString(R.string.ephemeral_message_footer_single_unit, weeks))(getString(R.string.ephemeral_message_footer_multiple_units, weeks, _))
+      else if (remaining > 1.day)    getString(R.string.ephemeral_message_footer_multiple_units, days, hours)
+      else if (remaining > 1.hour)   getString(R.string.ephemeral_message_footer_single_unit, hours)
+      else if (remaining > 1.minute) getString(R.string.ephemeral_message_footer_single_unit, minutes)
+      else                           getString(R.string.ephemeral_message_footer_single_unit, seconds)
 
     s"$timestamp \u30FB $remainingTimeStamp"
   }
