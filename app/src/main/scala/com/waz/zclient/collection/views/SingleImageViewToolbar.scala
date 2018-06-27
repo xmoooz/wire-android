@@ -55,14 +55,14 @@ class SingleImageViewToolbar(context: Context, attrs: AttributeSet, style: Int) 
 
   val message = collectionController.focusedItem collect { case Some(msg) => msg }
 
-  message.map(_.expiryTime.isEmpty).onUi { visible =>
+  message.map(_.ephemeral.isEmpty).onUi { visible =>
     Seq(likeButton, shareButton, viewButton).map(_.getParent.asInstanceOf[View]).foreach(_.setVisible(visible))
   }
 
   (for {
     self <- zms.map(_.selfUserId)
     msg <- message
-  } yield msg.expiryTime.isEmpty || msg.userId == self).onUi { visible =>
+  } yield msg.ephemeral.isEmpty || msg.userId == self).onUi { visible =>
     downloadButton.getParent.asInstanceOf[View].setVisible(visible)
   }
 
