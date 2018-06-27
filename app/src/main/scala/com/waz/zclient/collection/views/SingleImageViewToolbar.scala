@@ -58,6 +58,13 @@ class SingleImageViewToolbar(context: Context, attrs: AttributeSet, style: Int) 
     Seq(likeButton, shareButton, viewButton).foreach(_.setVisible(visible))
   }
 
+  (for {
+    self <- zms.map(_.selfUserId)
+    msg <- message
+  } yield msg.expiryTime.isEmpty || msg.userId == self).onUi { visible =>
+    downloadButton.setVisible(visible)
+  }
+
   val likedBySelf = collectionController.focusedItem flatMap {
     case Some(m) => zms.flatMap { z =>
       z.reactionsStorage.signal((m.id, z.selfUserId)).map(_.action == Liking.like).orElse(Signal const false)
