@@ -79,16 +79,17 @@ class ParticipantsAdapter(numOfColumns: Int)(implicit context: Context, injector
   private lazy val positions = for {
     users       <- users
     isTeam      <- participantsController.currentUserBelongsToConversationTeam
+    convActive  <- convController.currentConv.map(_.isActive)
     guestButton <- shouldShowGuestButton
     areWeAGuest <- participantsController.isCurrentUserGuest
   } yield {
     val (bots, people) = users.toList.partition(_.userData.isWireBot)
 
     List(Right(ConversationName)) :::
-    (if (isTeam && guestButton) List(Right(GuestOptions))
+    (if (convActive && isTeam && guestButton) List(Right(GuestOptions))
       else Nil
       ) :::
-    (if (!areWeAGuest) List(Right(EphemeralOptions))
+    (if (convActive && !areWeAGuest) List(Right(EphemeralOptions))
       else Nil
         ) :::
     (if (people.nonEmpty) List(Right(PeopleSeparator))
