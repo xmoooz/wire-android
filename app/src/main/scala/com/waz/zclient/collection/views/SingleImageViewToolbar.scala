@@ -33,6 +33,7 @@ import com.waz.zclient.utils.RichView
 import com.waz.zclient.{R, ViewHelper}
 import com.waz.ZLog.ImplicitTag._
 import MessageAction._
+import android.view.View
 
 class SingleImageViewToolbar(context: Context, attrs: AttributeSet, style: Int) extends LinearLayout(context, attrs, style) with ViewHelper {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
@@ -55,14 +56,14 @@ class SingleImageViewToolbar(context: Context, attrs: AttributeSet, style: Int) 
   val message = collectionController.focusedItem collect { case Some(msg) => msg }
 
   message.map(_.expiryTime.isEmpty).onUi { visible =>
-    Seq(likeButton, shareButton, viewButton).foreach(_.setVisible(visible))
+    Seq(likeButton, shareButton, viewButton).map(_.getParent.asInstanceOf[View]).foreach(_.setVisible(visible))
   }
 
   (for {
     self <- zms.map(_.selfUserId)
     msg <- message
   } yield msg.expiryTime.isEmpty || msg.userId == self).onUi { visible =>
-    downloadButton.setVisible(visible)
+    downloadButton.getParent.asInstanceOf[View].setVisible(visible)
   }
 
   val likedBySelf = collectionController.focusedItem flatMap {
