@@ -90,8 +90,12 @@ trait CollectionNormalItemView extends CollectionItemView with ClickableViewPart
 
   messageAndLikesResolver.on(Threading.Ui) { mal => set(mal, content) }
 
-  onClicked.on(Threading.Ui){
-    _ => messageData.currentValue.foreach(collectionController.clickedMessage ! _)
+  onClicked { _ =>
+    import Threading.Implicits.Ui
+    for {
+      false <- expired.head
+      md <- messageData.head
+    } collectionController.clickedMessage ! md
   }
 
   def setMessageData(messageData: MessageData, content: Option[MessageContent]): Unit = {
@@ -125,12 +129,15 @@ class CollectionImageView(context: Context) extends AspectRatioImageView(context
 
   ephemeralDrawable(imageDrawable).onUi { setImageDrawable }
 
-  this.onClick{
-    onClicked ! (())
-  }
-
-  onClicked{
-    _ => messageData.currentValue.foreach(collectionController.clickedMessage ! _)
+  this.onClick {
+    import Threading.Implicits.Ui
+    for {
+      false <- expired.head
+      md <- messageData.head
+    } {
+      collectionController.clickedMessage ! md
+      onClicked ! (())
+    }
   }
 
   def setMessageData(messageData: MessageData, width: Int, color: Int) = {
@@ -155,12 +162,14 @@ class CollectionFileAssetPartView(context: Context, attrs: AttributeSet, style: 
   }
 
   this.onClick{
-    deliveryState.currentValue.foreach(assetActionButton.onClicked ! _)
+    import Threading.Implicits.Ui
+    for {
+      false <- expired.head
+      ds <- deliveryState.head
+    } assetActionButton.onClicked ! ds
   }
 
-  assetActionButton.onClicked{ _ =>
-    messageData.currentValue.foreach(collectionController.clickedMessage ! _)
-  }
+  assetActionButton.onClicked(_ => onClicked ! (()))
   setWillNotDraw(true)
 }
 
@@ -181,8 +190,12 @@ class CollectionSimpleWebLinkPartView(context: Context, attrs: AttributeSet, sty
 
   urlText.on(Threading.Ui){ urlTextView.setText }
 
-  onClicked{ _ =>
-    urlText.currentValue foreach { c => browser.openUrl(AndroidURIUtil.parse(c)) }
+  onClicked { _ =>
+    import Threading.Implicits.Ui
+    for {
+      false <- expired.head
+      text <- urlText.head
+    } browser.openUrl(AndroidURIUtil.parse(text))
   }
   registerEphemeral(urlTextView)
 }

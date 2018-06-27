@@ -54,6 +54,10 @@ class SingleImageViewToolbar(context: Context, attrs: AttributeSet, style: Int) 
 
   val message = collectionController.focusedItem collect { case Some(msg) => msg }
 
+  message.map(_.expiryTime.isEmpty).onUi { visible =>
+    Seq(likeButton, shareButton, viewButton).foreach(_.setVisible(visible))
+  }
+
   val likedBySelf = collectionController.focusedItem flatMap {
     case Some(m) => zms.flatMap { z =>
       z.reactionsStorage.signal((m.id, z.selfUserId)).map(_.action == Liking.like).orElse(Signal const false)
