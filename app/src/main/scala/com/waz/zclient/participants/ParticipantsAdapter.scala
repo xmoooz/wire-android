@@ -37,6 +37,7 @@ import com.waz.zclient.common.controllers.ThemeController
 import com.waz.zclient.common.controllers.ThemeController.Theme
 import com.waz.zclient.common.views.SingleUserRowView
 import com.waz.zclient.conversation.ConversationController
+import com.waz.zclient.conversation.ConversationController.getEphemeralDisplayString
 import com.waz.zclient.paintcode.{ForwardNavigationIcon, GuestIconWithColor, HourGlassIcon}
 import com.waz.zclient.ui.text.TypefaceEditText.OnSelectionChangedListener
 import com.waz.zclient.ui.text.{GlyphTextView, TypefaceEditText}
@@ -222,8 +223,11 @@ object ParticipantsAdapter {
     view.findViewById[ImageView](R.id.icon).setImageDrawable(HourGlassIcon(getStyledColor(R.attr.wirePrimaryTextColor)))
     view.findViewById[TextView](R.id.name_text).setText(R.string.ephemeral_options_title)
     view.findViewById[ImageView](R.id.next_indicator).setImageDrawable(ForwardNavigationIcon(R.color.light_graphite_40))
-    convController.currentConv.map(_.ephemeralExpiration.map(_.duration))
-      .onUi(text => setValueText(view, ConversationController.getEphemeralDisplayString(text)))
+    convController.currentConv.map(_.ephemeralExpiration.flatMap {
+      case ConvExpiry(d) => Some(d)
+      case _ => None
+    }).map(getEphemeralDisplayString)
+      .onUi(setValueText(view, _))
   }
 
   case class SeparatorViewHolder(separator: View) extends ViewHolder(separator) {
