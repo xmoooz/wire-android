@@ -23,7 +23,9 @@
               android:id="@+id/content"
               android:orientation="horizontal"
               android:layout_width="match_parent"
-              android:layout_height="match_parent">
+              android:layout_height="match_parent"
+              android:layout_marginEnd="@dimen/content__padding_right"
+              android:layout_marginStart="@dimen/content__padding_left">
 
     <com.waz.zclient.messages.parts.assets.AssetActionButton
         android:id="@+id/action_button"

@@ -20,17 +20,14 @@ package com.waz.zclient.ui.utils;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
-import android.graphics.ColorMatrix;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.StateListDrawable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.DrawableCompat;
 import com.waz.zclient.utils.ViewUtils;
 
 public class ColorUtils {
-    private static final int PRESSED_ALPHA = 180;
     private static final int ROUNDED_TEXT_BOX_BACK_ALPHA = 163;
 
     private ColorUtils() {
@@ -55,44 +52,10 @@ public class ColorUtils {
     }
 
 
-    public static int getPressColor(int alpha, int borderColor) {
-        int borderColorPressed;
-        if (Color.alpha(borderColor) == 0) {
-            borderColorPressed = borderColor;
-        } else {
-            borderColorPressed = ColorUtils.injectAlpha(alpha, borderColor);
-        }
-        return borderColorPressed;
-    }
-
     public static Drawable getTintedDrawable(Context context, int resId, int color) {
         Drawable drawable = DrawableCompat.wrap(ContextCompat.getDrawable(context, resId));
         DrawableCompat.setTint(drawable.mutate(), color);
         return drawable;
-    }
-
-    public static Drawable getButtonBackground(int borderColor, int fillColor, int strokeWidth, int cornerRadius) {
-        int fillColorPressed = getPressColor(PRESSED_ALPHA, fillColor);
-        int borderColorPressed = getPressColor(PRESSED_ALPHA, borderColor);
-
-        GradientDrawable gradientDrawablePressed = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                                                                        new int[] {fillColorPressed, fillColorPressed});
-        gradientDrawablePressed.setStroke(strokeWidth, borderColorPressed);
-        gradientDrawablePressed.setCornerRadius(cornerRadius);
-
-        GradientDrawable gradientDrawable = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                                                                 new int[] {fillColor, fillColor});
-        gradientDrawable.setStroke(strokeWidth, borderColor);
-        gradientDrawable.setCornerRadius(cornerRadius);
-
-        StateListDrawable states = new StateListDrawable();
-        states.addState(new int[] {android.R.attr.state_pressed},
-                        gradientDrawablePressed);
-        states.addState(new int[] {android.R.attr.state_focused},
-                        gradientDrawablePressed);
-        states.addState(new int[] {}, gradientDrawable);
-
-        return states;
     }
 
     public static Drawable getRoundedTextBoxBackground(Context context, int color, int targetHeight) {
@@ -109,15 +72,4 @@ public class ColorUtils {
         return drawable;
     }
 
-    public static void adjustBrightness(ColorMatrix cm, float value) {
-        value = Math.min(100, Math.max(value, -100));
-        float[] mat = new float[] {
-            1, 0, 0, 0, value,
-            0, 1, 0, 0, value,
-            0, 0, 1, 0, value,
-            0, 0, 0, 1, 0,
-            0, 0, 0, 0, 1
-        };
-        cm.postConcat(new ColorMatrix(mat));
-    }
 }

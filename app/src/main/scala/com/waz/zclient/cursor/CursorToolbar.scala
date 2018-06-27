@@ -39,12 +39,10 @@ import android.content.res.ColorStateList
 import android.util.AttributeSet
 import android.view.ViewGroup
 import android.widget.LinearLayout
-import com.waz.threading.Threading
-import com.waz.utils.events.Signal
-import com.waz.zclient.ViewHelper
-import com.waz.zclient.R
-import com.waz.zclient.ui.utils.CursorUtils
 import com.waz.ZLog.ImplicitTag._
+import com.waz.utils.events.Signal
+import com.waz.zclient.{R, ViewHelper}
+import com.waz.zclient.ui.utils.CursorUtils
 
 class CursorToolbar(val context: Context, val attrs: AttributeSet, val defStyleAttr: Int) extends LinearLayout(context, attrs, defStyleAttr) with ViewHelper {
   def this(context: Context, attrs: AttributeSet) { this(context, attrs, 0) }
@@ -57,7 +55,7 @@ class CursorToolbar(val context: Context, val attrs: AttributeSet, val defStyleA
 
   private var customColor = Option.empty[ColorStateList]
 
-  cursorItems.on(Threading.Ui) { items =>
+  cursorItems.onUi { items =>
     removeAllViews()
 
     val rightMargin = CursorUtils.getMarginBetweenCursorButtons(getContext)

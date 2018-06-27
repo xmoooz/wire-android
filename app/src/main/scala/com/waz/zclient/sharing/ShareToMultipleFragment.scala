@@ -30,7 +30,6 @@ import android.widget.LinearLayout.LayoutParams
 import android.widget.TextView.OnEditorActionListener
 import android.widget._
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api.EphemeralExpiration
 import com.waz.api.impl.ContentUriAssetForUpload
 import com.waz.model.AssetMetaData.Image.Tag
 import com.waz.model.ConversationData.ConversationType
@@ -46,8 +45,8 @@ import com.waz.zclient.common.controllers.{AssetsController, SharingController}
 import com.waz.zclient.common.views.ImageAssetDrawable.{RequestBuilder, ScaleType}
 import com.waz.zclient.common.views.ImageController.DataImage
 import com.waz.zclient.common.views._
+import com.waz.zclient.cursor.EphemeralLayout
 import com.waz.zclient.messages.{MessagesController, UsersController}
-import com.waz.zclient.pages.extendedcursor.ephemeral.EphemeralLayout
 import com.waz.zclient.ui.text.TypefaceTextView
 import com.waz.zclient.ui.utils.{ColorUtils, KeyboardUtils}
 import com.waz.zclient.ui.views.CursorIconButton
@@ -194,14 +193,12 @@ class ShareToMultipleFragment extends FragmentHelper with OnBackPressedListener 
             bc.closedAnimated()
           case Some(false) =>
             returning(getLayoutInflater.inflate(R.layout.ephemeral_keyboard_layout, null, false).asInstanceOf[EphemeralLayout]) { l =>
-              sharingController.ephemeralExpiration.currentValue.foreach(l.setSelectedExpiration)
-              l.setCallback(new EphemeralLayout.Callback() {
-                override def onEphemeralExpirationSelected(expiration: EphemeralExpiration, close: Boolean): Unit = {
-                  sharingController.ephemeralExpiration ! expiration
-                  toggle.ephemeralExpiration ! expiration
-                  if (close) bc.closedAnimated()
-                }
-              })
+              sharingController.ephemeralExpiration.map(l.setSelectedExpiration)
+              l.expirationSelected.onUi { case (exp, close) =>
+                toggle.ephemeralExpiration ! exp
+                sharingController.ephemeralExpiration ! exp
+                if (close) bc.closedAnimated()
+              }
               bc.addView(l)
             }
             bc.openAnimated()

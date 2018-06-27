@@ -34,7 +34,6 @@ import com.waz.utils.events.{EventStream, Signal}
 import com.waz.zclient.common.views.ChatheadView
 import com.waz.zclient.common.controllers.global.AccentColorController
 import com.waz.zclient.messages.MessageView.MsgBindOptions
-import com.waz.zclient.messages.parts.EphemeralDotsDrawable
 import com.waz.zclient.ui.text.{GlyphTextView, TypefaceTextView}
 import com.waz.zclient.ui.theme.ThemeUtils
 import com.waz.zclient.ui.utils.ColorUtils
@@ -234,12 +233,8 @@ class EphemeralDotsView(context: Context, attrs: AttributeSet, style: Int) exten
   def this(context: Context) = this(context, null, 0)
 
   override val tpe = MsgPart.EphemeralDots
-  val background = new EphemeralDotsDrawable()
-
-  setBackground(background)
 
   override def set(msg: MessageAndLikes, part: Option[MessageContent], opts: Option[MsgBindOptions]): Unit = {
     super.set(msg, part, opts)
-    background.setMessage(msg.message.id)
   }
 }

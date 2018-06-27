@@ -26,8 +26,8 @@ import android.widget.Toast
 import com.google.android.gms.common.{ConnectionResult, GoogleApiAvailability}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api._
-import com.waz.content.UserPreferences
-import com.waz.model.{ConversationData, MessageData}
+import com.waz.content.{GlobalPreferences, UserPreferences}
+import com.waz.model.{ConvExpiry, MessageData}
 import com.waz.permissions.PermissionsService
 import com.waz.service.{NetworkModeService, ZMessaging}
 import com.waz.threading.{CancellableFuture, Threading}
@@ -38,7 +38,6 @@ import com.waz.zclient.controllers.camera.ICameraController
 import com.waz.zclient.controllers.drawing.IDrawingController
 import com.waz.zclient.controllers.giphy.IGiphyController
 import com.waz.zclient.controllers.location.ILocationController
-import com.waz.zclient.controllers.userpreferences.IUserPreferencesController
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversationlist.ConversationListController
 import com.waz.zclient.messages.MessageBottomSheetDialog.MessageAction
@@ -82,22 +81,23 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
     case _ => Option.empty[CursorMenuItem]
   }
   val isEditingMessage = editingMsg.map(_.isDefined)
-  val ephemeralSelected = extendedCursor.map(_ == ExtendedCursorContainer.Type.EPHEMERAL)
+
+  val ephemeralExp = conv.map(_.ephemeralExpiration)
+  val isEphemeral  = ephemeralExp.map(_.isDefined)
+
   val emojiKeyboardVisible = extendedCursor.map(_ == ExtendedCursorContainer.Type.EMOJIS)
-  val convIsEphemeral = conv.map(_.ephemeral != EphemeralExpiration.NONE)
   val convAvailability = for {
     convId <- conv.map(_.id)
     av <- convListController.availability(convId)
   } yield av
 
   val convIsActive = conv.map(_.isActive)
-  val isEphemeralMode = convIsEphemeral.zip(ephemeralSelected) map { case (ephConv, selected) => ephConv || selected }
 
   val onCursorItemClick = EventStream[CursorMenuItem]()
 
   val onMessageSent = EventStream[MessageData]()
   val onMessageEdited = EventStream[MessageData]()
-  val onEphemeralExpirationSelected = EventStream[ConversationData]()
+  val onEphemeralExpirationSelected = EventStream[Option[FiniteDuration]]()
 
   val sendButtonEnabled: Signal[Boolean] = zms.map(_.userPrefs).flatMap(_.preference(UserPreferences.SendButtonEnabled).signal)
 
@@ -105,9 +105,13 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
   val sendButtonVisible = Signal(emojiKeyboardVisible, enteredTextEmpty, sendButtonEnabled, isEditingMessage) map {
     case (emoji, empty, enabled, editing) => enabled && (emoji || !empty) && !editing
   }
-  val ephemeralBtnVisible = Signal(isEditingMessage, convIsActive, enteredTextEmpty, sendButtonVisible) map {
-    case (false, true, true, false) => true
-    case _ => false
+  val ephemeralBtnVisible = Signal(isEditingMessage, convIsActive).flatMap {
+    case (false, true) =>
+      isEphemeral.flatMap {
+        case true => Signal.const(true)
+        case _ => sendButtonVisible.map(!_)
+      }
+    case _ => Signal.const(false)
   }
 
   val onShowTooltip = EventStream[(CursorMenuItem, View)]   // (item, anchor)
@@ -220,24 +224,25 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
       keyboard ! KeyboardState.Hidden
     }
 
-  lazy val userPreferences = inject[IUserPreferencesController]
+  private val lastEphemeralValue = inject[GlobalPreferences].preference(GlobalPreferences.LastEphemeralValue).signal
 
-  def toggleEphemeralMode() = {
-    val lastExpiration = EphemeralExpiration.getForMillis(userPreferences.getLastEphemeralValue)
-    if (lastExpiration != EphemeralExpiration.NONE) {
-      conv.head foreach { c =>
-        zms.head.flatMap { _.convsUi.setEphemeral(c.id, if (c.ephemeral == EphemeralExpiration.NONE) lastExpiration else EphemeralExpiration.NONE) } foreach {
-          case Some((prev, current)) if prev.ephemeral == EphemeralExpiration.NONE =>
-            onEphemeralExpirationSelected ! current
-          case _ => // ignore
+  def toggleEphemeralMode(): Unit =
+    for {
+      lastExpiration <- lastEphemeralValue.head
+      c              <- conv.head
+      z              <- zms.head
+      eph            = c.ephemeralExpiration
+    } yield {
+      if (lastExpiration.isDefined && (eph.isEmpty || !eph.get.isInstanceOf[ConvExpiry])) {
+        val current = if (eph.isEmpty) lastExpiration else None
+        z.convsUi.setEphemeral(c.id, current)
+        if (eph != lastExpiration) onEphemeralExpirationSelected ! current
+        keyboard mutate {
+          case KeyboardState.ExtendedCursor(_) => KeyboardState.Hidden
+          case state => state
         }
       }
-      keyboard mutate {
-        case KeyboardState.ExtendedCursor(_) => KeyboardState.Hidden
-        case state => state
-      }
     }
-  }
 
   lazy val drawingController = inject[IDrawingController]
   lazy val giphyController = inject[IGiphyController]

@@ -23,7 +23,7 @@ import com.waz.ZLog._
 import com.waz.api
 import com.waz.api.MessageContent.Asset.ErrorHandler
 import com.waz.api.impl.{AssetForUpload, ImageAsset}
-import com.waz.api.{EphemeralExpiration, IConversation, Verification}
+import com.waz.api.{IConversation, Verification}
 import com.waz.model.ConversationData.ConversationType
 import com.waz.model._
 import com.waz.model.otr.Client
@@ -35,6 +35,7 @@ import com.waz.zclient.conversation.ConversationController.ConversationChange
 import com.waz.zclient.conversationlist.ConversationListController
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
 import com.waz.zclient.utils.Callback
+import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.{Injectable, Injector, R}
 import org.threeten.bp.Instant
 
@@ -111,7 +112,7 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
       ms <- z.membersStorage.getActiveUsers(conv)
     } yield ms
 
-  def setEphemeralExpiration(expiration: EphemeralExpiration): Future[Unit] = for {
+  def setEphemeralExpiration(expiration: Option[FiniteDuration]): Future[Unit] = for {
     z <- zms.head
     id <- currentConvId.head
     _ <- z.convsUi.setEphemeral(id, expiration)
@@ -154,7 +155,7 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
     id <- currentConvId.head
   } yield z.convsUi.removeConversationMember(id, user)
 
-  def leave(convId: ConvId): CancellableFuture[Option[ConversationData]] =
+  def leave(convId: ConvId): CancellableFuture[Unit] =
     returning (Serialized("Conversations", convId)(CancellableFuture.lift(zms.head.flatMap(_.convsUi.leaveConversation(convId))))) { _ =>
       currentConvId.head.map { id => if (id == convId) setCurrentConversationToNext(ConversationChangeRequester.LEAVE_CONVERSATION) }
     }
@@ -260,6 +261,30 @@ object ConversationController {
         conv.convType != IConversation.Type.INCOMING_CONNECTION)
       error(s"unexpected call, most likely UI error", new UnsupportedOperationException(s"Can't get other participant for: ${conv.convType} conversation"))
     UserId(conv.id.str) // one-to-one conversation has the same id as the other user, so we can access it directly
+  }
+
+  lazy val PredefinedExpirations =
+    Seq(
+      None,
+      Some(10.seconds),
+      Some(5.minutes),
+      Some(1.hour),
+      Some(1.day),
+      Some(7.days),
+      Some(28.days)
+    )
+
+  import com.waz.model.EphemeralDuration._
+  def getEphemeralDisplayString(exp: Option[FiniteDuration])(implicit context: Context): String = {
+    exp.map(EphemeralDuration(_)) match {
+      case None              => getString(R.string.ephemeral_message__timeout__off)
+      case Some((l, Second)) => getQuantityString(R.plurals.unit_seconds, l.toInt, l.toString)
+      case Some((l, Minute)) => getQuantityString(R.plurals.unit_minutes, l.toInt, l.toString)
+      case Some((l, Hour))   => getQuantityString(R.plurals.unit_hours,   l.toInt, l.toString)
+      case Some((l, Day))    => getQuantityString(R.plurals.unit_days,    l.toInt, l.toString)
+      case Some((l, Week))   => getQuantityString(R.plurals.unit_weeks,   l.toInt, l.toString)
+      case Some((l, Year))   => getQuantityString(R.plurals.unit_years,   l.toInt, l.toString)
+    }
   }
 
 }

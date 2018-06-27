@@ -95,16 +95,23 @@ class GroupParticipantsFragment extends FragmentHelper {
       case _ =>
     }
 
-    adapter.onGuestOptionsClick.onUi { _ =>
+    def slideFragmentInFromRight(f: Fragment, tag: String) =
       getFragmentManager.beginTransaction
         .setCustomAnimations(
           R.anim.fragment_animation_second_page_slide_in_from_right,
           R.anim.fragment_animation_second_page_slide_out_to_left,
           R.anim.fragment_animation_second_page_slide_in_from_left,
           R.anim.fragment_animation_second_page_slide_out_to_right)
-        .replace(R.id.fl__participant__container, new GuestOptionsFragment(), GuestOptionsFragment.Tag)
-        .addToBackStack(GuestOptionsFragment.Tag)
+        .replace(R.id.fl__participant__container, f, tag)
+        .addToBackStack(tag)
         .commit
+
+    adapter.onGuestOptionsClick.onUi { _ =>
+      slideFragmentInFromRight(new GuestOptionsFragment(), GuestOptionsFragment.Tag)
+    }
+
+    adapter.onEphemeralOptionsClick.onUi { _ =>
+      slideFragmentInFromRight(new EphemeralOptionsFragment(), EphemeralOptionsFragment.Tag)
     }
   }
 

@@ -18,10 +18,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 -->
-<com.waz.zclient.messages.parts.LocationPartView
+<com.waz.zclient.messages.parts.MessageTimerPartView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/message_location"
-    android:layout_width="@dimen/content__width"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_gravity="center"
-    />
+/>
+

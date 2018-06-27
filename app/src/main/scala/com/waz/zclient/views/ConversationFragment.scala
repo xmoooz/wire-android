@@ -32,6 +32,7 @@ import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
 import com.waz.api._
 import com.waz.api.impl.ContentUriAssetForUpload
+import com.waz.content.GlobalPreferences
 import com.waz.model.ConversationData.ConversationType
 import com.waz.model.{MessageContent => _, _}
 import com.waz.permissions.PermissionsService
@@ -58,12 +59,11 @@ import com.waz.zclient.controllers.singleimage.SingleImageObserver
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.ConversationController.ConversationChange
 import com.waz.zclient.conversation.toolbar.AudioMessageRecordingView
-import com.waz.zclient.cursor.{CursorCallback, CursorController, CursorView}
+import com.waz.zclient.cursor.{CursorCallback, CursorController, CursorView, EphemeralLayout}
 import com.waz.zclient.messages.{MessagesController, MessagesListView}
 import com.waz.zclient.pages.BaseFragment
 import com.waz.zclient.pages.extendedcursor.ExtendedCursorContainer
 import com.waz.zclient.pages.extendedcursor.emoji.EmojiKeyboardLayout
-import com.waz.zclient.pages.extendedcursor.ephemeral.EphemeralLayout
 import com.waz.zclient.pages.extendedcursor.image.{CursorImagesLayout, ImagePreviewLayout}
 import com.waz.zclient.pages.extendedcursor.voicefilter.VoiceFilterLayout
 import com.waz.zclient.pages.main.conversation.{AssetIntentsManager, MessageStreamAnimation}
@@ -100,6 +100,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
   private lazy val callController         = inject[CallController]
   private lazy val callStartController    = inject[CallStartController]
   private lazy val accountsController     = inject[UserAccountsController]
+  private lazy val globalPrefs            = inject[GlobalPreferences]
 
   private val previewShown = Signal(false)
   private lazy val convChange = convController.convChanged.filter { _.to.isDefined }
@@ -537,9 +538,14 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       cursorView.onExtendedCursorClosed()
 
       if (lastType == ExtendedCursorContainer.Type.EPHEMERAL)
-        convController.currentConv.head.map { conv =>
-          if (conv.ephemeral != EphemeralExpiration.NONE)
-            getControllerFactory.getUserPreferencesController.setLastEphemeralValue(conv.ephemeral.milliseconds)
+        convController.currentConv.head.map {
+          _.ephemeralExpiration.map { exp =>
+            val eph = exp.duration.toMillis match {
+              case 0 => None
+              case e => Some(e.millis)
+            }
+            globalPrefs.preference(GlobalPreferences.LastEphemeralValue) := eph
+          }
         }
 
       getControllerFactory.getGlobalLayoutController.resetScreenAwakeState()
@@ -550,9 +556,11 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       case ExtendedCursorContainer.Type.NONE =>
       case ExtendedCursorContainer.Type.EMOJIS =>
         extendedCursorContainer.openEmojis(getControllerFactory.getUserPreferencesController.getRecentEmojis, getControllerFactory.getUserPreferencesController.getUnsupportedEmojis, emojiKeyboardLayoutCallback)
-      case ExtendedCursorContainer.Type.EPHEMERAL => convController.currentConv.head.map { conv =>
-        extendedCursorContainer.openEphemeral(ephemeralLayoutCallback, conv.ephemeral)
-      }
+      case ExtendedCursorContainer.Type.EPHEMERAL =>
+        convController.currentConv.map(_.ephemeralExpiration).head.foreach {
+          case Some(ConvExpiry(_)) => //do nothing - global timer is set
+          case exp => extendedCursorContainer.openEphemeral(ephemeralLayoutCallback, exp.map(_.duration))
+        }
       case ExtendedCursorContainer.Type.VOICE_FILTER_RECORDING =>
         extendedCursorContainer.openVoiceFilter(voiceFilterLayoutCallback)
       case ExtendedCursorContainer.Type.IMAGES =>
@@ -570,7 +578,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
   }
 
   private val ephemeralLayoutCallback = new EphemeralLayout.Callback {
-    override def onEphemeralExpirationSelected(expiration: EphemeralExpiration, close: Boolean) = {
+    override def onEphemeralExpirationSelected(expiration: Option[FiniteDuration], close: Boolean) = {
       if (close) extendedCursorContainer.close(false)
       convController.setEphemeralExpiration(expiration)
     }

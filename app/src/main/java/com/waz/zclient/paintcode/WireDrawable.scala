@@ -20,6 +20,7 @@ package com.waz.zclient.paintcode
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.graphics._
+import com.waz.model.EphemeralDuration.TimeUnit
 import com.waz.utils.returning
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.paintcode.WireStyleKit._
@@ -136,4 +137,24 @@ case class VideoIcon(colorRes: Int)(implicit context: Context) extends WireDrawa
 case class ConversationIcon(colorRes: Int)(implicit context: Context) extends WireDrawable {
   setColor(getColor(colorRes))
   override def draw(canvas: Canvas) = drawConversation(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
+}
+
+case class EphemeralIcon(color: Int, timeUnit: TimeUnit)(implicit context: Context) extends WireDrawable {
+  setColor(color)
+  import com.waz.model.EphemeralDuration._
+  override def draw(canvas: Canvas) = {
+    timeUnit match {
+      case Second => drawSecond(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
+      case Minute => drawMinute(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
+      case Hour   => drawHour(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
+      case Day    => drawDay(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
+      case Week   => drawWeek(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
+      case Year   => drawYear(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
+    }
+  }
+}
+
+case class HourGlassIcon(color: Int)(implicit context: Context) extends WireDrawable {
+  setColor(color)
+  override def draw(canvas: Canvas) = drawTimedMessages(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
 }

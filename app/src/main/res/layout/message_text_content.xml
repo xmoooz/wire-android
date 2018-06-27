@@ -18,10 +18,25 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 -->
-<com.waz.zclient.messages.parts.LocationPartView
+<merge
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/message_location"
-    android:layout_width="@dimen/content__width"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_gravity="center"
-    />
+    >
+
+    <com.waz.zclient.ui.text.LinkTextView
+        android:id="@+id/text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/content__padding_left"
+        android:layout_gravity="center_vertical"
+        android:textSize="@dimen/wire__text_size__small"
+        android:textColor="?wirePrimaryTextColor"
+        android:minHeight="16dp"
+        android:gravity="center_vertical"
+        android:includeFontPadding="false"
+        app:w_font="@string/wire__typeface__light"
+        />
+
+</merge>

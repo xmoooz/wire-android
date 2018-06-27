@@ -110,9 +110,9 @@ class MessageView(context: Context, attrs: AttributeSet, style: Int)
 
         builder ++= contentParts
 
-        if (msg.isEphemeral) {
-          builder += PartDesc(MsgPart.EphemeralDots)
-        }
+//        if (msg.isEphemeral) {
+//          builder += PartDesc(MsgPart.EphemeralDots)
+//        }
 
         if (msg.msgType == Message.Type.ASSET && !areDownloadsAlwaysEnabled)
           builder += PartDesc(MsgPart.WifiWarning)
@@ -156,7 +156,7 @@ class MessageView(context: Context, attrs: AttributeSet, style: Int)
   private def systemMessage(m: MessageData) = {
     import Message.Type._
     m.isSystemMessage || (m.msgType match {
-      case OTR_DEVICE_ADDED | OTR_UNVERIFIED | OTR_VERIFIED | STARTED_USING_DEVICE | OTR_MEMBER_ADDED => true
+      case OTR_DEVICE_ADDED | OTR_UNVERIFIED | OTR_VERIFIED | STARTED_USING_DEVICE | OTR_MEMBER_ADDED | MESSAGE_TIMER=> true
       case _ => false
     })
   }
@@ -241,7 +241,8 @@ object MessageView {
              OtrMessage |
              Rename |
              WirelessLink |
-             ConversationStart => SystemLike
+             ConversationStart |
+             MessageTimer => SystemLike
         case MsgPart.MissedCall => MissedCall
         case _ => Other
       }

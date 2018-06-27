@@ -44,8 +44,6 @@ class VideoAssetPartView(context: Context, attrs: AttributeSet, style: Int) exte
     case _ => getColor(R.color.black)
   }.on(Threading.Ui)(durationView.setTextColor)
 
-  padding.on(Threading.Ui)(offset => controls.setMargin(offset))
-
   asset.disableAutowiring()
 
   assetActionButton.onClicked.filter(_ == DeliveryState.Complete) { _ =>
@@ -53,4 +51,6 @@ class VideoAssetPartView(context: Context, attrs: AttributeSet, style: Int) exte
       controller.openFile(a)
     }
   }
+
+  override def onInflated(): Unit = {}
 }

@@ -29,7 +29,6 @@ import com.waz.ZLog.ImplicitTag._
 import com.waz.api.impl.AccentColor
 import com.waz.model._
 import com.waz.service.ZMessaging
-import com.waz.service.messages.MessageAndLikes
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, EventStream, Signal, SourceSignal}
 import com.waz.utils.wrappers.AndroidURIUtil
@@ -39,7 +38,7 @@ import com.waz.zclient.common.views.ImageAssetDrawable.RequestBuilder
 import com.waz.zclient.common.views.ImageController.{ImageSource, WireImage}
 import com.waz.zclient.common.views.{ImageAssetDrawable, ProgressDotsDrawable, RoundedImageAssetDrawable}
 import com.waz.zclient.messages.controllers.MessageActionsController
-import com.waz.zclient.messages.parts.WebLinkPartView
+import com.waz.zclient.messages.parts.{EphemeralPartView, WebLinkPartView}
 import com.waz.zclient.messages.parts.assets.FileAssetPartView
 import com.waz.zclient.messages.{ClickableViewPart, MsgPart}
 import com.waz.zclient.pages.main.conversation.views.AspectRatioImageView
@@ -48,17 +47,20 @@ import com.waz.zclient.utils.{RichView, ViewUtils, _}
 import com.waz.zclient.{R, ViewHelper}
 import org.threeten.bp.{LocalDateTime, ZoneId}
 
-trait CollectionItemView extends ViewHelper {
+trait CollectionItemView extends ViewHelper with EphemeralPartView {
   protected lazy val civZms = inject[Signal[ZMessaging]]
   protected lazy val messageActions = inject[MessageActionsController]
   protected lazy val collectionController = inject[CollectionController]
 
   val messageData: SourceSignal[MessageData] = Signal()
 
-  val messageAndLikesResolver = civZms.zip(messageData).flatMap{
-    case (z, md) => Signal.future(z.msgAndLikes.combineWithLikes(md))
-    case _ => Signal[MessageAndLikes]()
-  }
+  val messageAndLikesResolver = for {
+    z <- civZms
+    mId <- messageData.map(_.id)
+    message <- z.messagesStorage.signal(mId)
+    msgAndLikes <- Signal.future(z.msgAndLikes.combineWithLikes(message))
+  } yield msgAndLikes
+
   messageAndLikesResolver.disableAutowiring()
 
   this.onLongClick {
@@ -88,8 +90,12 @@ trait CollectionNormalItemView extends CollectionItemView with ClickableViewPart
 
   messageAndLikesResolver.on(Threading.Ui) { mal => set(mal, content) }
 
-  onClicked.on(Threading.Ui){
-    _ => messageData.currentValue.foreach(collectionController.clickedMessage ! _)
+  onClicked { _ =>
+    import Threading.Implicits.Ui
+    for {
+      false <- expired.head
+      md <- messageData.head
+    } collectionController.clickedMessage ! md
   }
 
   def setMessageData(messageData: MessageData, content: Option[MessageContent]): Unit = {
@@ -100,6 +106,9 @@ trait CollectionNormalItemView extends CollectionItemView with ClickableViewPart
 
 class CollectionImageView(context: Context) extends AspectRatioImageView(context) with CollectionItemView {
   setId(R.id.collection_image_view)
+
+  override val tpe: MsgPart = MsgPart.Image
+  messageAndLikesResolver.onUi(set(_, None))
 
   val onClicked = EventStream[Unit]()
 
@@ -114,18 +123,21 @@ class CollectionImageView(context: Context) extends AspectRatioImageView(context
 
   val image: Signal[ImageSource] = messageData.map(md => WireImage(md.assetId))
 
-  private val dotsDrawable = new ProgressDotsDrawable
-  private val imageDrawable = new RoundedImageAssetDrawable(image, scaleType = ImageAssetDrawable.ScaleType.CenterCrop, cornerRadius = CornerRadius, request = RequestBuilder.Single)
+  private val imageDrawable =
+    new RoundedImageAssetDrawable(image, scaleType = ImageAssetDrawable.ScaleType.CenterCrop,
+      cornerRadius = CornerRadius, request = RequestBuilder.Single, background = Some(new ProgressDotsDrawable))
 
-  setBackground(dotsDrawable)
-  setImageDrawable(imageDrawable)
+  ephemeralDrawable(imageDrawable).onUi { setImageDrawable }
 
-  this.onClick{
-    onClicked ! (())
-  }
-
-  onClicked{
-    _ => messageData.currentValue.foreach(collectionController.clickedMessage ! _)
+  this.onClick {
+    import Threading.Implicits.Ui
+    for {
+      false <- expired.head
+      md <- messageData.head
+    } {
+      collectionController.clickedMessage ! md
+      onClicked ! (())
+    }
   }
 
   def setMessageData(messageData: MessageData, width: Int, color: Int) = {
@@ -150,15 +162,18 @@ class CollectionFileAssetPartView(context: Context, attrs: AttributeSet, style: 
   }
 
   this.onClick{
-    deliveryState.currentValue.foreach(assetActionButton.onClicked ! _)
+    import Threading.Implicits.Ui
+    for {
+      false <- expired.head
+      ds <- deliveryState.head
+    } assetActionButton.onClicked ! ds
   }
 
-  assetActionButton.onClicked{ _ =>
-    messageData.currentValue.foreach(collectionController.clickedMessage ! _)
-  }
+  assetActionButton.onClicked(_ => onClicked ! (()))
+  setWillNotDraw(true)
 }
 
-class CollectionSimpleWebLinkPartView(context: Context, attrs: AttributeSet, style: Int) extends CardView(context: Context, attrs: AttributeSet, style: Int) with CollectionNormalItemView{
+class CollectionSimpleWebLinkPartView(context: Context, attrs: AttributeSet, style: Int) extends CardView(context: Context, attrs: AttributeSet, style: Int) with CollectionNormalItemView {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null, 0)
 
@@ -175,9 +190,14 @@ class CollectionSimpleWebLinkPartView(context: Context, attrs: AttributeSet, sty
 
   urlText.on(Threading.Ui){ urlTextView.setText }
 
-  onClicked{ _ =>
-    urlText.currentValue foreach { c => browser.openUrl(AndroidURIUtil.parse(c)) }
+  onClicked { _ =>
+    import Threading.Implicits.Ui
+    for {
+      false <- expired.head
+      text <- urlText.head
+    } browser.openUrl(AndroidURIUtil.parse(text))
   }
+  registerEphemeral(urlTextView)
 }
 
 case class CollectionItemViewHolder(view: CollectionNormalItemView)(implicit eventContext: EventContext) extends RecyclerView.ViewHolder(view){

@@ -25,6 +25,5 @@
     android:layout_height="@dimen/ephemeral__animating_dots__height"
     android:layout_gravity="end|top"
     android:layout_marginEnd="@dimen/ephemeral__animating_dots__right_margin"
-    android:paddingTop="@dimen/ephemeral__animating_dots__padding_top"
-    android:paddingBottom="@dimen/ephemeral__animating_dots__padding_bottom"
+    android:layout_marginStart="@dimen/ephemeral__animating_dots__right_margin"
 />

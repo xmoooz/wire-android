@@ -24,14 +24,17 @@
        android:layout_height="wrap_content"
     >
 
-    <com.waz.zclient.common.views.ChatheadView
-        android:id="@+id/chathead"
-        app:show_border="false"
-        android:layout_width="@dimen/content__separator__chathead__size"
-        android:layout_height="@dimen/content__separator__chathead__size"
-        android:layout_marginEnd="@dimen/chathead__margin"
-        android:layout_marginStart="@dimen/chathead__margin_start"
-    />
+    <FrameLayout
+        android:layout_height="wrap_content"
+        android:layout_width="@dimen/content__padding_left">
+        <com.waz.zclient.common.views.ChatheadView
+            android:id="@+id/chathead"
+            app:show_border="false"
+            android:layout_width="@dimen/content__separator__chathead__size"
+            android:layout_height="@dimen/content__separator__chathead__size"
+            android:layout_gravity="center"
+            />
+    </FrameLayout>
 
     <com.waz.zclient.ui.text.TypefaceTextView
         android:id="@+id/tvName"

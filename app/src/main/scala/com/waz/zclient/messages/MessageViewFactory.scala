@@ -66,6 +66,7 @@ class MessageViewFactory {
         case MissedCall         => ViewHelper.inflate(R.layout.message_missed_call, parent, false)
         case EphemeralDots      => ViewHelper.inflate(R.layout.message_ephemeral_dots_view, parent, false)
         case WifiWarning        => ViewHelper.inflate(R.layout.message_wifi_warning, parent, false)
+        case MessageTimer       => ViewHelper.inflate(R.layout.message_msg_timer_changed, parent, false)
         case Empty              => new EmptyPartView(parent.getContext)
         case Unknown            => new EmptyPartView(parent.getContext) // TODO: display error msg, only used in internal
       }

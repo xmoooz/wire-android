@@ -37,11 +37,12 @@ import com.waz.zclient.common.controllers.ThemeController
 import com.waz.zclient.common.controllers.ThemeController.Theme
 import com.waz.zclient.common.views.SingleUserRowView
 import com.waz.zclient.conversation.ConversationController
-import com.waz.zclient.paintcode.{ForwardNavigationIcon, GuestIconWithColor}
+import com.waz.zclient.conversation.ConversationController.getEphemeralDisplayString
+import com.waz.zclient.paintcode.{ForwardNavigationIcon, GuestIconWithColor, HourGlassIcon}
 import com.waz.zclient.ui.text.TypefaceEditText.OnSelectionChangedListener
 import com.waz.zclient.ui.text.{GlyphTextView, TypefaceEditText}
 import com.waz.zclient.utils.ContextUtils._
-import com.waz.zclient.utils.{ContextUtils, RichView, ViewUtils}
+import com.waz.zclient.utils.{RichView, ViewUtils}
 import com.waz.zclient.{Injectable, Injector, R}
 
 import scala.concurrent.duration._
@@ -65,6 +66,7 @@ class ParticipantsAdapter(numOfColumns: Int)(implicit context: Context, injector
 
   val onClick             = EventStream[UserId]()
   val onGuestOptionsClick = EventStream[Unit]()
+  val onEphemeralOptionsClick = EventStream[Unit]()
 
   lazy val users = for {
     z       <- zms
@@ -77,14 +79,19 @@ class ParticipantsAdapter(numOfColumns: Int)(implicit context: Context, injector
   private lazy val positions = for {
     users       <- users
     isTeam      <- participantsController.currentUserBelongsToConversationTeam
+    convActive  <- convController.currentConv.map(_.isActive)
     guestButton <- shouldShowGuestButton
+    areWeAGuest <- participantsController.isCurrentUserGuest
   } yield {
     val (bots, people) = users.toList.partition(_.userData.isWireBot)
 
     List(Right(ConversationName)) :::
-    (if (isTeam && guestButton) List(Right(GuestOptions))
+    (if (convActive && isTeam && guestButton) List(Right(GuestOptions))
       else Nil
       ) :::
+    (if (convActive && !areWeAGuest) List(Right(EphemeralOptions))
+      else Nil
+        ) :::
     (if (people.nonEmpty) List(Right(PeopleSeparator))
       else Nil
       ) ::: people.map(data => Left(data)) :::
@@ -122,9 +129,9 @@ class ParticipantsAdapter(numOfColumns: Int)(implicit context: Context, injector
 
   override def onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = viewType match {
     case GuestOptions =>
-      val view = LayoutInflater.from(parent.getContext).inflate(R.layout.list_options_button, parent, false)
+      val view = LayoutInflater.from(parent.getContext).inflate(R.layout.list_options_button_with_value_label, parent, false)
       view.onClick(onGuestOptionsClick ! {})
-      GuestOptionsButtonViewHolder(view)
+      GuestOptionsButtonViewHolder(view, convController)
     case UserRow =>
       val view = LayoutInflater.from(parent.getContext).inflate(R.layout.single_user_row, parent, false).asInstanceOf[SingleUserRowView]
       view.showArrow(true)
@@ -135,6 +142,10 @@ class ParticipantsAdapter(numOfColumns: Int)(implicit context: Context, injector
       returning(ConversationNameViewHolder(view, zms)) { vh =>
         convNameViewHolder = Option(vh)
       }
+    case EphemeralOptions =>
+      val view = LayoutInflater.from(parent.getContext).inflate(R.layout.list_options_button_with_value_label, parent, false)
+      view.onClick(onEphemeralOptionsClick ! {})
+      EphemeralOptionsButtonViewHolder(view, convController)
     case _ => SeparatorViewHolder(getSeparatorView(parent))
   }
 
@@ -184,15 +195,34 @@ object ParticipantsAdapter {
   val BotsSeparator    = 2
   val GuestOptions     = 3
   val ConversationName = 4
+  val EphemeralOptions = 5
 
   case class ParticipantData(userData: UserData, isGuest: Boolean)
 
-  case class GuestOptionsButtonViewHolder(view: View) extends ViewHolder(view) {
+  case class GuestOptionsButtonViewHolder(view: View, convController: ConversationController)(implicit eventContext: EventContext) extends ViewHolder(view) {
     private implicit val ctx = view.getContext
-    //view.setId(R.id.guest_options)
-    view.findViewById[ImageView](R.id.icon).setImageDrawable(GuestIconWithColor(ContextUtils.getStyledColor(R.attr.wirePrimaryTextColor)))
+    view.setId(R.id.guest_options)
+    view.findViewById[TextView](R.id.options_divider).setVisibility(View.VISIBLE)
+    view.findViewById[ImageView](R.id.icon).setImageDrawable(GuestIconWithColor(getStyledColor(R.attr.wirePrimaryTextColor)))
     view.findViewById[TextView](R.id.name_text).setText(R.string.guest_options_title)
+    convController.currentConv.map(_.isTeamOnly).map {
+      case true => getString(R.string.ephemeral_message__timeout__off)
+      case false => getString(R.string.guests_option_on)
+    }.onUi(view.findViewById[TextView](R.id.value_text).setText)
     view.findViewById[ImageView](R.id.next_indicator).setImageDrawable(ForwardNavigationIcon(R.color.light_graphite_40))
+  }
+
+  case class EphemeralOptionsButtonViewHolder(view: View, convController: ConversationController)(implicit eventContext: EventContext) extends ViewHolder(view) {
+    private implicit val ctx = view.getContext
+    view.setId(R.id.timed_messages_options)
+    view.findViewById[ImageView](R.id.icon).setImageDrawable(HourGlassIcon(getStyledColor(R.attr.wirePrimaryTextColor)))
+    view.findViewById[TextView](R.id.name_text).setText(R.string.ephemeral_options_title)
+    view.findViewById[ImageView](R.id.next_indicator).setImageDrawable(ForwardNavigationIcon(R.color.light_graphite_40))
+    convController.currentConv.map(_.ephemeralExpiration.flatMap {
+      case ConvExpiry(d) => Some(d)
+      case _ => None
+    }).map(getEphemeralDisplayString)
+      .onUi(view.findViewById[TextView](R.id.value_text).setText)
   }
 
   case class SeparatorViewHolder(separator: View) extends ViewHolder(separator) {

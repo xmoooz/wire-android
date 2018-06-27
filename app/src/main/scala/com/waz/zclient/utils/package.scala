@@ -35,7 +35,7 @@ import com.waz.utils.returning
 import com.waz.zclient.ui.views.OnDoubleClickListener
 import com.waz.zclient.utils.ContextUtils._
 
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration._
 
 package object utils {
 
@@ -61,6 +61,11 @@ package object utils {
 
     def setMarginLeft(m: Int) = {
       view.getLayoutParams.asInstanceOf[ViewGroup.MarginLayoutParams].leftMargin = m
+      view.requestLayout()
+    }
+
+    def setMarginRight(m: Int) = {
+      view.getLayoutParams.asInstanceOf[ViewGroup.MarginLayoutParams].rightMargin = m
       view.requestLayout()
     }
 
