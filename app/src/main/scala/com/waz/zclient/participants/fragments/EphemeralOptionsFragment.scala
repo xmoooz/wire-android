@@ -19,17 +19,17 @@ package com.waz.zclient.participants.fragments
 
 import android.os.Bundle
 import android.view.{LayoutInflater, View, ViewGroup}
-import com.waz.zclient.utils.RichView
-import android.widget.LinearLayout
-import com.waz.service.ZMessaging
-import com.waz.utils.events.Signal
-import com.waz.zclient.ui.text.{GlyphTextView, TypefaceTextView}
+import android.widget.{LinearLayout, RelativeLayout, TextView}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.model.ConvExpiry
+import com.waz.service.ZMessaging
+import com.waz.utils.events.Signal
 import com.waz.utils.returning
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.ConversationController._
+import com.waz.zclient.ui.text.GlyphTextView
 import com.waz.zclient.utils.ContextUtils._
+import com.waz.zclient.utils.RichView
 import com.waz.zclient.{FragmentHelper, R, SpinnerController}
 
 import scala.concurrent.duration._
@@ -59,15 +59,20 @@ class EphemeralOptionsFragment extends FragmentHelper {
       v.removeAllViews()
       optionsList.zipWithIndex.map { case (option, index) =>
         getLayoutInflater.inflate(R.layout.conversation_option_item, v, true)
-        (option, v.getChildAt(index).asInstanceOf[LinearLayout]
-          .getChildAt(0).asInstanceOf[LinearLayout])
-      }.foreach { case (option, r) =>
-        val textView = r.getChildAt(0).asInstanceOf[TypefaceTextView]
-        val check = r.getChildAt(1).asInstanceOf[GlyphTextView]
+        (option, v.getChildAt(index).asInstanceOf[RelativeLayout], index)
+      }.foreach { case (option, r, index) =>
+
+        val textView  = findById[TextView](r, R.id.text)
+        val check     = findById[GlyphTextView](r, R.id.glyph)
+        val separator = findById[View](r, R.id.separator)
+
         textView.setText(ConversationController.getEphemeralDisplayString(option))
+
         check.setVisible(e.equals(option))
+        separator.setVisible(index != optionsList.size - 1)
+
         if (PredefinedExpirations.contains(option)) {
-          textView.onClick {
+          r.onClick {
             spinner.showSpinner(true)
             (for {
               z <- zms.head

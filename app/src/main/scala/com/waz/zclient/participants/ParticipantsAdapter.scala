@@ -37,6 +37,7 @@ import com.waz.zclient.common.controllers.ThemeController
 import com.waz.zclient.common.controllers.ThemeController.Theme
 import com.waz.zclient.common.views.SingleUserRowView
 import com.waz.zclient.conversation.ConversationController
+import com.waz.zclient.conversation.ConversationController.getEphemeralDisplayString
 import com.waz.zclient.paintcode.{ForwardNavigationIcon, GuestIconWithColor, HourGlassIcon}
 import com.waz.zclient.ui.text.TypefaceEditText.OnSelectionChangedListener
 import com.waz.zclient.ui.text.{GlyphTextView, TypefaceEditText}
@@ -78,16 +79,17 @@ class ParticipantsAdapter(numOfColumns: Int)(implicit context: Context, injector
   private lazy val positions = for {
     users       <- users
     isTeam      <- participantsController.currentUserBelongsToConversationTeam
+    convActive  <- convController.currentConv.map(_.isActive)
     guestButton <- shouldShowGuestButton
     areWeAGuest <- participantsController.isCurrentUserGuest
   } yield {
     val (bots, people) = users.toList.partition(_.userData.isWireBot)
 
     List(Right(ConversationName)) :::
-    (if (isTeam && guestButton) List(Right(GuestOptions))
+    (if (convActive && isTeam && guestButton) List(Right(GuestOptions))
       else Nil
       ) :::
-    (if (!areWeAGuest) List(Right(EphemeralOptions))
+    (if (convActive && !areWeAGuest) List(Right(EphemeralOptions))
       else Nil
         ) :::
     (if (people.nonEmpty) List(Right(PeopleSeparator))
@@ -195,12 +197,6 @@ object ParticipantsAdapter {
   val ConversationName = 4
   val EphemeralOptions = 5
 
-  private def setValueText(view: View, text: String): Unit = {
-    val valueText = view.findViewById[TextView](R.id.value_text)
-    valueText.setTextColor(R.color.text__primary_disabled_dark)
-    valueText.setText(text)
-  }
-
   case class ParticipantData(userData: UserData, isGuest: Boolean)
 
   case class GuestOptionsButtonViewHolder(view: View, convController: ConversationController)(implicit eventContext: EventContext) extends ViewHolder(view) {
@@ -212,7 +208,7 @@ object ParticipantsAdapter {
     convController.currentConv.map(_.isTeamOnly).map {
       case true => getString(R.string.ephemeral_message__timeout__off)
       case false => getString(R.string.guests_option_on)
-    }.onUi(setValueText(view, _))
+    }.onUi(view.findViewById[TextView](R.id.value_text).setText)
     view.findViewById[ImageView](R.id.next_indicator).setImageDrawable(ForwardNavigationIcon(R.color.light_graphite_40))
   }
 
@@ -222,8 +218,11 @@ object ParticipantsAdapter {
     view.findViewById[ImageView](R.id.icon).setImageDrawable(HourGlassIcon(getStyledColor(R.attr.wirePrimaryTextColor)))
     view.findViewById[TextView](R.id.name_text).setText(R.string.ephemeral_options_title)
     view.findViewById[ImageView](R.id.next_indicator).setImageDrawable(ForwardNavigationIcon(R.color.light_graphite_40))
-    convController.currentConv.map(_.ephemeralExpiration.map(_.duration))
-      .onUi(text => setValueText(view, ConversationController.getEphemeralDisplayString(text)))
+    convController.currentConv.map(_.ephemeralExpiration.flatMap {
+      case ConvExpiry(d) => Some(d)
+      case _ => None
+    }).map(getEphemeralDisplayString)
+      .onUi(view.findViewById[TextView](R.id.value_text).setText)
   }
 
   case class SeparatorViewHolder(separator: View) extends ViewHolder(separator) {
