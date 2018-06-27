@@ -73,16 +73,18 @@ class EphemeralOptionsFragment extends FragmentHelper {
 
         if (PredefinedExpirations.contains(option)) {
           r.onClick {
-            spinner.showSpinner(true)
-            (for {
-              z <- zms.head
-              Some(convId) <- z.convsStats.selectedConversationId.head
-              _ <- z.convsUi.setEphemeralGlobal(convId, option)
-            } yield {
-            }).onComplete { res =>
-              if (res.isFailure) showToast(getString(R.string.generic_error_message))
-              spinner.showSpinner(false)
-              this.getFragmentManager.popBackStack()
+            if (e != option) {
+              spinner.showSpinner(true)
+              (for {
+                z <- zms.head
+                Some(convId) <- z.convsStats.selectedConversationId.head
+                _ <- z.convsUi.setEphemeralGlobal(convId, option)
+              } yield {
+              }).onComplete { res =>
+                if (res.isFailure) showToast(getString(R.string.generic_error_message))
+                spinner.showSpinner(false)
+                this.getFragmentManager.popBackStack()
+              }
             }
           }
         } else {
