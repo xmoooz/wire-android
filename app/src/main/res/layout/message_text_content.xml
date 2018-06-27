@@ -35,6 +35,7 @@
         android:textColor="?wirePrimaryTextColor"
         android:minHeight="16dp"
         android:gravity="center_vertical"
+        android:includeFontPadding="false"
         app:w_font="@string/wire__typeface__light"
         />
 
