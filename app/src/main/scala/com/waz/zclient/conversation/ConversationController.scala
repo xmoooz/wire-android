@@ -155,7 +155,7 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
     id <- currentConvId.head
   } yield z.convsUi.removeConversationMember(id, user)
 
-  def leave(convId: ConvId): CancellableFuture[Option[ConversationData]] =
+  def leave(convId: ConvId): CancellableFuture[Unit] =
     returning (Serialized("Conversations", convId)(CancellableFuture.lift(zms.head.flatMap(_.convsUi.leaveConversation(convId))))) { _ =>
       currentConvId.head.map { id => if (id == convId) setCurrentConversationToNext(ConversationChangeRequester.LEAVE_CONVERSATION) }
     }
