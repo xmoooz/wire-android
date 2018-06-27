@@ -44,20 +44,26 @@ import scala.concurrent.duration._
 class FooterViewController(implicit inj: Injector, context: Context, ec: EventContext) extends Injectable {
   import com.waz.threading.Threading.Implicits.Ui
 
-  val zms = inject[Signal[ZMessaging]]
-  val accents = inject[AccentColorController]
-  val selection = inject[ConversationController].messages
-  val signals = inject[UsersController]
-  val likesController = inject[LikesController]
+  val zms                    = inject[Signal[ZMessaging]]
+  val accents                = inject[AccentColorController]
+  val selection              = inject[ConversationController].messages
+  val signals                = inject[UsersController]
+  val likesController        = inject[LikesController]
   val conversationController = inject[ConversationController]
 
-  val opts = Signal[MsgBindOptions]()
+  val opts            = Signal[MsgBindOptions]()
   val messageAndLikes = Signal[MessageAndLikes]()
-  val isSelfMessage = opts.map(_.isSelf)
-  val message = messageAndLikes.map(_.message)
-  val isLiked = messageAndLikes.map(_.likes.nonEmpty)
+  val isSelfMessage   = opts.map(_.isSelf)
+
+  val message =
+    for {
+      id  <- messageAndLikes.map(_.message.id)
+      msg <- zms.flatMap(_.messagesStorage.signal(id))
+    } yield msg
+
+  val isLiked     = messageAndLikes.map(_.likes.nonEmpty)
   val likedBySelf = messageAndLikes.map(_.likedBySelf)
-  val expiring = message.map { msg => msg.isEphemeral && !msg.expired && msg.expiryTime.isDefined }
+  val expiring    = message.map { msg => msg.isEphemeral && !msg.expired && msg.expiryTime.isDefined }
 
   //if the user likes OR dislikes something, we want to allow the timestamp/footer to disappear immediately
   val likedBySelfTime = Signal(Instant.EPOCH)
@@ -125,14 +131,14 @@ class FooterViewController(implicit inj: Injector, context: Context, ec: EventCo
 
   private def statusString(timestamp: String, m: MessageData, isGroup: Boolean) =
     m.state match {
-      case Status.PENDING => getString(R.string.message_footer__status__sending)
-      case Status.SENT => getString(R.string.message_footer__status__sent, timestamp)
+      case Status.PENDING              => getString(R.string.message_footer__status__sending)
+      case Status.SENT                 => getString(R.string.message_footer__status__sent, timestamp)
       case Status.DELIVERED if isGroup => getString(R.string.message_footer__status__sent, timestamp)
-      case Status.DELIVERED => getString(R.string.message_footer__status__delivered, timestamp)
-      case Status.DELETED => getString(R.string.message_footer__status__deleted, timestamp)
+      case Status.DELIVERED            => getString(R.string.message_footer__status__delivered, timestamp)
+      case Status.DELETED              => getString(R.string.message_footer__status__deleted, timestamp)
       case Status.FAILED |
-           Status.FAILED_READ => getString(R.string.message_footer__status__failed)
-      case _ => timestamp
+           Status.FAILED_READ          => getString(R.string.message_footer__status__failed)
+      case _                           => timestamp
     }
 
   private def ephemeralTimeoutString(timestamp: String, remaining: FiniteDuration) = {
