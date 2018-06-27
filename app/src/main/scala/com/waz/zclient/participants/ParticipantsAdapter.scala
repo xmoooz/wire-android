@@ -196,12 +196,6 @@ object ParticipantsAdapter {
   val ConversationName = 4
   val EphemeralOptions = 5
 
-  private def setValueText(view: View, text: String): Unit = {
-    val valueText = view.findViewById[TextView](R.id.value_text)
-    valueText.setTextColor(R.color.text__primary_disabled_dark)
-    valueText.setText(text)
-  }
-
   case class ParticipantData(userData: UserData, isGuest: Boolean)
 
   case class GuestOptionsButtonViewHolder(view: View, convController: ConversationController)(implicit eventContext: EventContext) extends ViewHolder(view) {
@@ -213,7 +207,7 @@ object ParticipantsAdapter {
     convController.currentConv.map(_.isTeamOnly).map {
       case true => getString(R.string.ephemeral_message__timeout__off)
       case false => getString(R.string.guests_option_on)
-    }.onUi(setValueText(view, _))
+    }.onUi(view.findViewById[TextView](R.id.value_text).setText)
     view.findViewById[ImageView](R.id.next_indicator).setImageDrawable(ForwardNavigationIcon(R.color.light_graphite_40))
   }
 
@@ -227,7 +221,7 @@ object ParticipantsAdapter {
       case ConvExpiry(d) => Some(d)
       case _ => None
     }).map(getEphemeralDisplayString)
-      .onUi(setValueText(view, _))
+      .onUi(view.findViewById[TextView](R.id.value_text).setText)
   }
 
   case class SeparatorViewHolder(separator: View) extends ViewHolder(separator) {

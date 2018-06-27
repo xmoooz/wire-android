@@ -78,10 +78,10 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
+                android:textSize="@dimen/wire__text_size__regular"
+                android:textColor="@color/light_graphite_40"
                 android:drawablePadding="@dimen/wire__padding__6"
-                android:textColor="@color/text__primary_disabled_dark"
                 app:w_font="@string/wire__typeface__light"
-                style="?startUiUserRowLabel"
                 android:layout_gravity="end"/>
         </LinearLayout>
 
