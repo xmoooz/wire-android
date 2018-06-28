@@ -77,7 +77,7 @@ import scala.concurrent.Future
     })
 
     (for {
-      true <- inject[com.waz.zclient.messages.controllers.NavigationController].mainActivityActive
+      true <- inject[com.waz.zclient.messages.controllers.NavigationController].mainActivityActive.map(_ > 0)
       true <- uiActive
       true <- pageVisible
       conv <- currentConvId.map(Option(_))
@@ -93,18 +93,15 @@ import scala.concurrent.Future
 
   def isLastSelf(id: MessageId) = lastSelfMessage.currentValue.exists(_.id == id)
 
-  def onMessageRead(msg: MessageData) = fullyVisibleMessagesList.currentValue foreach {
-    case Some(convId) if msg.convId == convId =>
-      if (msg.isEphemeral && !msg.expired)
-        zms.head foreach  { _.ephemeral.onMessageRead(msg.id) }
+  def onMessageRead(msg: MessageData) = {
+    if (msg.isEphemeral && !msg.expired)
+        zms.head.foreach(_.ephemeral.onMessageRead(msg.id))
 
-      if (msg.time isAfter lastReadTime)
-        zms.head.foreach { _.convsUi.setLastRead(msg.convId, msg) }
+    if (msg.time isAfter lastReadTime)
+      zms.head.foreach(_.convsUi.setLastRead(msg.convId, msg))
 
-      if (msg.state == Message.Status.FAILED)
-        zms.head.foreach { _.messages.markMessageRead(convId, msg.id) }
-    case _ =>
-      // messages list is not visible, or not current conv, ignoring
+    if (msg.state == Message.Status.FAILED)
+      zms.head.foreach(_.messages.markMessageRead(msg.convId, msg.id))
   }
 
   def getMessage(messageId: MessageId): Signal[Option[MessageData]] = {
