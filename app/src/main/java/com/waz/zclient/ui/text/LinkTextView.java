@@ -27,13 +27,15 @@ import android.text.TextUtils;
 import android.text.style.URLSpan;
 import android.text.util.Linkify;
 import android.util.AttributeSet;
+
 import com.waz.zclient.R;
+import com.waz.zclient.markdown.MarkdownTextView;
 
 /**
  * This view will automatically linkify the text passed to {@link LinkTextView#setTextLink(String)}, but will not steal
  * touch events that are not inside a URLSpan
  */
-public class LinkTextView extends TypefaceTextView {
+public class LinkTextView extends MarkdownTextView {
 
     @SuppressWarnings("unused")
     public LinkTextView(Context context) {
@@ -69,6 +71,8 @@ public class LinkTextView extends TypefaceTextView {
 
     public void setTextLink(String text) {
         setTransformedText(text);
+        markdown();
+
         try {
             if (Linkify.addLinks(this, Linkify.WEB_URLS | Linkify.EMAIL_ADDRESSES | Linkify.PHONE_NUMBERS)) {
                 stripUnderlines();
@@ -76,6 +80,10 @@ public class LinkTextView extends TypefaceTextView {
         } catch (Throwable t) {
             // ignore
         }
+
+        // Linkify.addLinks() removes all existing URLSpan objects, so we need to re-apply
+        // the ones added generated through markdown.
+        refreshLinks();
     }
 
     /*

@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 apply plugin: 'jp.leafytree.android-scala'
 apply plugin: 'hugo'
 apply plugin: 'com.mutualmobile.gradle.plugins.dexinfo'
@@ -198,6 +199,7 @@ android {
     sourceSets {
         androidTest {
             java.srcDirs += ['build/generated/source/apt/androidTest/dev/debug']
+            java.srcDirs += ['src/androidTest/kotlin']
         }
 
         test {
@@ -227,6 +229,7 @@ dependencies {
     //    implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation deps.scala
     compileOnly deps.scalaReflect
+    implementation deps.kotlin
     implementation deps.multidex
     implementation deps.timber
     implementation deps.supportv4
@@ -241,6 +244,7 @@ dependencies {
     implementation deps.mixpanel
     implementation deps.rebound
     implementation deps.preferences
+    implementation deps.commonmark
     implementation(deps.supportpreferences) {
         exclude group: 'com.android.support', module: 'appcompat-v7'
     }
