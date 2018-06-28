@@ -168,7 +168,7 @@ class MainActivity extends BaseActivity
   override def onStart() = {
     info("onStart")
     getControllerFactory.getNavigationController.addNavigationControllerObserver(this)
-    inject[NavigationController].mainActivityActive ! true
+    inject[NavigationController].mainActivityActive.mutate(_ + 1)
 
     super.onStart()
 
@@ -312,7 +312,7 @@ class MainActivity extends BaseActivity
     super.onStop()
     info("onStop")
     getControllerFactory.getNavigationController.removeNavigationControllerObserver(this)
-    inject[NavigationController].mainActivityActive ! false
+    inject[NavigationController].mainActivityActive.mutate(_ - 1)
   }
 
   override def onBackPressed(): Unit = {

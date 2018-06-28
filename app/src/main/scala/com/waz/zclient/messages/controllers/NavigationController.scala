@@ -29,7 +29,7 @@ class NavigationController(implicit injector: Injector) extends Injectable {
 
   val messageStreamOpen = visiblePage.map(_ == Page.MESSAGE_STREAM)
 
-  val mainActivityActive: SourceSignal[Boolean] = Signal(false)
+  val mainActivityActive: SourceSignal[Int] = Signal(0)
 
   navController.addNavigationControllerObserver(new NavigationControllerObserver {
     override def onPageVisible(page: Page): Unit = visiblePage ! page

@@ -77,7 +77,7 @@ import scala.concurrent.Future
     })
 
     (for {
-      true <- inject[com.waz.zclient.messages.controllers.NavigationController].mainActivityActive
+      true <- inject[com.waz.zclient.messages.controllers.NavigationController].mainActivityActive.map(_ > 0)
       true <- uiActive
       true <- pageVisible
       conv <- currentConvId.map(Option(_))
