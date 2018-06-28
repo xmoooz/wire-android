@@ -166,6 +166,8 @@ object WireApplication {
 
     // drafts
     bind [DraftMap] to new DraftMap()
+
+    bind [MessagesController]        to new MessagesController()
   }
 
   def controllers(implicit ctx: WireContext) = new Module {
@@ -189,7 +191,6 @@ object WireApplication {
 
     bind [ScreenController]          to new ScreenController()
     bind [MessageActionsController]  to new MessageActionsController()
-    bind [MessagesController]        to new MessagesController()
     bind [LikesController]           to new LikesController()
     bind [CollectionController]      to new CollectionController()
     bind [BackStackNavigator]        to new BackStackNavigator()
