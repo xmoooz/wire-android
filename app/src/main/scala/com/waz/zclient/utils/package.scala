@@ -59,6 +59,11 @@ package object utils {
       view.requestLayout()
     }
 
+    def setMarginBottom(m: Int) = {
+      view.getLayoutParams.asInstanceOf[ViewGroup.MarginLayoutParams].bottomMargin = m
+      view.requestLayout()
+    }
+
     def setMarginLeft(m: Int) = {
       view.getLayoutParams.asInstanceOf[ViewGroup.MarginLayoutParams].leftMargin = m
       view.requestLayout()

@@ -292,7 +292,10 @@ object ParticipantsAdapter {
         editText.setText(displayName)
         Selection.removeSelection(editText.getText)
       }
-      callInfo.setVisible(isTeam)
+
+      callInfo.setText(if (isTeam) R.string.call_info_text else R.string.empty_string)
+      callInfo.setMarginTop(getDimenPx(if (isTeam) R.dimen.wire__padding__16 else R.dimen.wire__padding__8)(view.getContext))
+      callInfo.setMarginBottom(getDimenPx(if (isTeam) R.dimen.wire__padding__16 else R.dimen.wire__padding__8)(view.getContext))
     }
 
     def onBackPressed(): Boolean =
