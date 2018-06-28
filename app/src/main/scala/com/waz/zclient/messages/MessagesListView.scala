@@ -202,28 +202,25 @@ case class MessageViewHolder(view: MessageView, adapter: MessagesListAdapter)(im
   }
 
   // mark message as read if message is bound while list is visible
-  private val messageRead =
-    msgsController.fullyVisibleMessagesList flatMap {
-      case Some(convId) =>
-        message.filter(_.convId == convId) flatMap {
-          case msg if msg.isAssetMessage && msg.state == Message.Status.SENT =>
-            // received asset message is considered read when its asset is available,
-            // this is especially needed for ephemeral messages, only start the counter when message is downloaded
-            assets.assetSignal(msg.assetId) flatMap {
-              case (_, AssetStatus.DOWNLOAD_DONE) if msg.msgType == Message.Type.ASSET =>
-                // image assets are considered read only once fully downloaded
-                Signal const msg
-              case (_, AssetStatus.UPLOAD_DONE | AssetStatus.UPLOAD_CANCELLED | AssetStatus.UPLOAD_FAILED) if msg.msgType != Message.Type.ASSET =>
-                // for other assets it's enough when upload is done, download is user triggered here
-                Signal const msg
-              case _ => Signal.empty[MessageData]
-            }
-          case msg => Signal const msg
-        }
-      case None => Signal.empty[MessageData]
-    }
-
-  messageRead { msgsController.onMessageRead }
+  msgsController.fullyVisibleMessagesList.flatMap {
+    case Some(convId) =>
+      message.filter(_.convId == convId) flatMap {
+        case msg if msg.isAssetMessage && msg.state == Message.Status.SENT =>
+          // received asset message is considered read when its asset is available,
+          // this is especially needed for ephemeral messages, only start the counter when message is downloaded
+          assets.assetSignal(msg.assetId) flatMap {
+            case (_, AssetStatus.DOWNLOAD_DONE) if msg.msgType == Message.Type.ASSET =>
+              // image assets are considered read only once fully downloaded
+              Signal const msg
+            case (_, AssetStatus.UPLOAD_DONE | AssetStatus.UPLOAD_CANCELLED | AssetStatus.UPLOAD_FAILED) if msg.msgType != Message.Type.ASSET =>
+              // for other assets it's enough when upload is done, download is user triggered here
+              Signal const msg
+            case _ => Signal.empty[MessageData]
+          }
+        case msg => Signal const msg
+      }
+    case None => Signal.empty[MessageData]
+  }(msgsController.onMessageRead)
 
   def bind(msg: MessageAndLikes, prev: Option[MessageData], next: Option[MessageData], opts: MsgBindOptions): Unit = {
     view.set(msg, prev, next, opts)
