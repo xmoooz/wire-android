@@ -23,6 +23,7 @@ import android.text.style.LeadingMarginSpan
 import android.text.style.TabStopSpan
 import com.waz.zclient.markdown.StyleSheet
 import com.waz.zclient.markdown.spans.custom.ListPrefixSpan
+import com.waz.zclient.markdown.spans.custom.ParagraphSpacingSpan
 import com.waz.zclient.markdown.utils.*
 import org.commonmark.internal.renderer.text.BulletListHolder
 import org.commonmark.internal.renderer.text.ListHolder
@@ -273,6 +274,9 @@ class SpanRenderer(private val styleSheet: StyleSheet) : AbstractVisitor(), Node
             // indentation for second paragraph up to nested list or item end
             writer.set(LeadingMarginSpan.Standard(indentation + standardPrefixWidth), b1, b2)
         }
+
+        // before and after spacing, from item start up to nested list or item end
+        writer.set(ParagraphSpacingSpan(styleSheet.listItemSpacingBefore, styleSheet.listItemSpacingAfter), start, b2 ?: b1)
 
         // finally, the span for the whole item
         writer.set(styleSheet.spanFor(listItem), start)

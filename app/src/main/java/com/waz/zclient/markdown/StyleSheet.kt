@@ -204,7 +204,7 @@ public class StyleSheet {
                 return BulletListSpan(node.bulletMarker)
             }
             is ListItem -> {
-                return ListItemSpan(listItemSpacingBefore, listItemSpacingAfter)
+                return ListItemSpan()
             }
             is FencedCodeBlock -> {
                 return FencedCodeBlockSpan(
