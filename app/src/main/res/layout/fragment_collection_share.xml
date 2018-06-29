@@ -87,14 +87,12 @@
 
         <com.waz.zclient.common.views.EphemeralCursorButton
             android:id="@+id/ephemeral_toggle"
-            android:layout_width="@dimen/cursor__menu_button__diameter"
-            android:layout_height="@dimen/cursor__menu_button__diameter"
+            android:layout_width="@dimen/wire__margin__24"
+            android:layout_height="@dimen/wire__margin__24"
             android:layout_alignParentEnd="true"
-            android:layout_alignParentBottom="true"
             android:layout_marginEnd="@dimen/wire__padding__16"
             android:layout_marginBottom="@dimen/wire__padding__16"
-            android:gravity="center"
-            android:text="@string/glyph__hourglass"
+            android:layout_centerVertical="true"
             android:textColor="@color/white"
             />
 
