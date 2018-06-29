@@ -22,6 +22,7 @@ import android.animation.ValueAnimator.AnimatorUpdateListener
 import android.content.Context
 import android.graphics.Color
 import android.util.{AttributeSet, TypedValue}
+import android.view.View
 import android.widget.LinearLayout
 import com.waz.api.{ContentSearchQuery, Message}
 import com.waz.model.{MessageContent, MessageData}
@@ -34,6 +35,7 @@ import com.waz.zclient.messages.MessageView.MsgBindOptions
 import com.waz.zclient.messages.{ClickableViewPart, MsgPart}
 import com.waz.zclient.ui.text.LinkTextView
 import com.waz.zclient.ui.utils.ColorUtils
+import com.waz.zclient.ui.views.OnDoubleClickListener
 import com.waz.zclient.{R, ViewHelper}
 
 class TextPartView(context: Context, attrs: AttributeSet, style: Int) extends LinearLayout(context, attrs, style) with ViewHelper with ClickableViewPart with EphemeralPartView with EphemeralIndicatorPartView {
@@ -54,6 +56,16 @@ class TextPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
   private val textView = findById[LinkTextView](R.id.text)
 
   registerEphemeral(textView)
+
+  textView.setOnClickListener(new OnDoubleClickListener {
+    override def onSingleClick(): Unit = TextPartView.this.onSingleClick()
+    override def onDoubleClick(): Unit = TextPartView.this.onDoubleClick()
+  })
+
+  textView.setOnLongClickListener(new View.OnLongClickListener {
+    override def onLongClick(v: View): Boolean =
+      TextPartView.this.getParent.asInstanceOf[View].performLongClick()
+  })
 
   var messagePart = Signal[Option[MessageContent]]()
 
