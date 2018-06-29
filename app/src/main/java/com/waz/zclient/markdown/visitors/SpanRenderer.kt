@@ -40,7 +40,6 @@ import org.commonmark.renderer.NodeRenderer
  */
 class SpanRenderer(private val styleSheet: StyleSheet) : AbstractVisitor(), NodeRenderer {
 
-    // TODO: make this an option
     val softBreaksAsHardBreaks = true
     val spannableString: SpannableString get() = writer.spannableString.trim() as SpannableString
 
