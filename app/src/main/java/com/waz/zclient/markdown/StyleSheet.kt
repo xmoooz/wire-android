@@ -102,7 +102,7 @@ public class StyleSheet {
     /**
      * The width (in points) of the quote stripe.
      */
-    public var quoteStripeWidth: Int = 4
+    public var quoteStripeWidth: Int = 2
 
     /**
      * The gap width (in points) between the quote stripe and the quote content text.
