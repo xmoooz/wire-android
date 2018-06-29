@@ -139,7 +139,7 @@ object AvailabilityView {
   val viewData: Map[Availability, ViewData] = Map(
     Availability.None      -> ViewData(R.string.availability_none,      0,                                    (_, _) => ()),
     Availability.Available -> ViewData(R.string.availability_available, R.string.availability_text_available, WireStyleKit.drawAvailableIcon),
-    Availability.Busy      -> ViewData(R.string.availability_busy,      R.string.availability_text_busy,   (c, i) => WireStyleKit.drawBusyIcon(c)),
+    Availability.Busy      -> ViewData(R.string.availability_busy,      R.string.availability_text_busy,      WireStyleKit.drawBusyIcon),
     Availability.Away      -> ViewData(R.string.availability_away,      R.string.availability_text_away,      WireStyleKit.drawAwayIcon)
   )
 
