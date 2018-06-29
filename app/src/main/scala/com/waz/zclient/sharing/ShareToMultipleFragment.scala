@@ -86,7 +86,7 @@ class ShareToMultipleFragment extends FragmentHelper with OnBackPressedListener 
   lazy val convList = view[RecyclerView](R.id.lv__conversation_list)
   lazy val accountTabs = view[AccountTabsView](R.id.account_tabs)
   lazy val bottomContainer = view[AnimatedBottomContainer](R.id.ephemeral_container)
-  lazy val ephemeralToggle = view[EphemeralCursorButton](R.id.ephemeral_toggle)
+  lazy val ephemeralIcon = view[EphemeralCursorButton](R.id.ephemeral_toggle)
 
   lazy val sendButton = returning(view[CursorIconButton](R.id.cib__send_button)) { vh =>
     (for {
@@ -186,16 +186,16 @@ class ShareToMultipleFragment extends FragmentHelper with OnBackPressedListener 
       }
     })
 
-    ephemeralToggle.foreach(toggle => toggle.onClick {
+    ephemeralIcon.foreach(icon => icon.onClick {
       bottomContainer.foreach { bc =>
         bc.isExpanded.currentValue match {
           case Some(true) =>
             bc.closedAnimated()
           case Some(false) =>
             returning(getLayoutInflater.inflate(R.layout.ephemeral_keyboard_layout, null, false).asInstanceOf[EphemeralLayout]) { l =>
-              sharingController.ephemeralExpiration.map(l.setSelectedExpiration)
+              sharingController.ephemeralExpiration.foreach(l.setSelectedExpiration)
               l.expirationSelected.onUi { case (exp, close) =>
-                toggle.ephemeralExpiration ! exp
+                icon.ephemeralExpiration ! exp
                 sharingController.ephemeralExpiration ! exp
                 if (close) bc.closedAnimated()
               }

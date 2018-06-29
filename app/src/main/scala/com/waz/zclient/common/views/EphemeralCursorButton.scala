@@ -18,53 +18,76 @@
 package com.waz.zclient.common.views
 
 import android.content.Context
-import android.util.{AttributeSet, TypedValue}
-import com.waz.threading.Threading
+import android.graphics.drawable.Drawable
+import android.util.AttributeSet
+import android.view.Gravity
+import com.waz.api.AccentColor
+import com.waz.model.EphemeralDuration
 import com.waz.utils.events.Signal
+import com.waz.zclient.paintcode.{EphemeralIcon, HourGlassIcon}
+import com.waz.zclient.ui.text.TypefaceTextView
+import com.waz.zclient.utils.ContextUtils.{getColor, getDimenPx}
+import com.waz.zclient.utils.RichView
 import com.waz.zclient.{R, ViewHelper}
-import com.waz.zclient.common.controllers.global.AccentColorController
-import com.waz.zclient.ui.utils.{ColorUtils, TypefaceUtils}
-import com.waz.zclient.ui.views.CursorIconButton
-
-import java.util.concurrent.TimeUnit.{DAYS, MINUTES}
 
 import scala.concurrent.duration.FiniteDuration
 
-class EphemeralCursorButton(context: Context, attrs: AttributeSet, defStyleAttr: Int) extends CursorIconButton(context, attrs, defStyleAttr) with ViewHelper {
+class EphemeralCursorButton(context: Context, attrs: AttributeSet, defStyleAttr: Int) extends TypefaceTextView(context, attrs, defStyleAttr) with ViewHelper {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null, 0)
 
-  val accentColorController = inject[AccentColorController]
+  val accentColor = inject[Signal[AccentColor]]
   val ephemeralExpiration = Signal[Option[FiniteDuration]](None)
 
-  accentColorController.accentColor.zip(ephemeralExpiration).on(Threading.Ui){
-    case (accentColor, expiration) =>
-      val value = expiration.map(_.unit) match {
-        case Some(DAYS) =>
-          getResources.getString(R.string.cursor__ephemeral_message__timer_days, expiration.get.toDays.toString)
-        case Some(MINUTES) =>
-          getResources.getString(R.string.cursor__ephemeral_message__timer_min, expiration.get.toMinutes.toString)
-        case None =>
-          getResources.getString(R.string.glyph__hourglass)
-        case _ =>
-          getResources.getString(R.string.cursor__ephemeral_message__timer_seconds, expiration.get.toSeconds.toString)
-      }
-      setText(value)
-      if (expiration.isEmpty) {
-        setBackground(null)
-        setTypeface(TypefaceUtils.getTypeface(TypefaceUtils.getGlyphsTypefaceName))
-        setTextSize(TypedValue.COMPLEX_UNIT_PX, getContext.getResources.getDimensionPixelSize(R.dimen.wire__text_size__regular))
-      } else {
-        //val bgColor: Int = ColorUtils.injectAlpha(ResourceUtils.getResourceFloat(getResources, R.dimen.ephemeral__accent__timer_alpha), accentColor.getColor())
-        //setSolidBackgroundColor(bgColor)
-        setBackground(ColorUtils.getTintedDrawable(getContext, R.drawable.background__cursor__ephemeral_timer, accentColor.getColor()))
-        setTypeface(TypefaceUtils.getTypeface(getContext.getString(R.string.wire__typeface__regular)))
-        setTextSize(TypedValue.COMPLEX_UNIT_PX, getContext.getResources.getDimensionPixelSize(R.dimen.wire__text_size__small))
-      }
-    case _ =>
+  val lengthAndUnit = ephemeralExpiration.map(_.map(EphemeralDuration(_)))
+  val (len, unit) =
+    (lengthAndUnit.map(_.map(_._1)), lengthAndUnit.map(_.map(_._2)))
+
+  val display = len.map(_.map(_.toString).getOrElse(""))
+
+  val color =
+    ephemeralExpiration.flatMap {
+      case Some(_) => accentColor.map(_.getColor)
+      case _ => Signal.const(getColor(R.color.text__primary_dark))
+    }
+
+  val iconSize = ephemeralExpiration.map {
+    case Some(_) => R.dimen.wire__padding__24
+    case _       => R.dimen.wire__padding__16
+  }.map(getDimenPx)
+
+  //For QA testing
+  val contentDescription = lengthAndUnit.map {
+    case Some((l, unit)) => s"$l$unit"
+    case None => "off"
   }
 
-  def setExpiration(ephemeralExpiration: Option[FiniteDuration]): Unit = {
-    this.ephemeralExpiration ! ephemeralExpiration
+  val drawable: Signal[Drawable] =
+    for {
+      color <- color
+      unit  <- unit
+    } yield {
+      unit match {
+        case Some(u) => EphemeralIcon(color, u)
+        case _       => HourGlassIcon(color)
+      }
+    }
+
+  override def onFinishInflate(): Unit = {
+    super.onFinishInflate()
+
+    setGravity(Gravity.CENTER)
+
+    display.onUi(setText)
+
+    drawable.onUi(setBackgroundDrawable)
+    contentDescription.onUi(setContentDescription)
+
+    setLetterSpacing(-0.1f)
+
+    color.onUi(setTextColor)
+    iconSize.onUi { size =>
+      this.setWidthAndHeight(Some(size), Some(size))
+    }
   }
 }
