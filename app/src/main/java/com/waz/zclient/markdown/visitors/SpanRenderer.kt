@@ -296,6 +296,7 @@ class SpanRenderer(private val styleSheet: StyleSheet) : AbstractVisitor(), Node
         if (htmlBlock == null) return
         writer.saveCursor()
         writer.write(htmlBlock.literal)
+        writeLineIfNeeded(htmlBlock)
         writer.set(styleSheet.spanFor(htmlBlock), writer.retrieveCursor())
     }
 
