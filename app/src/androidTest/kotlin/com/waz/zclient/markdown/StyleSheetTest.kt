@@ -143,6 +143,10 @@ class StyleSheetTest {
 
         // then
         assertTrue(result is ListItemSpan)
+        val span = result as ListItemSpan
+
+        assertEquals(sut.listItemSpacingBefore, span.beforeSpacing)
+        assertEquals(sut.listItemSpacingAfter, span.afterSpacing)
     }
 
     @Test

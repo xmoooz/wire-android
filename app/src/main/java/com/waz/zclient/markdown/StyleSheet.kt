@@ -120,6 +120,16 @@ public class StyleSheet {
     public var listPrefixGapWidth: Int = 8
 
     /**
+     * The amount of spacing (in points) before a list item.
+     */
+    public var listItemSpacingBefore: Int = 16
+
+    /**
+     * The amount of spacing (in points) after a list item.
+     */
+    public var listItemSpacingAfter: Int = 16
+
+    /**
      * The color of all monospace code text.
      */
     public var codeColor: Int = Color.GRAY
@@ -194,7 +204,7 @@ public class StyleSheet {
                 return BulletListSpan(node.bulletMarker)
             }
             is ListItem -> {
-                return ListItemSpan()
+                return ListItemSpan(listItemSpacingBefore, listItemSpacingAfter)
             }
             is FencedCodeBlock -> {
                 return FencedCodeBlockSpan(

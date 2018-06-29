@@ -165,11 +165,22 @@ class GroupSpanTest {
     @Test
     fun testThatItConfiguresSpansAndNode_ListItem() {
         // given
-        val sut = ListItemSpan()
+        val sut = ListItemSpan(8, 16)
 
         // then
         assertEquals(GroupSpan.Priority.MEDIUM, sut.priority)
-        assertTrue(sut.spans.isEmpty())
+        assertEquals(1, sut.spans.size)
+
+        val span = sut.spans.first()
+
+        when (span) {
+            is ParagraphSpacingSpan -> {
+                assertEquals(8, span.before)
+                assertEquals(16, span.after)
+            }
+            else -> fail()
+        }
+
         assertTrue(sut.toNode() is ListItem)
     }
 

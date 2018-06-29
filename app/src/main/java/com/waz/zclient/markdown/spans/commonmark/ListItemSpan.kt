@@ -18,13 +18,18 @@
 package com.waz.zclient.markdown.spans.commonmark
 
 import com.waz.zclient.markdown.spans.BlockSpan
+import com.waz.zclient.markdown.spans.custom.ParagraphSpacingSpan
 import org.commonmark.node.ListItem
 import org.commonmark.node.Node
 
 /**
  * The span corresponding to the markdown "ListItem" unit.
  */
-class ListItemSpan : BlockSpan() {
+class ListItemSpan(val beforeSpacing: Int, val afterSpacing: Int) : BlockSpan() {
+
+    init {
+        add(ParagraphSpacingSpan(beforeSpacing, afterSpacing))
+    }
 
     override fun toNode(literal: String?): Node = ListItem()
 }
