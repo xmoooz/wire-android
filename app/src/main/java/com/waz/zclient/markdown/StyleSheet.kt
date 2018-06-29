@@ -127,7 +127,7 @@ public class StyleSheet {
     /**
      * The indentation (in points) from the leading margin of all code blocks.
      */
-    public var codeBlockIndentation: Int = 24
+    public var codeBlockIndentation: Int = 0
 
     /**
      * The color of links.
