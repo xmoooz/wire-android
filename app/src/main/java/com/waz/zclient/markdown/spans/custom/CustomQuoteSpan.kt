@@ -44,7 +44,7 @@ class CustomQuoteSpan(
     ) {
         // ensure this span is attached to the text
         val spanned = text as Spanned
-        if (!(spanned.getSpanStart(this) == start && spanned.getSpanEnd(this) == end)) return
+        if (!(spanned.getSpanStart(this) <= start && spanned.getSpanEnd(this) >= end)) return
 
         if (c == null || p == null) return
 
