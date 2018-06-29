@@ -197,13 +197,28 @@ public class StyleSheet {
                 return ListItemSpan()
             }
             is FencedCodeBlock -> {
-                return FencedCodeBlockSpan(codeColor, codeBlockIndentation.scaled)
+                return FencedCodeBlockSpan(
+                    codeColor,
+                    codeBlockIndentation.scaled,
+                    paragraphSpacingBefore,
+                    paragraphSpacingAfter
+                )
             }
             is IndentedCodeBlock -> {
-                return IndentedCodeBlockSpan(codeColor, codeBlockIndentation.scaled)
+                return IndentedCodeBlockSpan(
+                    codeColor,
+                    codeBlockIndentation.scaled,
+                    paragraphSpacingBefore,
+                    paragraphSpacingAfter
+                )
             }
             is HtmlBlock -> {
-                return HtmlBlockSpan(codeColor, codeBlockIndentation.scaled)
+                return HtmlBlockSpan(
+                    codeColor,
+                    codeBlockIndentation.scaled,
+                    paragraphSpacingBefore,
+                    paragraphSpacingAfter
+                )
             }
             is Link -> {
                 return LinkSpan(node.destination, linkColor, onClickLink)

@@ -176,13 +176,13 @@ class GroupSpanTest {
     @Test
     fun testThatItConfiguresSpansAndNode_FencedCodeBlock() {
         // given
-        val sut = FencedCodeBlockSpan(Color.RED, 16)
+        val sut = FencedCodeBlockSpan(Color.RED, 16, 8, 20)
 
         // then
         assertEquals(GroupSpan.Priority.MEDIUM, sut.priority)
 
         val spans = sut.spans
-        assertEquals(3, spans.size)
+        assertEquals(4, spans.size)
 
         for (span in spans) {
             when (span) {
@@ -195,6 +195,10 @@ class GroupSpanTest {
                 }
                 is ForegroundColorSpan -> {
                     assertEquals(Color.RED, span.foregroundColor)
+                }
+                is ParagraphSpacingSpan -> {
+                    assertEquals(8, span.before)
+                    assertEquals(20, span.after)
                 }
                 else -> fail()
             }
@@ -212,13 +216,13 @@ class GroupSpanTest {
     @Test
     fun testThatItConfiguresSpansAndNode_IndentedCodeBlock() {
         // given
-        val sut = IndentedCodeBlockSpan(Color.YELLOW, 20)
+        val sut = IndentedCodeBlockSpan(Color.YELLOW, 20, 8, 16)
 
         // then
         assertEquals(GroupSpan.Priority.MEDIUM, sut.priority)
 
         val spans = sut.spans
-        assertEquals(3, spans.size)
+        assertEquals(4, spans.size)
 
         for (span in spans) {
             when (span) {
@@ -232,6 +236,10 @@ class GroupSpanTest {
                 is ForegroundColorSpan -> {
                     assertEquals(Color.YELLOW, span.foregroundColor)
                 }
+                is ParagraphSpacingSpan -> {
+                    assertEquals(8, span.before)
+                    assertEquals(16, span.after)
+                }
                 else -> fail()
             }
         }
@@ -244,13 +252,13 @@ class GroupSpanTest {
     @Test
     fun testThatItConfiguresSpansAndNode_HtmlBlock() {
         // given
-        val sut = HtmlBlockSpan(Color.GREEN, 8)
+        val sut = HtmlBlockSpan(Color.GREEN, 8, 16, 20)
 
         // then
         assertEquals(GroupSpan.Priority.MEDIUM, sut.priority)
 
         val spans = sut.spans
-        assertEquals(3, spans.size)
+        assertEquals(4, spans.size)
 
         for (span in spans) {
             when (span) {
@@ -263,6 +271,10 @@ class GroupSpanTest {
                 }
                 is ForegroundColorSpan -> {
                     assertEquals(Color.GREEN, span.foregroundColor)
+                }
+                is ParagraphSpacingSpan -> {
+                    assertEquals(16, span.before)
+                    assertEquals(20, span.after)
                 }
                 else -> fail()
             }

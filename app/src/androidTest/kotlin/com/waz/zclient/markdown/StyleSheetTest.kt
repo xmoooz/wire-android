@@ -159,6 +159,8 @@ class StyleSheetTest {
 
         assertEquals(sut.codeColor, span.color)
         assertEquals((sut.codeBlockIndentation * sut.screenDensity).toInt(), span.indentation)
+        assertEquals(sut.paragraphSpacingBefore, span.beforeSpacing)
+        assertEquals(sut.paragraphSpacingAfter, span.afterSpacing)
     }
 
     @Test
@@ -175,6 +177,8 @@ class StyleSheetTest {
 
         assertEquals(sut.codeColor, span.color)
         assertEquals((sut.codeBlockIndentation * sut.screenDensity).toInt(), span.indentation)
+        assertEquals(sut.paragraphSpacingBefore, span.beforeSpacing)
+        assertEquals(sut.paragraphSpacingAfter, span.afterSpacing)
     }
 
     @Test
@@ -191,6 +195,8 @@ class StyleSheetTest {
 
         assertEquals(sut.codeColor, span.color)
         assertEquals((sut.codeBlockIndentation * sut.screenDensity).toInt(), span.indentation)
+        assertEquals(sut.paragraphSpacingBefore, span.beforeSpacing)
+        assertEquals(sut.paragraphSpacingAfter, span.afterSpacing)
     }
 
     @Test
