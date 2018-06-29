@@ -308,7 +308,6 @@ class SpanRenderer(private val styleSheet: StyleSheet) : AbstractVisitor(), Node
 
     override fun visit(image: Image?) {
         if (image == null) return
-        // TODO: write raw input b/c this is unsupported
         writer.saveCursor()
         visitChildren(image)
         writer.set(styleSheet.spanFor(image), writer.retrieveCursor())
@@ -376,8 +375,7 @@ class SpanRenderer(private val styleSheet: StyleSheet) : AbstractVisitor(), Node
             is Paragraph -> if (!node.isOuterMost) return
             else -> { }
         }
-
-        // TODO: we might want to prohibit adding newline if it is the last node
+        
         writer.lineIfNeeded()
     }
 }
