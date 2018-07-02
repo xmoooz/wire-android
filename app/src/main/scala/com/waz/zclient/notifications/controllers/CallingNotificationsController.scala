@@ -24,7 +24,7 @@ import android.support.v4.app.NotificationCompat
 import com.waz.ZLog._
 import com.waz.bitmap.BitmapUtils
 import com.waz.content.UserPreferences
-import com.waz.model.{ConvId, UserId}
+import com.waz.model.{ConvId, LocalInstant, UserId}
 import com.waz.service.assets.AssetService.BitmapResult.BitmapLoaded
 import com.waz.service.call.CallInfo
 import com.waz.service.call.CallInfo.CallState._
@@ -41,7 +41,7 @@ import com.waz.zclient.common.views.ImageController
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.{DeprecationUtils, RingtoneUtils}
 import com.waz.zms.CallWakeService
-import org.threeten.bp.Instant
+import com.waz.utils._
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -220,7 +220,7 @@ object CallingNotificationsController {
   case class CallNotification(id:            Int,
                               convId:        ConvId,
                               accountId:     UserId,
-                              callStartTime: Instant,
+                              callStartTime: LocalInstant,
                               caller:        String,
                               convName:      String,
                               bitmap:        Option[Bitmap],

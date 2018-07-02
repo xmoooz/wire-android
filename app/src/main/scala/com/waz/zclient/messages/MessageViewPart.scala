@@ -41,7 +41,7 @@ import com.waz.zclient.utils.ContextUtils.{getColor, getDimenPx}
 import com.waz.zclient.utils.ZTimeFormatter.getSeparatorTime
 import com.waz.zclient.utils._
 import com.waz.zclient.{R, ViewHelper}
-import org.threeten.bp.{Instant, LocalDateTime, ZoneId}
+import org.threeten.bp.{LocalDateTime, ZoneId}
 
 trait MessageViewPart extends View {
   val tpe: MsgPart
@@ -102,9 +102,9 @@ trait TimeSeparator extends MessageViewPart with ViewHelper {
   lazy val timeText: TypefaceTextView = findById(R.id.separator__time)
   lazy val unreadDot: UnreadDot = findById(R.id.unread_dot)
 
-  val time = Signal[Instant]()
+  val time = Signal[RemoteInstant]()
   val text = time map { t =>
-    getSeparatorTime(getContext, LocalDateTime.now, DateConvertUtils.asLocalDateTime(t), is24HourFormat, ZoneId.systemDefault, true)
+    getSeparatorTime(getContext, LocalDateTime.now, DateConvertUtils.asLocalDateTime(t.instant), is24HourFormat, ZoneId.systemDefault, true)
   }
 
   text.on(Threading.Ui)(timeText.setTransformedText)
@@ -177,7 +177,7 @@ class UserPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
 
   private val stateGlyph = message map {
     case m if m.msgType == Message.Type.RECALLED => Some(R.string.glyph__trash)
-    case m if m.editTime != Instant.EPOCH => Some(R.string.glyph__edit)
+    case m if !m.editTime.isEpoch => Some(R.string.glyph__edit)
     case _ => None
   }
 
