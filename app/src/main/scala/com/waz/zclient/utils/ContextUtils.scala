@@ -177,7 +177,7 @@ object ContextUtils {
       .setNegativeButton(android.R.string.ok, new DialogInterface.OnClickListener() {
         def onClick(dialog: DialogInterface, which: Int): Unit = {
           dialog.dismiss()
-          p.complete(Success({}))
+          p.tryComplete(Success({}))
         }
       }).create
     dialog.show()
@@ -194,13 +194,13 @@ object ContextUtils {
       .setTitle(title)
       .setMessage(msg)
       .setPositiveButton(positiveRes, new DialogInterface.OnClickListener {
-        override def onClick(dialog: DialogInterface, which: Int) = p.complete(Success(true))
+        override def onClick(dialog: DialogInterface, which: Int) = p.tryComplete(Success(true))
       })
       .setNegativeButton(negativeRes, new DialogInterface.OnClickListener() {
         def onClick(dialog: DialogInterface, which: Int): Unit = dialog.cancel()
       })
       .setOnCancelListener(new DialogInterface.OnCancelListener {
-        override def onCancel(dialog: DialogInterface) = p.complete(Success(false))
+        override def onCancel(dialog: DialogInterface) = p.tryComplete(Success(false))
       })
       .create
     dialog.show()
@@ -218,7 +218,7 @@ object ContextUtils {
           cxt.startActivity(returning(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", cxt.getPackageName, null)))(_.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)))
       })
       .setOnDismissListener(new DialogInterface.OnDismissListener { //From the docs: The system calls onDismiss() upon each event that invokes the onCancel() callback
-        override def onDismiss(dialog: DialogInterface) = p.complete(Success({}))
+        override def onDismiss(dialog: DialogInterface) = p.tryComplete(Success({}))
       })
       .create
       .show()
