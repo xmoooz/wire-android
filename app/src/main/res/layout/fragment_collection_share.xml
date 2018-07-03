@@ -89,6 +89,7 @@
             android:id="@+id/ephemeral_toggle"
             android:layout_width="@dimen/wire__margin__24"
             android:layout_height="@dimen/wire__margin__24"
+            android:letterSpacing="-0.1"
             android:layout_alignParentEnd="true"
             android:layout_marginEnd="@dimen/wire__padding__16"
             android:layout_marginBottom="@dimen/wire__padding__16"
