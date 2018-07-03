@@ -110,6 +110,7 @@
                                                         android:layout_width="@dimen/wire__margin__24"
                                                         android:layout_height="@dimen/wire__margin__24"
                                                         android:layout_gravity="center"
+                                                        android:letterSpacing="-0.1"
                                                         android:includeFontPadding="false"
                                                         android:gravity="center_vertical"
                                                         style="?cursorIconButton"/>

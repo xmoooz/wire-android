@@ -85,9 +85,7 @@ class EphemeralIconButton(context: Context, attrs: AttributeSet, defStyleAttr: I
 
     drawable.onUi(setBackgroundDrawable)
     contentDescription.onUi(setContentDescription)
-
-    setLetterSpacing(-0.1f)
-
+    
     color.onUi(setTextColor)
     iconSize.onUi { size =>
       this.setWidthAndHeight(Some(size), Some(size))
