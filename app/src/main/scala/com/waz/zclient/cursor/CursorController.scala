@@ -195,12 +195,8 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
     }
     else if (TextUtils.isEmpty(msg.trim)) false
     else {
-      for {
-        cId <- conversationController.currentConvId.head
-        cs <- zms.head.map(_.convsUi)
-        m <- cs.sendMessage(cId, msg)
-      } {
-        m foreach { msg =>
+      conversationController.sendMessage(msg).foreach { m =>
+        m.foreach { msg =>
           onMessageSent ! msg
           cursorCallback.foreach(_.onMessageSent(msg))
         }
@@ -221,7 +217,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
         cs.recallMessage(cId, msg.id)
         Toast.makeText(ctx, R.string.conversation__message_action__delete__confirmation, Toast.LENGTH_SHORT).show()
       } else {
-        cs.updateMessage(cId, msg.id, new MessageContent.Text(text))
+        cs.updateMessage(cId, msg.id, text)
       }
       editingMsg ! None
       keyboard ! KeyboardState.Hidden

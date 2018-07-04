@@ -24,7 +24,6 @@ import android.text.TextUtils
 import android.view.{LayoutInflater, View, ViewGroup}
 import android.widget.{EditText, ImageView, TextView}
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api.ImageAssetFactory
 import com.waz.model.AssetData
 import com.waz.service.images.BitmapSignal
 import com.waz.service.tracking.ContributionEvent
@@ -235,7 +234,7 @@ class GiphySharingPreviewFragment extends BaseFragment[GiphySharingPreviewFragme
         if (TextUtils.isEmpty(term)) getString(R.string.giphy_preview__message_via_random_trending)
         else getString(R.string.giphy_preview__message_via_search, term)
       _    <- conversationController.sendMessage(msg)
-      _    <- conversationController.sendMessage(ImageAssetFactory.getImageAsset(gif.flatMap(_.source).get))
+      _    <- conversationController.sendMessage(gif.flatMap(_.source).get, getActivity)
     } yield screenController.hideGiphy ! true
   }
 

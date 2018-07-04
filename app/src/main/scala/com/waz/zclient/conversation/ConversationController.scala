@@ -17,20 +17,22 @@
  */
 package com.waz.zclient.conversation
 
+import android.app.Activity
 import android.content.Context
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
 import com.waz.api
-import com.waz.api.MessageContent.Asset.ErrorHandler
-import com.waz.api.impl.{AssetForUpload, ImageAsset}
-import com.waz.api.{IConversation, Verification}
+import com.waz.api.{AssetForUpload, IConversation, Verification}
 import com.waz.content.{ConversationStorage, MembersStorage, OtrClientsStorage, UsersStorage}
 import com.waz.model.ConversationData.ConversationType
 import com.waz.model._
 import com.waz.model.otr.Client
+import com.waz.service.assets.AssetService
+import com.waz.service.assets.AssetService.RawAssetInput.UriInput
 import com.waz.service.conversation.{ConversationsListStateService, ConversationsService, ConversationsUiService}
 import com.waz.threading.{CancellableFuture, SerialDispatchQueue, Threading}
 import com.waz.utils.events.{EventContext, EventStream, Signal, SourceStream}
+import com.waz.utils.wrappers.URI
 import com.waz.utils.{Serialized, returning, _}
 import com.waz.zclient.conversation.ConversationController.ConversationChange
 import com.waz.zclient.conversationlist.ConversationListController
@@ -109,7 +111,8 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
       }
   }
 
-  def selectConv(id: ConvId, requester: ConversationChangeRequester): Future[Unit] = selectConv(Some(id), requester)
+  def selectConv(id: ConvId, requester: ConversationChangeRequester): Future[Unit] =
+    selectConv(Some(id), requester)
 
   def loadConv(convId: ConvId): Future[Option[ConversationData]] = convsStorage.head.flatMap(_.get(convId))
 
@@ -136,23 +139,6 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
 
   def loadClients(userId: UserId): Future[Seq[Client]] = otrClientsStorage.head.flatMap(_.getClients(userId)) // TODO: move to SE maybe?
 
-  def sendMessage(audioAsset: AssetForUpload, errorHandler: ErrorHandler): Future[Unit] = currentConvId.head.map { convId => sendMessage(convId, audioAsset, errorHandler) }
-  def sendMessage(convId: ConvId, audioAsset: AssetForUpload, errorHandler: ErrorHandler): Future[Unit] = convsUi.head.map { _.sendMessage(convId, audioAsset, errorHandler) }
-  def sendMessage(text: String): Future[Unit] = for {
-    convsUi <- convsUi.head
-    convId  <- currentConvId.head
-  } yield convsUi.sendMessage(convId, text)
-  def sendMessage(imageAsset: com.waz.api.ImageAsset): Future[Unit] = imageAsset match { // TODO: remove when not used anymore
-    case a: com.waz.api.impl.ImageAsset => currentConvId.head.map { convId => sendMessage(convId, a) }
-    case _ => Future.successful({})
-  }
-  def sendMessage(imageAsset: ImageAsset): Future[Unit] = currentConvId.head.map { convId => sendMessage(convId, imageAsset) }
-  def sendMessage(convId: ConvId, imageAsset: ImageAsset): Future[Unit] = convsUi.head.map { _.sendMessage(convId, imageAsset) }
-  def sendMessage(location: api.MessageContent.Location): Future[Unit] = for {
-    convsUi <- convsUi.head
-    convId  <- currentConvId.head
-  } yield convsUi.sendMessage(convId, location)
-
   def setCurrentConvName(name: String): Future[Unit] = for {
     convsUi <- convsUi.head
     convId  <- currentConvId.head
@@ -164,6 +150,32 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
     convsUi <- convsUi.head
     id      <- currentConvId.head
   } yield convsUi.removeConversationMember(id, user)
+
+  def sendMessage(text: String): Future[Option[MessageData]] =
+    convsUiwithCurrentConv((ui, id) => ui.sendTextMessage(id, text))
+
+  def sendMessage(input: AssetService.RawAssetInput): Future[Option[MessageData]] =
+    convsUiwithCurrentConv((ui, id) => ui.sendAssetMessage(id, input))
+
+  def sendMessage(uri: URI, activity: Activity): Future[Option[MessageData]] =
+    convsUiwithCurrentConv((ui, id) => ui.sendAssetMessage(id, UriInput(uri), (s: Long) => showWifiWarningDialog(s)(activity)))
+
+  def sendMessage(audioAsset: AssetForUpload, activity: Activity): Future[Option[MessageData]] =
+    audioAsset match {
+      case asset: com.waz.api.impl.AudioAssetForUpload =>
+        convsUiwithCurrentConv((ui, id) => ui.sendMessage(id, asset, (s: Long) => showWifiWarningDialog(s)(activity)))
+      case _ => Future.successful(None)
+    }
+
+  def sendMessage(location: api.MessageContent.Location): Future[Option[MessageData]] =
+    convsUiwithCurrentConv((ui, id) => ui.sendLocationMessage(id, location))
+
+  private def convsUiwithCurrentConv[A](f: (ConversationsUiService, ConvId) => Future[A]): Future[A] =
+    for {
+      cUi    <- convsUi.head
+      convId <- currentConvId.head
+      res    <- f(cUi, convId)
+    } yield res
 
   def leave(convId: ConvId): CancellableFuture[Unit] =
     returning (Serialized("Conversations", convId)(CancellableFuture.lift(convsUi.head.flatMap(_.leaveConversation(convId))))) { _ =>
@@ -262,8 +274,6 @@ object ConversationController {
     def toConvId: ConvId = to.orNull // TODO: remove when not used anymore
     lazy val noChange: Boolean = from == to
   }
-
-  val emptyImageAsset: com.waz.api.ImageAsset = ImageAsset.Empty.asInstanceOf[com.waz.api.ImageAsset]
 
   def getOtherParticipantForOneToOneConv(conv: ConversationData): UserId = {
     if (conv != ConversationData.Empty &&
