@@ -114,9 +114,9 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
     } yield ms
 
   def setEphemeralExpiration(expiration: Option[FiniteDuration]): Future[Unit] = for {
-    z <- zms.head
+    z  <- zms.head
     id <- currentConvId.head
-    _ <- z.convsUi.setEphemeral(id, expiration)
+    _  <- z.convsUi.setEphemeral(id, expiration)
   } yield ()
 
   def loadMembers(convId: ConvId): Future[Seq[UserData]] = for {
