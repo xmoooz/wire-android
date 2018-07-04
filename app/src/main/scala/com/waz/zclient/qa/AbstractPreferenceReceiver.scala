@@ -65,6 +65,8 @@ trait AbstractPreferenceReceiver extends BroadcastReceiver {
         setGlobalPref(DeveloperAnalyticsEnabled, true)
       case HIDE_GDPR_POPUPS =>
         setGlobalPref(ShowMarketingConsentDialog, false)
+      case FULL_CONVERSATION_INTENT =>
+        setGlobalPref(ShouldCreateFullConversation, intent.getBooleanExtra(FULL_CONVERSATION_VALUE, true))
       case SILENT_MODE =>
         Seq(RingTone, PingTone, TextTone).foreach(setUserPref(_, "silent"))
       case NO_CONTACT_SHARING =>
@@ -104,6 +106,8 @@ object AbstractPreferenceReceiver {
   private val SILENT_MODE = packageName + ".intent.action.SILENT_MODE"
   private val NO_CONTACT_SHARING = packageName + ".intent.action.NO_CONTACT_SHARING"
   private val TRACKING_ID_INTENT = packageName + ".intent.action.TRACKING_ID"
+  private val FULL_CONVERSATION_INTENT = packageName + ".intent.action.FULL_CONVERSATION_INTENT"
+  private val FULL_CONVERSATION_VALUE = "FULL_CONVERSATION_VALUE"
 
   private final val HIDE_GDPR_POPUPS = packageName + ".intent.action.HIDE_GDPR_POPUPS"
 
