@@ -19,14 +19,17 @@ package com.waz.zclient.notifications.controllers
 
 import android.app.{NotificationManager, PendingIntent}
 import android.graphics.{Bitmap, Color}
+import android.os.Build
 import android.support.v4.app.NotificationCompat
 import com.waz.ZLog._
 import com.waz.bitmap.BitmapUtils
+import com.waz.content.UserPreferences
 import com.waz.model.{ConvId, UserId}
 import com.waz.service.assets.AssetService.BitmapResult.BitmapLoaded
 import com.waz.service.call.CallInfo
 import com.waz.service.call.CallInfo.CallState._
-import com.waz.service.{AccountsService, GlobalModule, ZMessaging}
+import com.waz.service.{AccountManager, AccountsService, GlobalModule, ZMessaging}
+import com.waz.threading.Threading.Implicits.Background
 import com.waz.ui.MemoryImageCache.BitmapRequest.Regular
 import com.waz.utils.LoggedTry
 import com.waz.utils.events.{EventContext, Signal}
@@ -41,6 +44,8 @@ import com.waz.zms.CallWakeService
 import org.threeten.bp.Instant
 import com.waz.utils._
 
+import scala.concurrent.Future
+import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
 class CallingNotificationsController(implicit cxt: WireContext, eventContext: EventContext, inj: Injector) extends Injectable {
@@ -52,6 +57,7 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
   val notificationManager = inject[NotificationManager]
 
   val callCtrler = inject[CallController]
+
   import callCtrler._
 
   val filteredGlobalProfile: Signal[(Option[ConvId], Seq[(ConvId, (UserId, UserId))])] = for {
@@ -101,21 +107,36 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
       case (cn1, cn2) => cn1.convId.str > cn2.convId.str
     }
 
-  private var currentNotifications = Set.empty[Int]
+  private lazy val currentNotificationsPref = inject[Signal[AccountManager]].map(_.userPrefs(UserPreferences.CurrentNotifications))
 
   notifications.map(_.exists(!_.isMainCall)).onUi(soundController.playRingFromThemInCall)
 
+  private def cancelNots(nots: Seq[CallingNotificationsController.CallNotification]): Unit = {
+    (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) Future.successful(notificationManager.getActiveNotifications.map(_.getId).toSet)
+    else
+      for {
+        pref  <- currentNotificationsPref.head
+        value <- pref()
+        _     <- pref := Set()
+      } yield value
+    ).onComplete {
+      case Failure(ex) => verbose(s"Got exception $ex whilst fetching active notifications")
+      case Success(activeNots) =>
+        val toCancel = activeNots -- nots.map(_.id).toSet
+        Future.successful(toCancel.foreach(notificationManager.cancel(CallNotificationTag, _)))
+    }
+  }
+
   notifications.onUi { nots =>
     verbose(s"${nots.size} call notifications")
-    val toCancel = currentNotifications -- nots.map(_.id).toSet
-    toCancel.foreach(notificationManager.cancel(CallNotificationTag, _))
 
+    cancelNots(nots)
     nots.foreach { not =>
       val title = if (not.isGroup) not.convName else not.caller
       val message = (not.isGroup, not.videoCall) match {
-        case (true, true)   => getString(R.string.system_notification__video_calling_group, not.caller)
-        case (true, false)  => getString(R.string.system_notification__calling_group, not.caller)
-        case (false, true)  => getString(R.string.system_notification__video_calling_one)
+        case (true, true) => getString(R.string.system_notification__video_calling_group, not.caller)
+        case (true, false) => getString(R.string.system_notification__calling_group, not.caller)
+        case (false, true) => getString(R.string.system_notification__video_calling_one)
         case (false, false) => getString(R.string.system_notification__calling_one)
       }
 
@@ -151,7 +172,10 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
       }
 
       def showNotification() = {
-        currentNotifications += not.id
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+          verbose(s"Adding not: ${not.id}")
+          currentNotificationsPref.head.foreach(_.mutate(_ + not.id))
+        }
         notificationManager.notify(CallNotificationTag, not.id, builder.build())
       }
 
