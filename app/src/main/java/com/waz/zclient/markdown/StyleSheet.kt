@@ -17,15 +17,14 @@
  */
 package com.waz.zclient.markdown
 
+import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.Paint
 import android.net.Uri
-import android.support.v4.content.ContextCompat
 import android.support.v4.content.ContextCompat.startActivity
-import android.widget.TextView
 import com.waz.zclient.R
 import com.waz.zclient.markdown.spans.GroupSpan
 import com.waz.zclient.markdown.spans.commonmark.*
@@ -39,34 +38,6 @@ import org.commonmark.node.*
  * syntax tree constructed from a marked down document.
  */
 public class StyleSheet {
-
-    companion object {
-        fun styleFor(textView: TextView): StyleSheet {
-            val context = textView.context
-            val style = StyleSheet()
-
-            style.baseFontColor = textView.currentTextColor
-            style.baseFontSize = textView.textSize.toInt()
-            style.linkColor = ContextCompat.getColor(context, R.color.accent_blue)
-
-            style.onClickLink = { url: String ->
-                // show dialog to confirm if url should be open
-                ViewUtils.showAlertDialog(context,
-                    context.getString(R.string.markdown_link_dialog_title),
-                    context.getString(R.string.markdown_link_dialog_message, url),
-                    context.getString(R.string.markdown_link_dialog_confirmation),
-                    context.getString(R.string.markdown_link_dialog_cancel),
-                    DialogInterface.OnClickListener { _, _ ->
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                        startActivity(context, intent, null)
-                    },
-                    null
-                )
-            }
-
-            return style
-        }
-    }
 
     /**
      * The base font size (in pixels) used for all markdown units unless otherwise specified.
@@ -167,6 +138,27 @@ public class StyleSheet {
     }
 
     private val Int.scaled: Int get() = (this * screenDensity).toInt()
+
+    /**
+     * Configures the handler when a markdown link is clicked by presenting a confirmation
+     * dialog from the given context.
+     */
+    fun configureLinkHandler(context: Context) {
+        onClickLink = { url: String ->
+            // show dialog to confirm if url should be open
+            ViewUtils.showAlertDialog(context,
+                context.getString(R.string.markdown_link_dialog_title),
+                context.getString(R.string.markdown_link_dialog_message, url),
+                context.getString(R.string.markdown_link_dialog_confirmation),
+                context.getString(R.string.markdown_link_dialog_cancel),
+                DialogInterface.OnClickListener { _, _ ->
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    startActivity(context, intent, null)
+                },
+                null
+            )
+        }
+    }
 
     /**
      * Returns the configured `GroupSpan` for the given node, depending on the node type.

@@ -18,14 +18,22 @@
 package com.waz.zclient.markdown;
 
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
+import android.support.v4.content.ContextCompat;
 import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
 import android.util.AttributeSet;
 
+import com.waz.zclient.R;
+import com.waz.zclient.controllers.accentcolor.AccentColorController;
 import com.waz.zclient.markdown.spans.GroupSpan;
 import com.waz.zclient.markdown.spans.commonmark.ImageSpan;
 import com.waz.zclient.markdown.spans.commonmark.LinkSpan;
 import com.waz.zclient.ui.text.TypefaceTextView;
+import com.waz.zclient.utils.ContextUtils;
+import com.waz.zclient.utils.ViewUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,17 +52,39 @@ public class MarkdownTextView extends TypefaceTextView {
         super(context);
     }
 
+    private StyleSheet mStyleSheet;
+
+
+    /**
+     * Configures the style sheet used for rendering.
+     */
+    private void configureStyleSheet() {
+        mStyleSheet = new StyleSheet();
+
+        mStyleSheet.setBaseFontColor(getCurrentTextColor());
+        mStyleSheet.setBaseFontSize((int) getTextSize());
+
+        mStyleSheet.setCodeColor(ContextUtils.getStyledColor(R.attr.codeColor, context()));
+        mStyleSheet.setQuoteColor(ContextUtils.getStyledColor(R.attr.quoteColor, context()));
+        mStyleSheet.setListPrefixColor(ContextUtils.getStyledColor(R.attr.listPrefixColor, context()));
+
+        // TODO: this should be users accent color
+        mStyleSheet.setLinkColor(ContextCompat.getColor(context(), R.color.accent_blue));
+
+        // to make links clickable
+        mStyleSheet.configureLinkHandler(context());
+        setMovementMethod(LinkMovementMethod.getInstance());
+    }
+
+
     /**
      * Mark down the text currently in the buffer.
      */
     public void markdown() {
-        StyleSheet ss = StyleSheet.Companion.styleFor(this);
-
-        // to make links clickable
-        setMovementMethod(LinkMovementMethod.getInstance());
+        if (mStyleSheet == null) { configureStyleSheet(); }
 
         String text = getText().toString();
-        SpannableString result = Markdown.parse(text, ss);
+        SpannableString result = Markdown.parse(text, mStyleSheet);
         setText(result);
     }
 
