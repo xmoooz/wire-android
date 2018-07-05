@@ -155,4 +155,9 @@
     <!-- Teams -->
     <attr name="roundBackgroundDrawable" format="reference" />
 
+    <!-- Markdown -->
+    <attr name="codeColor" format="reference" />
+    <attr name="quoteColor" format="reference" />
+    <attr name="listPrefixColor" format="reference" />
+
 </resources>

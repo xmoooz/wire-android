@@ -178,6 +178,11 @@
         <!-- Teams -->
         <item name="roundBackgroundDrawable">@drawable/rounded_corner_background_dark</item>
 
+        <!-- Markdown -->
+        <item name="codeColor">@color/white_64</item>
+        <item name="quoteColor">@color/white_64</item>
+        <item name="listPrefixColor">@color/white_64</item>
+
     </style>
 
     <style name="Theme.Light" parent="@style/Theme.Design.Light.NoActionBar">
@@ -336,6 +341,11 @@
 
         <!-- Teams -->
         <item name="roundBackgroundDrawable">@drawable/rounded_corner_background_light</item>
+
+        <!-- Markdown -->
+        <item name="codeColor">@color/graphite_64</item>
+        <item name="quoteColor">@color/graphite_64</item>
+        <item name="listPrefixColor">@color/graphite_64</item>
 
     </style>
 
