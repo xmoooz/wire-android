@@ -847,6 +847,13 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     containerPreview.setTranslationY(getView.getMeasuredHeight)
     containerPreview.animate.translationY(0).setDuration(getResources.getInteger(R.integer.animation_duration_medium)).setInterpolator(new Expo.EaseOut)
   }
+
+  override def onBackPressed(): Boolean = {
+    if(extendedCursorContainer.isExpanded) {
+      extendedCursorContainer.close(false)
+      true
+    } else false
+  }
 }
 
 object ConversationFragment {
