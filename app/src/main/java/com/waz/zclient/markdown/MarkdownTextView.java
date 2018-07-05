@@ -18,22 +18,17 @@
 package com.waz.zclient.markdown;
 
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.net.Uri;
 import android.support.v4.content.ContextCompat;
 import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
 import android.util.AttributeSet;
 
 import com.waz.zclient.R;
-import com.waz.zclient.controllers.accentcolor.AccentColorController;
 import com.waz.zclient.markdown.spans.GroupSpan;
 import com.waz.zclient.markdown.spans.commonmark.ImageSpan;
 import com.waz.zclient.markdown.spans.commonmark.LinkSpan;
 import com.waz.zclient.ui.text.TypefaceTextView;
 import com.waz.zclient.utils.ContextUtils;
-import com.waz.zclient.utils.ViewUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
