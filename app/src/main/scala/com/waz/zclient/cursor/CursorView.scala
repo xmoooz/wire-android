@@ -96,6 +96,8 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
   } yield
     !typing && (multiline || !scrolledToBottom)
 
+  lineCount.onUi(cursorEditText.setLines(_))
+
   dividerColor.onUi(dividerView.setBackgroundColor)
   bgColor.onUi(setBackgroundColor)
 
