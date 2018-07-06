@@ -93,12 +93,12 @@ public class StyleSheet {
     /**
      * The amount of spacing (in points) before a list item.
      */
-    public var listItemSpacingBefore: Int = 6
+    public var listItemSpacingBefore: Int = 4
 
     /**
      * The amount of spacing (in points) after a list item.
      */
-    public var listItemSpacingAfter: Int = 6
+    public var listItemSpacingAfter: Int = 4
 
     /**
      * The color of all monospace code text.
