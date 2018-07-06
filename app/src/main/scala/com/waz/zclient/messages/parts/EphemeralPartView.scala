@@ -75,22 +75,23 @@ trait EphemeralPartView extends MessageViewPart { self: ViewHelper =>
 
 trait EphemeralIndicatorPartView extends MessageViewPart with ViewHelper {
 
-  private val paint = returning(new Paint(Paint.ANTI_ALIAS_FLAG))(_.setColor(getColor(R.color.light_graphite)))
-  private val bgPaint = returning(new Paint(Paint.ANTI_ALIAS_FLAG))(_.setColor(getColor(R.color.light_graphite_16)))
+  private val paint = returning(new Paint(Paint.ANTI_ALIAS_FLAG))(_.setColor(getColor(R.color.white_80)))
+  private val bgPaint = returning(new Paint(Paint.ANTI_ALIAS_FLAG))(_.setColor(getColor(R.color.light_graphite)))
   private val circleSize = getDimenPx(R.dimen.ephemeral__animating_dots__width)
   private val paddingStart = (getDimenPx(R.dimen.content__padding_left) - circleSize) / 2
   private val paddingTop = getDimenPx(R.dimen.wire__padding__6)
+  private val borderPadding = getDimenPx(R.dimen.wire__padding__1)
 
   private val timerAngle = messageAndLikes
     .map { m => (m.message.ephemeral, m.message.expired, m.message.expiryTime) }  // optimisation to ignore unrelated changes
     .flatMap {
     case (ephemeral, expired, expiryTime) =>
-      if (expired) Signal const 0
-      else expiryTime.fold(Signal const 360) { time =>
+      if (expired) Signal const 360
+      else expiryTime.fold(Signal const 0) { time =>
         val interval = ephemeral.get / 360
         ClockSignal(interval) map { now =>
           val remaining = time.toEpochMilli - now.toEpochMilli
-          (remaining * 360f / ephemeral.get.toMillis).toInt max 0 min 360
+          360 - ((remaining * 360f / ephemeral.get.toMillis).toInt max 0 min 360)
         }
       }
   }
@@ -107,9 +108,10 @@ trait EphemeralIndicatorPartView extends MessageViewPart with ViewHelper {
     case Some((true, angle)) if canvas != null && canvas.getHeight > 0 =>
       val top = Math.min(paddingTop, (canvas.getHeight - circleSize) / 2)
       val circleRect = new RectF(paddingStart, top, paddingStart + circleSize, top + circleSize)
+      val innerRect = returning(new RectF(circleRect))(_.inset(borderPadding, borderPadding))
 
       canvas.drawArc(circleRect, 0, 360, true, bgPaint)
-      canvas.drawArc(circleRect, -90, -angle, true, paint)
+      canvas.drawArc(innerRect, -90, angle, true, paint)
     case _ => // nothing to draw, not ephemeral or not loaded
   }
 }
