@@ -52,12 +52,12 @@ public class StyleSheet {
     /**
      * The amount of spacing (in points) before a paragraph.
      */
-    public var paragraphSpacingBefore: Int = 16
+    public var paragraphSpacingBefore: Int = 6
 
     /**
      * The amount of spacing (in points) after a paragraph.
      */
-    public var paragraphSpacingAfter: Int = 16
+    public var paragraphSpacingAfter: Int = 6
 
     /**
      * The relative font size multiplers (values) for the various header levels (keys).
@@ -93,12 +93,12 @@ public class StyleSheet {
     /**
      * The amount of spacing (in points) before a list item.
      */
-    public var listItemSpacingBefore: Int = 16
+    public var listItemSpacingBefore: Int = 6
 
     /**
      * The amount of spacing (in points) after a list item.
      */
-    public var listItemSpacingAfter: Int = 16
+    public var listItemSpacingAfter: Int = 6
 
     /**
      * The color of all monospace code text.
