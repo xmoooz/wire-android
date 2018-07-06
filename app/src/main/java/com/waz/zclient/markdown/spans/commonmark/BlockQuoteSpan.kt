@@ -37,7 +37,7 @@ class BlockQuoteSpan(
 ) : BlockSpan() {
 
     init {
-        add(CustomQuoteSpan(color, stripeWidth, gapWidth, density))
+        add(CustomQuoteSpan(color, stripeWidth, gapWidth, density, beforeSpacing, afterSpacing))
         add(ParagraphSpacingSpan(beforeSpacing, afterSpacing))
         add(ForegroundColorSpan(color))
     }
