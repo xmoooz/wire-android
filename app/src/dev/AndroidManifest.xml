@@ -41,6 +41,7 @@
                 <action android:name="${applicationId}.intent.action.ENABLE_TRACKING" />
                 <action android:name="${applicationId}.intent.action.DISABLE_TRACKING" />
                 <action android:name="${applicationId}.intent.action.HIDE_GDPR_POPUPS" />
+                <action android:name="${applicationId}.intent.action.FULL_CONVERSATION_INTENT" />
             </intent-filter>
         </receiver>
 
