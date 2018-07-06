@@ -55,10 +55,8 @@ public class MarkdownTextView extends TypefaceTextView {
      */
     private void configureStyleSheet() {
         mStyleSheet = new StyleSheet();
-
         mStyleSheet.setBaseFontColor(getCurrentTextColor());
         mStyleSheet.setBaseFontSize((int) getTextSize());
-
         mStyleSheet.setCodeColor(ContextUtils.getStyledColor(R.attr.codeColor, context()));
         mStyleSheet.setQuoteColor(ContextUtils.getStyledColor(R.attr.quoteColor, context()));
         mStyleSheet.setListPrefixColor(ContextUtils.getStyledColor(R.attr.listPrefixColor, context()));
@@ -69,6 +67,8 @@ public class MarkdownTextView extends TypefaceTextView {
         // to make links clickable
         mStyleSheet.configureLinkHandler(context());
         setMovementMethod(LinkMovementMethod.getInstance());
+
+        setLineSpacing(0f, 1.1f);
     }
 
 
