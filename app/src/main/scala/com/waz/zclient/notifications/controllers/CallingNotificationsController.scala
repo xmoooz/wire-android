@@ -31,7 +31,7 @@ import com.waz.service.call.CallInfo.CallState._
 import com.waz.service.{AccountManager, AccountsService, GlobalModule, ZMessaging}
 import com.waz.threading.Threading.Implicits.Background
 import com.waz.ui.MemoryImageCache.BitmapRequest.Regular
-import com.waz.utils.LoggedTry
+import com.waz.utils.{LoggedTry, _}
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.utils.wrappers.{Context, Intent}
 import com.waz.zclient.Intents.{CallIntent, OpenCallingScreen}
@@ -42,11 +42,10 @@ import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.{DeprecationUtils, RingtoneUtils}
 import com.waz.zms.CallWakeService
 import org.threeten.bp.Instant
-import com.waz.utils._
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
 class CallingNotificationsController(implicit cxt: WireContext, eventContext: EventContext, inj: Injector) extends Injectable {
 
