@@ -81,6 +81,16 @@ public class StyleSheet {
     public var quoteGapWidth: Int = 16
 
     /**
+     * The amount of spacing (in points) before a quote.
+     */
+    public var quoteSpacingBefore: Int = 16
+
+    /**
+     * The amount of spacing (in points) after a quote.
+     */
+    public var quoteSpacingAfter: Int = 16
+
+    /**
      * The color of list prefixes
      */
     public var listPrefixColor: Int = Color.GRAY
@@ -184,8 +194,8 @@ public class StyleSheet {
                     quoteColor,
                     quoteStripeWidth,
                     quoteGapWidth,
-                    paragraphSpacingBefore,
-                    paragraphSpacingAfter,
+                    quoteSpacingBefore,
+                    quoteSpacingAfter,
                     screenDensity
                 )
             }

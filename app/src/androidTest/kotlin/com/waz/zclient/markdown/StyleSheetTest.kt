@@ -101,8 +101,8 @@ class StyleSheetTest {
         assertEquals(sut.quoteColor, span.color)
         assertEquals(sut.quoteStripeWidth, span.stripeWidth)
         assertEquals(sut.quoteGapWidth, span.gapWidth)
-        assertEquals(sut.paragraphSpacingBefore, span.beforeSpacing)
-        assertEquals(sut.paragraphSpacingAfter, span.afterSpacing)
+        assertEquals(sut.quoteSpacingBefore, span.beforeSpacing)
+        assertEquals(sut.quoteSpacingAfter, span.afterSpacing)
     }
 
     @Test
