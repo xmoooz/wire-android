@@ -49,7 +49,6 @@ public class MarkdownTextView extends TypefaceTextView {
 
     private StyleSheet mStyleSheet;
 
-
     /**
      * Configures the style sheet used for rendering.
      */
@@ -71,13 +70,11 @@ public class MarkdownTextView extends TypefaceTextView {
         setLineSpacing(0f, 1.1f);
     }
 
-
     /**
      * Mark down the text currently in the buffer.
      */
     public void markdown() {
         if (mStyleSheet == null) { configureStyleSheet(); }
-
         String text = getText().toString();
         SpannableString result = Markdown.parse(text, mStyleSheet);
         setText(result);
