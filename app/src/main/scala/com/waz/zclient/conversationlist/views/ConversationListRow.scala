@@ -120,7 +120,8 @@ class NormalConversationListRow(context: Context, attrs: AttributeSet, style: In
     availableCalls <- z.calling.availableCalls
     call           <- z.calling.currentCall
     callDuration   <- call.filter(_.convId == conv.id).fold(Signal.const(""))(_.durationFormatted)
-  } yield (conv.id, badgeStatusForConversation(conv, conv.unreadCount.messages, typing, availableCalls, callDuration))
+    isGroupConv    <- Signal.future(z.conversations.isGroupConversation(conv.id))
+  } yield (conv.id, badgeStatusForConversation(conv, conv.unreadCount.messages, typing, availableCalls, callDuration, isGroupConv))
 
   val subtitleText = for {
     z <- zms
@@ -346,11 +347,12 @@ object ConversationListRow {
                                  unreadCount:      Int,
                                  typing:           Boolean,
                                  availableCalls:   Map[ConvId, CallInfo],
-                                 callDuration:     String): ConversationBadge.Status = {
+                                 callDuration:     String,
+                                 isGroupConv:      Boolean): ConversationBadge.Status = {
 
     if (callDuration.nonEmpty) {
       ConversationBadge.OngoingCall(Some(callDuration))
-    } else if (availableCalls.contains(conversationData.id)) {
+    } else if (availableCalls.contains(conversationData.id) && isGroupConv) {
       availableCalls(conversationData.id).state match {
         case Some(CallInfo.CallState.SelfCalling) => OngoingCall(None)
         case _                                    => ConversationBadge.IncomingCall
