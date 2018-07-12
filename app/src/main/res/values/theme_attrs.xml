@@ -158,6 +158,7 @@
     <!-- Markdown -->
     <attr name="codeColor" format="reference" />
     <attr name="quoteColor" format="reference" />
+    <attr name="quoteStripeColor" format="reference" />
     <attr name="listPrefixColor" format="reference" />
 
 </resources>

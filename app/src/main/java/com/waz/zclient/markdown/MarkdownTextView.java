@@ -58,6 +58,7 @@ public class MarkdownTextView extends TypefaceTextView {
         mStyleSheet.setBaseFontSize((int) getTextSize());
         mStyleSheet.setCodeColor(ContextUtils.getStyledColor(R.attr.codeColor, context()));
         mStyleSheet.setQuoteColor(ContextUtils.getStyledColor(R.attr.quoteColor, context()));
+        mStyleSheet.setQuoteStripeColor(ContextUtils.getStyledColor(R.attr.quoteStripeColor, context()));
         mStyleSheet.setListPrefixColor(ContextUtils.getStyledColor(R.attr.listPrefixColor, context()));
 
         // TODO: this should be users accent color

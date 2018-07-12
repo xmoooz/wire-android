@@ -99,6 +99,7 @@ class StyleSheetTest {
         val span = result as BlockQuoteSpan
 
         assertEquals(sut.quoteColor, span.color)
+        assertEquals(sut.quoteStripeColor, span.stripeColor)
         assertEquals(sut.quoteStripeWidth, span.stripeWidth)
         assertEquals(sut.quoteGapWidth, span.gapWidth)
         assertEquals(sut.quoteSpacingBefore, span.beforeSpacing)

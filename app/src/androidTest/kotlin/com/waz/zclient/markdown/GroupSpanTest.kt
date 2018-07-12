@@ -104,7 +104,7 @@ class GroupSpanTest {
     @Test
     fun testThatItConfiguresSpansAndNode_BlockQuote() {
         // given
-        val sut = BlockQuoteSpan(Color.BLUE, 4, 8, 16, 8)
+        val sut = BlockQuoteSpan(Color.BLUE, Color.GREEN, 4, 8, 16, 8)
 
         // then
         assertEquals(GroupSpan.Priority.MEDIUM, sut.priority)
@@ -115,7 +115,7 @@ class GroupSpanTest {
         for (span in spans) {
             when (span) {
                 is CustomQuoteSpan -> {
-                    assertEquals(Color.BLUE, span.color)
+                    assertEquals(Color.GREEN, span.color)
                     assertEquals(4, span.stripeWidth)
                     assertEquals(8, span.gapWidth)
                 }

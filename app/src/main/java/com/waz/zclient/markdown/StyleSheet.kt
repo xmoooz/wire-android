@@ -66,9 +66,14 @@ public class StyleSheet {
     public var headingSizeMultipliers = mapOf(1 to 1.7f, 2 to 1.5f, 3 to 1.25f, 4 to 1.25f, 5 to 1.25f, 6 to 1.25f)
 
     /**
-     * The color of a quote (including stripe).
+     * The color of a quote text.
      */
     public var quoteColor: Int = Color.GRAY
+
+    /**
+     * The color of a quote stripe.
+     */
+    public var quoteStripeColor: Int = Color.GRAY
 
     /**
      * The width (in points) of the quote stripe.
@@ -192,6 +197,7 @@ public class StyleSheet {
             is BlockQuote -> {
                 return BlockQuoteSpan(
                     quoteColor,
+                    quoteStripeColor,
                     quoteStripeWidth,
                     quoteGapWidth,
                     quoteSpacingBefore,

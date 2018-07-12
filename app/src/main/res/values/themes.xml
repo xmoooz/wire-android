@@ -181,6 +181,7 @@
         <!-- Markdown -->
         <item name="codeColor">@color/white_64</item>
         <item name="quoteColor">@color/white_64</item>
+        <item name="quoteStripeColor">@color/white_24</item>
         <item name="listPrefixColor">@color/white_64</item>
 
     </style>
@@ -345,6 +346,7 @@
         <!-- Markdown -->
         <item name="codeColor">@color/graphite_64</item>
         <item name="quoteColor">@color/graphite_64</item>
+        <item name="quoteStripeColor">@color/graphite_24</item>
         <item name="listPrefixColor">@color/graphite_64</item>
 
     </style>
