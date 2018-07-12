@@ -18,12 +18,16 @@
 package com.waz.zclient.markdown;
 
 import android.content.Context;
-import android.support.v4.content.ContextCompat;
 import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
 import android.util.AttributeSet;
 
+import com.waz.api.AccentColor;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.R;
+import com.waz.zclient.ViewHelper;
+import com.waz.zclient.common.controllers.global.AccentColorCallback;
+import com.waz.zclient.common.controllers.global.AccentColorController;
 import com.waz.zclient.markdown.spans.GroupSpan;
 import com.waz.zclient.markdown.spans.commonmark.ImageSpan;
 import com.waz.zclient.markdown.spans.commonmark.LinkSpan;
@@ -34,7 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class MarkdownTextView extends TypefaceTextView {
+public class MarkdownTextView extends TypefaceTextView implements ViewHelper {
     public MarkdownTextView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
     }
@@ -61,8 +65,15 @@ public class MarkdownTextView extends TypefaceTextView {
         mStyleSheet.setQuoteStripeColor(ContextUtils.getStyledColor(R.attr.quoteStripeColor, context()));
         mStyleSheet.setListPrefixColor(ContextUtils.getStyledColor(R.attr.listPrefixColor, context()));
 
-        // TODO: this should be users accent color
-        mStyleSheet.setLinkColor(ContextCompat.getColor(context(), R.color.accent_blue));
+        // update the link color whenever the accent color changes
+        ((BaseActivity) getContext()).injectJava(AccentColorController.class).accentColorForJava(new AccentColorCallback() {
+            @Override
+            public void color(AccentColor color) {
+                mStyleSheet.setLinkColor(color.getColor());
+                setLinkTextColor(color.getColor());
+                refreshLinks();
+            }
+        }, eventContext());
 
         // to make links clickable
         mStyleSheet.configureLinkHandler(context());
@@ -82,7 +93,8 @@ public class MarkdownTextView extends TypefaceTextView {
     }
 
     /**
-     * Re-applies all LinkSpan and ImageSpan objects.
+     * Re-applies all LinkSpan and ImageSpan objects. Call this method after Linkifying the text
+     * preserve existing markdown links, or after changing the link color in the stylesheet.
      */
     public void refreshLinks() {
         if (!(getText() instanceof SpannableString)) { return; }
@@ -93,17 +105,21 @@ public class MarkdownTextView extends TypefaceTextView {
         List<GroupSpan> allSpans = new ArrayList<>(Arrays.asList(linkSpans));
         allSpans.addAll(Arrays.asList(imageSpans));
 
-
-        for (GroupSpan span: allSpans) {
+        for (GroupSpan span : allSpans) {
             int start = text.getSpanStart(span);
             int end = text.getSpanEnd(span);
             int flags = text.getSpanFlags(span);
 
-            // remove subspans & re-add them
-            for (Object subspan: span.getSpans()) {
-                text.removeSpan(subspan);
-                text.setSpan(subspan, start, end, flags);
-            }
+            // remove the group span & its subspans
+            text.removeSpan(span);
+            for (Object subspan : span.getSpans()) { text.removeSpan(subspan); }
+
+            // generate a new one (link color may have changed)
+            GroupSpan newGroupSpan = mStyleSheet.spanFor(span.toNode(null));
+
+            // add the group span & its subspans
+            text.setSpan(newGroupSpan, start, end, flags);
+            for (Object subspan : newGroupSpan.getSpans()) { text.setSpan(subspan, start, end, flags); }
         }
     }
 }
