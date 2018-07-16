@@ -19,7 +19,7 @@ package com.waz.zclient.preferences.pages
 
 import android.app.{Activity, FragmentTransaction}
 import android.content.DialogInterface.OnClickListener
-import android.content.{ClipData, ClipboardManager, Context, DialogInterface}
+import android.content.{ClipData, Context, DialogInterface}
 import android.os.Bundle
 import android.text.format.DateFormat
 import android.util.AttributeSet
@@ -72,6 +72,8 @@ trait DeviceDetailsView {
 class DeviceDetailsViewImpl(context: Context, attrs: AttributeSet, style: Int) extends ScrollView(context, attrs, style) with DeviceDetailsView with ViewHelper {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null, 0)
+
+  private val clipboard = inject[ClipboardUtils]
 
   inflate(R.layout.preferences_device_details_layout)
 
@@ -130,8 +132,7 @@ class DeviceDetailsViewImpl(context: Context, attrs: AttributeSet, style: Int) e
   }
 
   fingerprintView.onClickEvent{ _ =>
-    val clipboard: ClipboardManager = getContext.getSystemService(Context.CLIPBOARD_SERVICE).asInstanceOf[ClipboardManager]
-    val clip: ClipData = ClipData.newPlainText(getContext.getString(R.string.pref_devices_device_fingerprint_copy_description), fingerprint)
+    val clip = ClipData.newPlainText(getContext.getString(R.string.pref_devices_device_fingerprint_copy_description), fingerprint)
     clipboard.setPrimaryClip(clip)
     showToast(R.string.pref_devices_device_fingerprint_copy_toast)
   }
