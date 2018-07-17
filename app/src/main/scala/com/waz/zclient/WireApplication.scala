@@ -21,7 +21,7 @@ import java.io.File
 import java.util.Calendar
 
 import android.app.{Activity, ActivityManager, NotificationManager}
-import android.content.{ClipboardManager, Context, ContextWrapper}
+import android.content.{Context, ContextWrapper}
 import android.media.AudioManager
 import android.os.{Build, PowerManager, Vibrator}
 import android.renderscript.RenderScript
@@ -38,7 +38,7 @@ import com.waz.service._
 import com.waz.service.tracking.TrackingService
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.zclient.appentry.controllers.{CreateTeamController, InvitationsController}
-import com.waz.zclient.calling.controllers.{CallStartController, CallController}
+import com.waz.zclient.calling.controllers.{CallController, CallStartController}
 import com.waz.zclient.camera.controllers.{AndroidCameraFactory, GlobalCameraController}
 import com.waz.zclient.collection.controllers.CollectionController
 import com.waz.zclient.common.controllers.global.{AccentColorController, ClientsController, KeyboardController, PasswordController}
@@ -88,7 +88,6 @@ object WireApplication {
     bind [Vibrator]             to ctx.getSystemService(Context.VIBRATOR_SERVICE).asInstanceOf[Vibrator]
     bind [AudioManager]         to ctx.getSystemService(Context.AUDIO_SERVICE).asInstanceOf[AudioManager]
     bind [NotificationManager]  to ctx.getSystemService(Context.NOTIFICATION_SERVICE).asInstanceOf[NotificationManager]
-    bind [ClipboardManager]     to ctx.getSystemService(Context.CLIPBOARD_SERVICE).asInstanceOf[ClipboardManager]
     bind [RenderScript]         to RenderScript.create(ctx)
 
     def controllerFactory = APP_INSTANCE.asInstanceOf[ZApplication].getControllerFactory
@@ -170,6 +169,8 @@ object WireApplication {
     bind [DraftMap] to new DraftMap()
 
     bind [MessagesController]        to new MessagesController()
+
+    bind [ClipboardUtils]       to new ClipboardUtils(ctx)
   }
 
   def controllers(implicit ctx: WireContext) = new Module {

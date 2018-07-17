@@ -40,7 +40,7 @@ import com.waz.zclient.messages.MessageBottomSheetDialog
 import com.waz.zclient.messages.MessageBottomSheetDialog.{MessageAction, Params}
 import com.waz.zclient.notifications.controllers.ImageNotificationsController
 import com.waz.zclient.utils.ContextUtils._
-import com.waz.zclient.{Injectable, Injector, R}
+import com.waz.zclient.{ClipboardUtils, Injectable, Injector, R}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -53,7 +53,7 @@ class MessageActionsController(implicit injector: Injector, ctx: Context, ec: Ev
   private val context                   = inject[Activity]
   private lazy val keyboardController   = inject[KeyboardController]
   private lazy val userPrefsController  = inject[IUserPreferencesController]
-  private lazy val clipboardManager     = inject[ClipboardManager]
+  private lazy val clipboard            = inject[ClipboardUtils]
   private lazy val permissions          = inject[PermissionsService]
   private lazy val imageNotifications   = inject[ImageNotificationsController]
 
@@ -115,7 +115,7 @@ class MessageActionsController(implicit injector: Injector, ctx: Context, ec: Ev
     zms.head.flatMap(_.usersStorage.get(message.userId)) foreach {
       case Some(user) =>
         val clip = ClipData.newPlainText(getString(R.string.conversation__action_mode__copy__description, user.getDisplayName), message.contentString)
-        clipboardManager.setPrimaryClip(clip)
+        clipboard.setPrimaryClip(clip)
         Toast.makeText(context, R.string.conversation__action_mode__copy__toast, Toast.LENGTH_SHORT).show()
       case None =>
         // invalid message, ignoring
