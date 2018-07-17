@@ -97,6 +97,7 @@ object WireApplication {
     bind [AccountsService]                to ZMessaging.currentAccounts
     bind [AccountStorage]                 to inject[GlobalModule].accountsStorage
     bind [TeamsStorage]                   to inject[GlobalModule].teamsStorage
+    bind [SSOService]                     to inject[GlobalModule].ssoService
 
     bind [Signal[Option[AccountManager]]] to ZMessaging.currentAccounts.activeAccountManager
     bind [Signal[AccountManager]]         to inject[Signal[Option[AccountManager]]].collect { case Some(am) => am }

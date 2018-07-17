@@ -21,24 +21,33 @@ import android.os.Bundle
 import android.view.{LayoutInflater, View, ViewGroup}
 import android.widget.LinearLayout
 import com.waz.ZLog
+import com.waz.service.SSOService
 import com.waz.zclient.appentry.fragments.{SignInFragment, TeamNameFragment}
 import com.waz.zclient.appentry.fragments.SignInFragment._
-import com.waz.zclient.{FragmentHelper, R}
+import com.waz.zclient.{ClipboardUtils, FragmentHelper, InputDialog, R}
 import com.waz.zclient.utils.{LayoutSpec, RichView}
+import com.waz.ZLog.verbose
+import com.waz.ZLog.ImplicitTag._
+import com.waz.zclient.InputDialog.{Event, OnNegativeBtn, OnPositiveBtn, ValidatorResult}
 
 object AppLaunchFragment {
   val Tag: String = ZLog.ImplicitTag.implicitLogTag
+  private val SSODialogTag = "SSO_DIALOG"
 
   def apply(): AppLaunchFragment = new AppLaunchFragment()
 }
 
-class AppLaunchFragment extends FragmentHelper {
+class AppLaunchFragment extends FragmentHelper with InputDialog.Listener with InputDialog.InputValidator {
+  import AppLaunchFragment._
 
   private def activity = getActivity.asInstanceOf[AppEntryActivity]
 
-  lazy val createTeamButton = view[LinearLayout](R.id.create_team_button)
-  lazy val createAccountButton = view[LinearLayout](R.id.create_account_button)
-  lazy val loginButton = view[View](R.id.login_button)
+  private lazy val clipboard   = inject[ClipboardUtils]
+  private lazy val ssoService  = inject[SSOService]
+
+  private lazy val createTeamButton = view[LinearLayout](R.id.create_team_button)
+  private lazy val createAccountButton = view[LinearLayout](R.id.create_account_button)
+  private lazy val loginButton = view[View](R.id.login_button)
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View =
     inflater.inflate(R.layout.app_entry_scene, container, false)
@@ -53,4 +62,38 @@ class AppLaunchFragment extends FragmentHelper {
     })))
     loginButton.foreach(_.onClick(activity.showFragment(SignInFragment(SignInMethod(Login, Email)), SignInFragment.Tag)))
   }
+
+  override def onResume(): Unit = {
+    super.onResume()
+    if (Option(getChildFragmentManager.findFragmentByTag(SSODialogTag)).nonEmpty) return
+    for {
+      clipboardText <- clipboard.getPrimaryClipItemsAsText.headOption
+      _ = verbose(s"In clipboard: $clipboardText")
+      token <- ssoService.extractToken(clipboardText.toString)
+    } {
+      InputDialog
+        .newInstance(
+          title = R.string.app_entry_sso_dialog_tittle,
+          message = R.string.app_entry_sso_dialog_message,
+          inputValue = Some(token),
+          inputHint = Some(R.string.hint_change_filter),
+          validateInput = true,
+          disablePositiveBtnOnInvalidInput = true,
+          negativeBtn = R.string.app_entry_dialog_cancel,
+          positiveBtn = R.string.app_entry_dialog_accept
+        )
+        .show(getChildFragmentManager, SSODialogTag)
+    }
+  }
+
+  override def onDialogEvent(dialogTag: String, event: Event): Unit = event match {
+    case OnNegativeBtn => verbose("Negative")
+    case OnPositiveBtn(input) => verbose(s"Positive: $input")
+  }
+
+  override def isInputInvalid(dialogTag: String, input: String): ValidatorResult = {
+    if (ssoService.extractToken(input).nonEmpty) ValidatorResult.Valid
+    else ValidatorResult.Invalid()
+  }
+
 }

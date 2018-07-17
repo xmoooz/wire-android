@@ -1,6 +1,8 @@
 package com.waz.zclient
 
+import android.content.ClipboardManager.OnPrimaryClipChangedListener
 import android.content.{ClipData, ClipboardManager, Context}
+import com.waz.utils.events.EventStream
 
 /**
   * Wire
@@ -24,6 +26,18 @@ class ClipboardUtils(context: Context) {
 
   private lazy val clipboardManager: ClipboardManager =
     context.getSystemService(Context.CLIPBOARD_SERVICE).asInstanceOf[ClipboardManager]
+
+  def primaryClipChanged: EventStream[Unit] = new EventStream[Unit] {
+    private val listener = new OnPrimaryClipChangedListener {
+      override def onPrimaryClipChanged(): Unit = publish(())
+    }
+    override protected def onWire(): Unit = {
+      clipboardManager.addPrimaryClipChangedListener(listener)
+    }
+    override protected def onUnwire(): Unit = {
+      clipboardManager.removePrimaryClipChangedListener(listener)
+    }
+  }
 
   def setPrimaryClip(data: ClipData): Unit = clipboardManager.setPrimaryClip(data)
 
