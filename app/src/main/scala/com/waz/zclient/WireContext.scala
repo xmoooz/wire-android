@@ -128,13 +128,32 @@ trait ServiceHelper extends Service with Injectable with WireContext with EventC
 
 
 
-trait FragmentHelper extends Fragment with OnBackPressedListener with ViewFinder with Injectable with EventContext {
+trait FragmentHelper extends Fragment
+  with OnBackPressedListener
+  with ViewFinder
+  with EventContext
+  with CanInject
+  with LifecycleResumePause
+  with LifecycleStartStop
+  with HasFragmentManager
+  with HasChildFragmentManager
+  with HasContext {
 
   implicit def currentAndroidContext: Context = getContext
   lazy implicit val injector: Injector = getActivity.asInstanceOf[WireContext].injector
   override implicit def eventContext: EventContext = this
 
   private var views: List[ViewHolder[_]] = Nil
+
+  //new methods
+
+  override def fragmentManager: FragmentManager = getFragmentManager
+
+  override def childFragmentManager: FragmentManager = getChildFragmentManager
+
+  override def context2: Context = getContext
+
+  //new methods
 
   @SuppressLint(Array("com.waz.ViewUtils"))
   def findById[V <: View](id: Int) = {
@@ -209,17 +228,19 @@ trait FragmentHelper extends Fragment with OnBackPressedListener with ViewFinder
     false
   }
 
-  override def onResume() = {
+  override def onResume(): Unit = {
     super.onResume()
     views.foreach(_.onResume())
+    onResumeCalled()
   }
 
-  override def onPause() = {
+  override def onPause(): Unit = {
     views.foreach(_.onPause())
     super.onPause()
+    onPauseCalled()
   }
 
-  override def onDestroyView() = {
+  override def onDestroyView(): Unit = {
     views foreach(_.clear())
     super.onDestroyView()
   }
@@ -227,11 +248,13 @@ trait FragmentHelper extends Fragment with OnBackPressedListener with ViewFinder
   override def onStart(): Unit = {
     onContextStart()
     super.onStart()
+    onStartCalled()
   }
 
   override def onStop(): Unit = {
     super.onStop()
     onContextStop()
+    onStopCalled()
   }
 
   override def onDestroy(): Unit = {
@@ -415,4 +438,32 @@ trait PreferenceHelper extends Preference with Injectable with EventContext {
     onContextStop()
     super.onDetached()
   }
+}
+
+trait LifecycleResumePause {
+  protected def onResumeCalled(): Unit = ()
+  protected def onPauseCalled(): Unit = ()
+}
+
+trait LifecycleStartStop {
+  protected def onStartCalled(): Unit = ()
+  protected def onStopCalled(): Unit = ()
+}
+
+trait HasFragmentManager {
+  protected def fragmentManager: FragmentManager
+}
+
+trait HasChildFragmentManager {
+  protected def childFragmentManager: FragmentManager
+  protected def findChildFragment[T](tag: String): Option[T] =
+    Option(childFragmentManager.findFragmentByTag(tag)).map(_.asInstanceOf[T])
+}
+
+trait HasContext {
+  protected def context2: Context
+}
+
+trait CanInject extends Injectable {
+  implicit protected val injector: Injector
 }

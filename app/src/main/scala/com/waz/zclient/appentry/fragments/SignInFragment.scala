@@ -35,7 +35,7 @@ import com.waz.threading.Threading
 import com.waz.utils.events.Signal
 import com.waz.utils.returning
 import com.waz.zclient._
-import com.waz.zclient.appentry.AppEntryActivity
+import com.waz.zclient.appentry.{AppEntryActivity, SSOFeatures}
 import com.waz.zclient.appentry.DialogErrorMessage.{EmailError, PhoneError}
 import com.waz.zclient.appentry.fragments.SignInFragment._
 import com.waz.zclient.common.controllers.BrowserController
@@ -54,7 +54,8 @@ import com.waz.zclient.utils._
 
 class SignInFragment extends FragmentHelper
   with View.OnClickListener
-  with CountryController.Observer {
+  with CountryController.Observer
+  with SSOFeatures {
 
   implicit def context: Context = getActivity
 

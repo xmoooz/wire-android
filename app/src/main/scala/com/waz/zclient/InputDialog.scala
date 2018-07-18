@@ -42,7 +42,7 @@ object InputDialog {
     /**
       * @return Non empty option with error message if input is invalid.
       */
-    def isInputInvalid(dialogTag: String, input: String): ValidatorResult
+    def isInputInvalid(input: String): ValidatorResult
   }
 
   private val Title = "TITLE"
@@ -55,7 +55,7 @@ object InputDialog {
   private val PositiveBtn = "POSITIVE_BTN"
 
   trait Listener {
-    def onDialogEvent(dialogTag: String, event: Event): Unit
+    def onDialogEvent(event: Event): Unit
   }
 
   def newInstance(
@@ -91,18 +91,17 @@ class InputDialog extends DialogFragment {
 
   import InputDialog._
 
-  private def listener: Listener = (getParentFragment, getActivity) match {
-    case (l: Listener, _) => l
-    case (_, l: Listener) => l
-    case _ =>
-      throw new RuntimeException("Parent fragment or activity do not implement Listener trait")
+  private var listener: Option[Listener] = None
+  private var validator: Option[InputValidator] = None
+
+  def setListener(listener: Listener): this.type = {
+    this.listener = Some(listener)
+    this
   }
 
-  private def inputValidator: InputValidator = (getParentFragment, getActivity) match {
-    case (iv: InputValidator, _) => iv
-    case (_, iv: InputValidator) => iv
-    case _ =>
-      throw new RuntimeException("Parent fragment or activity do not implement InputValidator trait")
+  def setValidator(validator: InputValidator): this.type = {
+    this.validator = Some(validator)
+    this
   }
 
   override def onCreateDialog(savedInstanceState: Bundle): Dialog = {
@@ -114,7 +113,7 @@ class InputDialog extends DialogFragment {
     val input = view.findViewById[EditText](R.id.input)
 
     message.setText(args.getInt(Message))
-    Option(args.getString(InputHint)).foreach(input.setHint)
+    Option(args.getInt(InputHint)).foreach(input.setHint)
 
     if (savedInstanceState == null) {
       Option(args.getString(Input)).foreach(input.setText)
@@ -125,11 +124,11 @@ class InputDialog extends DialogFragment {
       .setView(view)
       .setNegativeButton(args.getInt(NegativeBtn), new DialogInterface.OnClickListener {
         override def onClick(dialogInterface: DialogInterface, i: Int): Unit =
-          listener.onDialogEvent(getTag, OnNegativeBtn)
+          listener.foreach(_.onDialogEvent(OnNegativeBtn))
       })
       .setPositiveButton(args.getInt(PositiveBtn), new DialogInterface.OnClickListener {
         override def onClick(dialogInterface: DialogInterface, i: Int): Unit =
-          listener.onDialogEvent(getTag, OnPositiveBtn(input.getText.toString))
+          listener.foreach(_.onDialogEvent(OnPositiveBtn(input.getText.toString)))
       })
       .create()
 
@@ -137,12 +136,14 @@ class InputDialog extends DialogFragment {
       val disablePositiveBtnOnInvalidInput = args.getBoolean(DisablePositiveBtnOnInvalidInput)
       lazy val positiveBtn = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
       input.addTextListener { str =>
-        inputValidator.isInputInvalid(getTag, str) match {
-          case ValidatorResult.Valid =>
-            if (disablePositiveBtnOnInvalidInput) positiveBtn.setEnabled(true)
-          case ValidatorResult.Invalid(actions) =>
-            if (disablePositiveBtnOnInvalidInput) positiveBtn.setEnabled(false)
-            actions.foreach(_(input))
+        validator.foreach { inputValidator =>
+          inputValidator.isInputInvalid(str) match {
+            case ValidatorResult.Valid =>
+              if (disablePositiveBtnOnInvalidInput) positiveBtn.setEnabled(true)
+            case ValidatorResult.Invalid(actions) =>
+              if (disablePositiveBtnOnInvalidInput) positiveBtn.setEnabled(false)
+              actions.foreach(_(input))
+          }
         }
       }
     }
