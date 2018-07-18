@@ -25,7 +25,7 @@ import android.os.Bundle
 import android.support.v4.content.ContextCompat
 import android.transition._
 import android.view.{LayoutInflater, View, ViewGroup}
-import android.widget.{FrameLayout, LinearLayout}
+import android.widget.{Button, FrameLayout, LinearLayout}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
 import com.waz.api.impl.ErrorResponse
@@ -116,6 +116,7 @@ class SignInFragment extends FragmentHelper
     R.layout.sign_up_phone_scene
   )
 
+  private lazy val companyLoginButton = view[Button](R.id.btn_company_login)
   private lazy val phoneButton = view[TypefaceTextView](R.id.ttv__new_reg__sign_in__go_to__phone)
   private lazy val emailButton = view[TypefaceTextView](R.id.ttv__new_reg__sign_in__go_to__email)
   private lazy val tabSelector = view[TabIndicatorLayout](R.id.til__app_entry)
@@ -185,7 +186,7 @@ class SignInFragment extends FragmentHelper
     }
 
   override def onViewCreated(view: View, savedInstanceState: Bundle): Unit = {
-
+    companyLoginButton.foreach(_.setOnClickListener(this))
     phoneButton.foreach(_.setOnClickListener(this))
     emailButton.foreach(_.setOnClickListener(this))
     closeButton.foreach(_.setOnClickListener(this))
@@ -304,6 +305,9 @@ class SignInFragment extends FragmentHelper
 
   override def onClick(v: View) = {
     v.getId match {
+      case R.id.btn_company_login =>
+        showSSODialog(None)
+
       case R.id.ttv__new_reg__sign_in__go_to__email =>
         uiSignInState.mutate {
           case SignInMethod(x, Phone) => SignInMethod(x, Email)

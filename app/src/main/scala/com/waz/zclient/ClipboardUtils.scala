@@ -3,6 +3,9 @@ package com.waz.zclient
 import android.content.ClipboardManager.OnPrimaryClipChangedListener
 import android.content.{ClipData, ClipboardManager, Context}
 import com.waz.utils.events.EventStream
+import com.waz.utils.returning
+import com.waz.ZLog.verbose
+import com.waz.ZLog.ImplicitTag._
 
 /**
   * Wire
@@ -41,7 +44,10 @@ class ClipboardUtils(context: Context) {
 
   def setPrimaryClip(data: ClipData): Unit = clipboardManager.setPrimaryClip(data)
 
-  def getPrimaryClip: Option[ClipData] = Option(clipboardManager.getPrimaryClip)
+  def getPrimaryClip: Option[ClipData] =
+    returning(Option(clipboardManager.getPrimaryClip)) { primaryClip =>
+      verbose(s"Primary clip is empty: ${primaryClip.isEmpty}")
+    }
 
   @inline
   def getItems(data: ClipData): Stream[ClipData.Item] =

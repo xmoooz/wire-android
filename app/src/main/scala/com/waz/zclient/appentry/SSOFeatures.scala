@@ -25,6 +25,8 @@ import com.waz.utils.events.EventContext
 import com.waz.zclient.InputDialog.{Event, OnNegativeBtn, OnPositiveBtn, ValidatorResult}
 import com.waz.zclient._
 
+import scala.concurrent.Future
+
 object SSOFeatures {
   val SSODialogTag = "SSO_DIALOG"
 }
@@ -32,6 +34,8 @@ object SSOFeatures {
 trait SSOFeatures extends CanInject with LifecycleStartStop with HasChildFragmentManager {
 
   import SSOFeatures._
+  import com.waz.threading.Threading.Implicits.Background
+  import com.waz.threading.Threading
 
   private lazy val clipboard   = inject[ClipboardUtils]
   private lazy val ssoService  = inject[SSOService]
@@ -60,23 +64,28 @@ trait SSOFeatures extends CanInject with LifecycleStartStop with HasChildFragmen
     clipboardSubscription.destroy()
   }
 
-  protected def showSSODialogIfNeeded(): Unit = {
-    if (findChildFragment[InputDialog](SSODialogTag).isEmpty) {
+  private def extractTokenFromClipboard: Future[Option[String]] = {
+    Future {
       for {
         clipboardText <- clipboard.getPrimaryClipItemsAsText.headOption
-        _ = verbose(s"In clipboard: $clipboardText")
         token <- ssoService.extractToken(clipboardText.toString)
-      } { showSSODialog(Some(token)) }
+      } yield token
+    }
+  }
+
+  protected def showSSODialogIfNeeded(): Unit = {
+    if (findChildFragment[InputDialog](SSODialogTag).isEmpty) {
+      extractTokenFromClipboard.filter(_.nonEmpty).foreach(showSSODialog)(Threading.Ui)
     }
   }
 
   protected def showSSODialog(token: Option[String]): Unit = {
     InputDialog
       .newInstance(
-        title = R.string.app_entry_sso_dialog_tittle,
+        title = R.string.app_entry_sso_dialog_title,
         message = R.string.app_entry_sso_dialog_message,
         inputValue = token,
-        inputHint = Some(R.string.hint_change_filter),
+        inputHint = Some(R.string.app_entry_sso_input_hint),
         validateInput = true,
         disablePositiveBtnOnInvalidInput = true,
         negativeBtn = R.string.app_entry_dialog_cancel,
@@ -88,7 +97,7 @@ trait SSOFeatures extends CanInject with LifecycleStartStop with HasChildFragmen
   }
 
   protected def cancelSSODialog(): Unit = {
-    findChildFragment[InputDialog](SSODialogTag).foreach(_.dismiss())
+    findChildFragment[InputDialog](SSODialogTag).foreach(_.dismissAllowingStateLoss())
   }
 
 }
