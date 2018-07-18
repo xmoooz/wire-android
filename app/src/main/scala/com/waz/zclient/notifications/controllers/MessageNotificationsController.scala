@@ -94,14 +94,14 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
       case (userId, shouldBeSilent, nots, teamName) if nots.nonEmpty =>
         createConvNotifications(userId, shouldBeSilent, nots, teamName)
       case (userId, _, _, _) =>
-        notificationsToCancel ! Set(toNotificationGroupId(userId))
+        notificationsToCancel ! Set(toNotificationGroupId(userId), toEphemeralNotificationGroupId(userId))
     }
   }
 
   newNotifications { notifications =>
     if (bundleEnabled) {
       val notIdSet = notifications.flatMap { case (userId, _, nots, _) =>
-        nots.map(n => toNotificationConvId(userId, n.convId)) ++ Seq(toNotificationGroupId(userId))
+        nots.flatMap(n => Seq(toNotificationConvId(userId, n.convId), toEphemeralNotificationConvId(userId, n.convId))) ++ Seq(toNotificationGroupId(userId))
       }.toSet
 
       val activeIds = inject[NotificationManagerWrapper].getActiveNotificationIds.toSet
@@ -128,7 +128,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
           case _                      => Set.empty[ConvId]
         })
     }.toMap) { displayedConversations =>
-    notificationsService.notificationsSourceVisible ! displayedConversations 
+    notificationsService.notificationsSourceVisible ! displayedConversations
   }
 
   private def fetchTeamName(userId: UserId) =
@@ -183,19 +183,24 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
     )
 
   private def createConvNotifications(userId: UserId, silent: Boolean, nots: Seq[NotificationInfo], teamName: Option[String]): Unit = {
-      verbose(s"createConvNotifications($userId, ${nots.map(_.convId)})")
+      //verbose(s"createConvNotifications($userId, ${nots.map(_.convId)})")
       if (bundleEnabled) {
         val summary = createSummaryNotificationProps(userId, silent, nots, teamName)
         notificationToBuild ! (toNotificationGroupId(userId), summary)
       }
 
+      val (ephemeral, normal) = nots.partition(_.isEphemeral)
+    verbose(s"createConvNotifications($userId, ${normal.map(_.convId)}, ${ephemeral.map(_.convId)})")
+
       val groupedConvs =
         if (bundleEnabled)
-          nots.groupBy(_.convId).map {
+          normal.groupBy(_.convId).map {
             case (convId, ns) => toNotificationConvId(userId, convId) -> ns
-          }
+          } ++ ephemeral.groupBy(_.convId).map {
+              case (convId, ns) => toEphemeralNotificationConvId(userId, convId) -> ns
+            }
         else
-          Map(toNotificationGroupId(userId) -> nots)
+          Map(toNotificationGroupId(userId) -> normal, toEphemeralNotificationGroupId(userId) -> ephemeral)
 
       val teamNameOpt = if (groupedConvs.keys.size > 1) None else teamName
 
@@ -430,8 +435,9 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
 
 object MessageNotificationsController {
   def toNotificationGroupId(userId: UserId): Int = userId.str.hashCode()
+  def toEphemeralNotificationGroupId(userId: UserId): Int = toNotificationGroupId(userId) + 1
   def toNotificationConvId(userId: UserId, convId: ConvId): Int = (userId.str + convId.str).hashCode()
-  def channelId(userId: UserId): String = userId.str
+  def toEphemeralNotificationConvId(userId: UserId, convId: ConvId): Int = toNotificationConvId(userId, convId) + 1
 
   val ZETA_MESSAGE_NOTIFICATION_ID: Int = 1339272
   val ZETA_EPHEMERAL_NOTIFICATION_ID: Int = 1339279
