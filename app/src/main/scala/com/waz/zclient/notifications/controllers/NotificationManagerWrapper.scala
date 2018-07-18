@@ -209,6 +209,13 @@ case class NotificationProps(when:                     Option[Long] = None,
       case (accountId, convId, requestBase) => builder.setContentIntent(Intents.OpenConvIntent(accountId, convId, requestBase))
     }
 
+    clearNotificationsIntent.foreach {
+      case (uId, Some(convId)) =>
+        builder.setDeleteIntent(NotificationsAndroidService.clearNotificationsIntent(uId, convId, cxt))
+      case (uId, None) =>
+        builder.setDeleteIntent(NotificationsAndroidService.clearNotificationsIntent(uId, cxt))
+    }
+
     contentInfo.foreach(builder.setContentInfo)
     color.foreach(builder.setColor)
     vibrate.foreach(builder.setVibrate)
