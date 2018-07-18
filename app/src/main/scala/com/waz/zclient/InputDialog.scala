@@ -45,7 +45,7 @@ object InputDialog {
     def isInputInvalid(dialogTag: String, input: String): ValidatorResult
   }
 
-  private val Tittle = "TITTLE"
+  private val Title = "TITLE"
   private val Message = "MESSAGE"
   private val Input = "INPUT"
   private val InputHint = "INPUT_HINT"
@@ -72,7 +72,7 @@ object InputDialog {
     val dialog = new InputDialog()
     val bundle = new Bundle()
 
-    bundle.putInt(Tittle, title)
+    bundle.putInt(Title, title)
     bundle.putInt(Message, message)
     inputValue.foreach(i => bundle.putString(Input, i))
     inputHint.foreach(ih => bundle.putInt(InputHint, ih))
@@ -121,7 +121,7 @@ class InputDialog extends DialogFragment {
     }
 
     val dialog = new AlertDialog.Builder(getContext)
-      .setTitle(args.getInt(Tittle))
+      .setTitle(args.getInt(Title))
       .setView(view)
       .setNegativeButton(args.getInt(NegativeBtn), new DialogInterface.OnClickListener {
         override def onClick(dialogInterface: DialogInterface, i: Int): Unit =

@@ -92,7 +92,7 @@ class AppLaunchFragment extends FragmentHelper with InputDialog.Listener with In
   }
 
   override def isInputInvalid(dialogTag: String, input: String): ValidatorResult = {
-    if (ssoService.extractToken(input).nonEmpty) ValidatorResult.Valid
+    if (ssoService.isTokenValid(input.trim)) ValidatorResult.Valid
     else ValidatorResult.Invalid()
   }
 
