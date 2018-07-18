@@ -260,9 +260,10 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
 
     sendInfo(createInfo("1:1"))
 
-    val props = waitForOne()
-    props.contentTitle.exists(_.spans.exists(_.style == Span.StyleSpanBold)) && // the title should be in bold
-    props.style.exists(_.summaryText.contains(teamName)) // and since the user has a team account, the summary text contains the name
+    waitForOne { props =>
+     props.contentTitle.exists(_.spans.exists(_.style == Span.StyleSpanBold)) && // the title should be in bold
+        props.style.exists(_.summaryText.contains(teamName)) // and since the user has a team account, the summary text contains the name
+    }
   }
 
   @Test
@@ -273,9 +274,10 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
 
     sendInfos(List(createInfo("1:1", convId = convId), createInfo("1:2", convId = convId)))
 
-    val props = waitForOne()
-    props.style.exists(_.lines.size == 2) && // we received two messages
-      props.contentTitle.exists(_.header.args == StringArgs(List(convName))) // but the conv is the same, so its name is the title
+    waitForOne { props =>
+      props.style.exists(_.lines.size == 2) && // we received two messages
+        props.contentTitle.exists(_.header.args == StringArgs(List(convName))) // but the conv is the same, so its name is the title
+    }
   }
 
   @Test
@@ -287,9 +289,10 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
 
     sendInfos(List(createInfo("one", convId = convId1), createInfo("two", convId = convId2)))
 
-    val props = waitForOne()
-    props.contentTitle.exists(_.header.args == AnyRefArgs(List(2.asInstanceOf[AnyRef], "2"))) && // the title says there are two notifications from two conversations
-      props.contentText.exists(_.body == ResString(0, 0, StringArgs(List("two")))) // the main message is the last one
+    waitForOne { props =>
+      props.contentTitle.exists(_.header.args == AnyRefArgs(List(2.asInstanceOf[AnyRef], "2"))) && // the title says there are two notifications from two conversations
+        props.contentText.exists(_.body == ResString(0, 0, StringArgs(List("two")))) // the main message is the last one
+    }
   }
 
   @Test
@@ -318,9 +321,10 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
 
     sendInfos(infos)
 
-    val props = waitForOne()
-    props.contentTitle.exists(_.header.args == AnyRefArgs(List(9.asInstanceOf[AnyRef], "3"))) &&  // nine notifications from three conversations
+    waitForOne { props =>
+      props.contentTitle.exists(_.header.args == AnyRefArgs(List(9.asInstanceOf[AnyRef], "3"))) &&  // nine notifications from three conversations
       props.contentText.exists(_.body == ResString(0, 0, StringArgs(List("3:9")))) // the main message is the last one
+    }
   }
 
   @Test
@@ -354,9 +358,10 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
 
     sendInfos(List(info1, info2, info3))
 
-    val props = waitForOne()
-    props.contentTitle.exists(_.header.args == StringArgs(Nil)) && // the title doesn't contain the username
+    waitForOne { props =>
+      props.contentTitle.exists(_.header.args == StringArgs(Nil)) && // the title doesn't contain the username
       props.style.exists(_.lines.map(_.body.args.asInstanceOf[StringArgs].args.headOption) == List(Some("111"), Some("222"), None)) // the body contains two first messages, but only a placeholder for the third one
+    }
   }
 
   @Test
@@ -368,12 +373,13 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
 
     sendInfos(List(info1, info2))
 
-    val props = waitForOne()
-    props.style.exists(_.lines.size == 2) &&  // we receive two one-liners
-    props.style.exists(_.lines.head.header.args == StringArgs(List("user1 user name", "user1 conv name"))) && // the first contains the user name and the conv name
-    props.style.exists(_.lines.head.body.args ==  StringArgs(List("111"))) &&  // and the message
-    props.style.exists(_.lines.tail.head.header.args == StringArgs(Nil)) && // the other does not have them - instead strings from the resources should be displayed
-    props.style.exists(_.lines.tail.head.body.args == StringArgs(Nil))
+    waitForOne { props =>
+      props.style.exists(_.lines.size == 2) &&  // we receive two one-liners
+      props.style.exists(_.lines.head.header.args == StringArgs(List("user1 user name", "user1 conv name"))) && // the first contains the user name and the conv name
+      props.style.exists(_.lines.head.body.args ==  StringArgs(List("111"))) &&  // and the message
+      props.style.exists(_.lines.tail.head.header.args == StringArgs(Nil)) && // the other does not have them - instead strings from the resources should be displayed
+      props.style.exists(_.lines.tail.head.body.args == StringArgs(Nil))
+    }
   }
 
   @Test
@@ -403,9 +409,10 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
 
     sendInfos(List(info1, info2))
 
-    val props = waitForOne()
-    props.contentTitle.exists(_.header.args == StringArgs(Nil)) &&  // the title doesn't contain the username
+    waitForOne { props =>
+      props.contentTitle.exists(_.header.args == StringArgs(Nil)) &&  // the title doesn't contain the username
       props.contentText.exists(_.body.args == StringArgs(List("222"))) // the body contains the second message
+    }
   }
 
   @Test
@@ -424,13 +431,14 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
 
     sendInfos(List(info1, info2, info3))
 
-    val props = waitForOne()
-    props.contentTitle.exists(_.header.args == AnyRefArgs(List[AnyRef](3.asInstanceOf[AnyRef], "2")))  && // the title says that these are three notifications from two conversations
+    waitForOne { props =>
+      props.contentTitle.exists(_.header.args == AnyRefArgs(List[AnyRef](3.asInstanceOf[AnyRef], "2")))  && // the title says that these are three notifications from two conversations
       props.style.exists(_.lines.size == 3) &&  // there are three notifications
       props.style.exists(_.lines.head.header.args == StringArgs(Nil)) && // but no information visible about the first one
       props.style.exists(_.lines.tail.head.header.args == StringArgs(List(userName1, userName1))) && // the other two are visible
       props.style.exists(_.lines.tail.tail.head.header.args == StringArgs(List(userName2, userName2))) &&
       props.style.exists(_.lines.map(_.body.args.asInstanceOf[StringArgs].args.headOption) == List(None, Some("222"), Some("333")))
+    }
   }
 
   @Test
