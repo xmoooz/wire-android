@@ -34,17 +34,6 @@
         android:layout_gravity="top|start"
         />
 
-    <Button
-        android:id="@+id/btn_company_login"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="@dimen/first_time__logo__padding_left"
-        android:layout_marginTop="@dimen/wire_logo_margin_top"
-        android:layout_gravity="end"
-        android:text="Company login"
-        android:textSize="@dimen/wire__text_size__regular"
-        />
-
     <com.waz.zclient.ui.text.GlyphTextView
         android:id="@+id/close_button"
         android:layout_width="wrap_content"

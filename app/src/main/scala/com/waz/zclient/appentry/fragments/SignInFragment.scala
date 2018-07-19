@@ -25,7 +25,7 @@ import android.os.Bundle
 import android.support.v4.content.ContextCompat
 import android.transition._
 import android.view.{LayoutInflater, View, ViewGroup}
-import android.widget.{Button, FrameLayout, LinearLayout}
+import android.widget.{FrameLayout, LinearLayout}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
 import com.waz.api.impl.ErrorResponse
@@ -116,7 +116,6 @@ class SignInFragment extends FragmentHelper
     R.layout.sign_up_phone_scene
   )
 
-  private lazy val companyLoginButton = view[Button](R.id.btn_company_login)
   private lazy val phoneButton = view[TypefaceTextView](R.id.ttv__new_reg__sign_in__go_to__phone)
   private lazy val emailButton = view[TypefaceTextView](R.id.ttv__new_reg__sign_in__go_to__email)
   private lazy val tabSelector = view[TabIndicatorLayout](R.id.til__app_entry)
@@ -137,6 +136,7 @@ class SignInFragment extends FragmentHelper
   def termsOfService = Option(findById[TypefaceTextView](R.id.terms_of_service_text))
 
   def forgotPasswordButton = Option(findById[View](getView, R.id.ttv_signin_forgot_password))
+  def companyLoginButton = Option(findById[View](getView, R.id.ttv_signin_sso))
 
   def setupViews(): Unit = {
 
@@ -177,6 +177,7 @@ class SignInFragment extends FragmentHelper
     confirmationButton.foreach(_.setAccentColor(Color.WHITE))
     setConfirmationButtonActive(isValid.currentValue.getOrElse(false))
     forgotPasswordButton.foreach(_.setOnClickListener(this))
+    companyLoginButton.foreach(_.setOnClickListener(this))
   }
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View =
@@ -186,7 +187,6 @@ class SignInFragment extends FragmentHelper
     }
 
   override def onViewCreated(view: View, savedInstanceState: Bundle): Unit = {
-    companyLoginButton.foreach(_.setOnClickListener(this))
     phoneButton.foreach(_.setOnClickListener(this))
     emailButton.foreach(_.setOnClickListener(this))
     closeButton.foreach(_.setOnClickListener(this))
@@ -305,7 +305,7 @@ class SignInFragment extends FragmentHelper
 
   override def onClick(v: View) = {
     v.getId match {
-      case R.id.btn_company_login =>
+      case R.id.ttv_signin_sso =>
         showSSODialog(None)
 
       case R.id.ttv__new_reg__sign_in__go_to__email =>
