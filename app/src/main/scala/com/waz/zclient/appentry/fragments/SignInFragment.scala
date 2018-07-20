@@ -22,6 +22,7 @@ import android.graphics.Color
 import android.os.Build.VERSION.SDK_INT
 import android.os.Build.VERSION_CODES.KITKAT
 import android.os.Bundle
+import android.support.v4.app.Fragment
 import android.support.v4.content.ContextCompat
 import android.transition._
 import android.view.{LayoutInflater, View, ViewGroup}
@@ -395,6 +396,8 @@ class SignInFragment extends FragmentHelper
     } else {
       false
     }
+
+  protected def showFragment(f: => Fragment, tag: String, animated: Boolean = true): Unit = activity.showFragment(f, tag)
 
   def activity = getActivity.asInstanceOf[AppEntryActivity]
 }

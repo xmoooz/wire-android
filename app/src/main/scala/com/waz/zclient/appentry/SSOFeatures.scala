@@ -17,6 +17,7 @@
  */
 package com.waz.zclient.appentry
 
+import android.support.v4.app.Fragment
 import com.waz.ZLog.verbose
 import com.waz.ZLog.ImplicitTag._
 import com.waz.utils.events.Subscription
@@ -43,7 +44,11 @@ trait SSOFeatures extends CanInject with LifecycleStartStop with HasChildFragmen
   private lazy val dialogStaff = new InputDialog.Listener with InputDialog.InputValidator {
     override def onDialogEvent(event: Event): Unit = event match {
       case OnNegativeBtn => verbose("Negative")
-      case OnPositiveBtn(input) => verbose(s"Positive: $input")
+      case OnPositiveBtn(input) =>
+        ssoService.extractUUID(input).foreach { uuid =>
+          showFragment(SSOWebViewFragment.newInstance(uuid.toString), SSOWebViewFragment.Tag)
+        }
+
     }
     override def isInputInvalid(input: String): ValidatorResult =
       if (ssoService.isTokenValid(input.trim)) ValidatorResult.Valid
@@ -89,7 +94,7 @@ trait SSOFeatures extends CanInject with LifecycleStartStop with HasChildFragmen
         validateInput = true,
         disablePositiveBtnOnInvalidInput = true,
         negativeBtn = R.string.app_entry_dialog_cancel,
-        positiveBtn = R.string.app_entry_dialog_accept
+        positiveBtn = R.string.app_entry_dialog_log_in
       )
       .setListener(dialogStaff)
       .setValidator(dialogStaff)
@@ -99,5 +104,7 @@ trait SSOFeatures extends CanInject with LifecycleStartStop with HasChildFragmen
   protected def cancelSSODialog(): Unit = {
     findChildFragment[InputDialog](SSODialogTag).foreach(_.dismissAllowingStateLoss())
   }
+
+  protected def showFragment(f: => Fragment, tag: String, animated: Boolean = true): Unit
 
 }

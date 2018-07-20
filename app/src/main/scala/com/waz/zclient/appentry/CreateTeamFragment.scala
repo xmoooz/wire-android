@@ -74,7 +74,7 @@ trait CreateTeamFragment extends FragmentHelper {
     })
   }
 
-  protected def showFragment(f: => Fragment, tag: String): Unit = activity.showFragment(f, tag)
+  protected def showFragment(f: => Fragment, tag: String, animated: Boolean = true): Unit = activity.showFragment(f, tag, animated)
 
   override def onBackPressed(): Boolean =
     if (getFragmentManager.getBackStackEntryCount > 1) {
