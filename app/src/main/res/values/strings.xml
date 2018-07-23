@@ -1443,4 +1443,7 @@
         <item quantity="other">Up to 300 people can join a conversation. Currently there is only room for %1$s more people.</item>
     </plurals>
     <string name="sso_signin_button">Company log in</string>
+
+    <string name="sso_signin_error_title">Something went wrong</string>
+    <string name="sso_signin_error_message">Please contact your team administrator for details (Error %1$s).</string>
 </resources>

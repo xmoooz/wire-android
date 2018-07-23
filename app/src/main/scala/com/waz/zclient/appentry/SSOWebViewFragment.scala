@@ -24,7 +24,6 @@ import android.view.{LayoutInflater, View, ViewGroup}
 import android.webkit.WebView
 import android.widget.TextView
 import com.waz.ZLog
-import com.waz.api.impl.ErrorResponse
 import com.waz.service.{AccountsService, ZMessaging}
 import com.waz.threading.Threading
 import com.waz.utils._
@@ -57,17 +56,14 @@ class SSOWebViewFragment extends FragmentHelper {
       import Threading.Implicits.Ui
 
       webViewWrapper.loginWithCode(code).flatMap {
-        case Left((cookie, userId)) =>
-          //TODO: Move this to SE
-          for {
-            _  <- accountsService.addAccountEntryNoCredentials(userId, cookie)
-            am <- accountsService.createAccountManager(userId, None, isLogin = Some(true))
-            _  <- accountsService.setAccount(Some(userId))
-            _  <- am.fold2(Future.successful(Left(ErrorResponse.internalError(""))), _.getOrRegisterClient())
-          } yield getActivity.asInstanceOf[AppEntryActivity].onEnterApplication(false)
-        case Right(error) =>
-          ViewUtils.showAlertDialog(getActivity, "Error", "error message", "ok", null, true)
-          Future.successful({})
+        case Right((cookie, userId)) =>
+          accountsService.ssoLogin(userId, cookie).map {
+            case Left(error) =>
+              showSSOError(error.label)
+            case _ =>
+              getActivity.asInstanceOf[AppEntryActivity].onEnterApplication(openSettings = false)
+          }
+        case Left(error) => showSSOError(error)
       }
     }
 
@@ -77,6 +73,14 @@ class SSOWebViewFragment extends FragmentHelper {
     })
 
   }
+
+  def showSSOError(label: String): Future[Unit] =
+    Future.successful({
+      val title = getString(R.string.sso_signin_error_title)
+      val message = getString(R.string.sso_signin_error_message, label)
+      val ok = getString(android.R.string.ok)
+      ViewUtils.showAlertDialog(getActivity, title, message, ok, null, true)
+    })
 
   override def onBackPressed(): Boolean = {
     if (webView.map(_.canGoBack).getOrElse(false))

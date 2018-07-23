@@ -55,7 +55,7 @@ class SSOWebViewWrapper(webView: WebView, backendHost: String) {
   })
 
   def loginWithCode(code: String): Future[SSOResponse] = {
-    loginPromise.tryComplete(Success(Right("cancelled")))
+    loginPromise.tryComplete(Success(Left("cancelled")))
     loginPromise = Promise[SSOResponse]()
 
     val url = URI.parse(s"$backendHost/${InitiateLoginPath(code)}")
@@ -72,12 +72,12 @@ class SSOWebViewWrapper(webView: WebView, backendHost: String) {
   protected def parseURL(url: String): Option[SSOResponse] = {
     val uri = URI.parse(url)
     val cookie = Option(uri.getQueryParameter("cookie"))
-    val userId = Option(uri.getQueryParameter("userid"))
+    val userId = Option(uri.getQueryParameter("user"))
     val failure = Option(uri.getQueryParameter("failure"))
 
     (cookie, userId, failure) match {
-      case (Some(c), Some(uId), _) => Some(Left(Cookie(c), UserId(uId)))
-      case (_, _, Some(f)) => Some(Right(f))
+      case (Some(c), Some(uId), _) => Some(Right(Cookie(c), UserId(uId)))
+      case (_, _, Some(f)) => Some(Left(f))
       case _ => None
     }
   }
@@ -86,9 +86,6 @@ class SSOWebViewWrapper(webView: WebView, backendHost: String) {
 
 object SSOWebViewWrapper {
 
-  //TODO: REMOVE!
-  val TestCredentials = (Cookie("pJSP6_gVLhHRN5V0miZ6r8fRfuXj-WyGBZN2l1u2lOh0a-y3JTwnjao6ipSdifqNmNI5RIia2pIzR-3fNphTCw==.v=1.k=1.d=1536936840.t=u.l=.u=36f3d01f-4f29-470e-8cb6-7523dee79c8d.r=608c01f3"), UserId("36f3d01f-4f29-470e-8cb6-7523dee79c8d"))
-
-  type SSOResponse = Either[(Cookie, UserId), String]
+  type SSOResponse = Either[String, (Cookie, UserId)]
   def InitiateLoginPath(code: String) = s"sso/initiate-login/$code"
 }
