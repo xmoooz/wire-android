@@ -23,6 +23,8 @@ import android.os.Bundle
 import android.support.annotation.StringRes
 import android.support.v4.app.DialogFragment
 import android.support.v7.app.AlertDialog
+import android.view.View
+import android.view.View.OnAttachStateChangeListener
 import android.widget.{EditText, TextView}
 import com.waz.zclient.utils.RichTextView
 
@@ -135,17 +137,22 @@ class InputDialog extends DialogFragment {
     if (args.getBoolean(ValidateInput)) {
       val disablePositiveBtnOnInvalidInput = args.getBoolean(DisablePositiveBtnOnInvalidInput)
       lazy val positiveBtn = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-      input.addTextListener { str =>
-        validator.foreach { inputValidator =>
-          inputValidator.isInputInvalid(str) match {
-            case ValidatorResult.Valid =>
-              if (disablePositiveBtnOnInvalidInput) positiveBtn.setEnabled(true)
-            case ValidatorResult.Invalid(actions) =>
-              if (disablePositiveBtnOnInvalidInput) positiveBtn.setEnabled(false)
-              actions.foreach(_(input))
-          }
+
+      def validate(str: String): Unit = validator.foreach { inputValidator =>
+        inputValidator.isInputInvalid(str) match {
+          case ValidatorResult.Valid =>
+            if (disablePositiveBtnOnInvalidInput) positiveBtn.setEnabled(true)
+          case ValidatorResult.Invalid(actions) =>
+            if (disablePositiveBtnOnInvalidInput) positiveBtn.setEnabled(false)
+            actions.foreach(_(input))
         }
       }
+
+      input.addOnAttachStateChangeListener(new OnAttachStateChangeListener {
+        override def onViewDetachedFromWindow(v: View): Unit = {}
+        override def onViewAttachedToWindow(v: View): Unit = validate(input.getText.toString)
+      })
+      input.addTextListener(str => validate(str))
     }
 
     dialog
