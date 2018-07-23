@@ -18,7 +18,6 @@
 package com.waz.zclient.appentry
 
 import android.os.Bundle
-import android.support.v4.app.Fragment
 import android.view.{LayoutInflater, View, ViewGroup}
 import android.widget.LinearLayout
 import com.waz.ZLog
@@ -55,5 +54,5 @@ class AppLaunchFragment extends FragmentHelper with SSOFeatures {
     loginButton.foreach(_.onClick(activity.showFragment(SignInFragment(SignInMethod(Login, Email)), SignInFragment.Tag)))
   }
 
-  protected def showFragment(f: => Fragment, tag: String, animated: Boolean = true): Unit = activity.showFragment(f, tag, animated)
+  override protected def onSSOConfirm(code: String): Unit = activity.showFragment(SSOWebViewFragment.newInstance(code.toString), SSOWebViewFragment.Tag)
 }

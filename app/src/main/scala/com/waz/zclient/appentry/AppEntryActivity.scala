@@ -231,7 +231,7 @@ class AppEntryActivity extends BaseActivity {
   def showFragment(f: => Fragment, tag: String, animated: Boolean = true): Unit = {
     val transaction = getSupportFragmentManager.beginTransaction()
     if (animated) setDefaultAnimation(transaction)
-      transaction
+    transaction
       .replace(R.id.fl_main_content, f, tag)
       .addToBackStack(tag)
       .commit

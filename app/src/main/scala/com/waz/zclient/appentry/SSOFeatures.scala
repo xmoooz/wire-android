@@ -17,7 +17,6 @@
  */
 package com.waz.zclient.appentry
 
-import android.support.v4.app.Fragment
 import com.waz.ZLog.verbose
 import com.waz.ZLog.ImplicitTag._
 import com.waz.utils.events.Subscription
@@ -45,10 +44,7 @@ trait SSOFeatures extends CanInject with LifecycleStartStop with HasChildFragmen
     override def onDialogEvent(event: Event): Unit = event match {
       case OnNegativeBtn => verbose("Negative")
       case OnPositiveBtn(input) =>
-        ssoService.extractUUID(input).foreach { uuid =>
-          showFragment(SSOWebViewFragment.newInstance(uuid.toString), SSOWebViewFragment.Tag)
-        }
-
+        ssoService.extractUUID(input).foreach(uuid => onSSOConfirm(uuid.toString))
     }
     override def isInputInvalid(input: String): ValidatorResult =
       if (ssoService.isTokenValid(input.trim)) ValidatorResult.Valid
@@ -105,6 +101,6 @@ trait SSOFeatures extends CanInject with LifecycleStartStop with HasChildFragmen
     findChildFragment[InputDialog](SSODialogTag).foreach(_.dismissAllowingStateLoss())
   }
 
-  protected def showFragment(f: => Fragment, tag: String, animated: Boolean = true): Unit
+  protected def onSSOConfirm(code: String): Unit
 
 }

@@ -22,7 +22,6 @@ import android.graphics.Color
 import android.os.Build.VERSION.SDK_INT
 import android.os.Build.VERSION_CODES.KITKAT
 import android.os.Bundle
-import android.support.v4.app.Fragment
 import android.support.v4.content.ContextCompat
 import android.transition._
 import android.view.{LayoutInflater, View, ViewGroup}
@@ -36,7 +35,7 @@ import com.waz.threading.Threading
 import com.waz.utils.events.Signal
 import com.waz.utils.returning
 import com.waz.zclient._
-import com.waz.zclient.appentry.{AppEntryActivity, SSOFeatures}
+import com.waz.zclient.appentry.{AppEntryActivity, SSOFeatures, SSOWebViewFragment}
 import com.waz.zclient.appentry.DialogErrorMessage.{EmailError, PhoneError}
 import com.waz.zclient.appentry.fragments.SignInFragment._
 import com.waz.zclient.common.controllers.BrowserController
@@ -397,7 +396,7 @@ class SignInFragment extends FragmentHelper
       false
     }
 
-  protected def showFragment(f: => Fragment, tag: String, animated: Boolean = true): Unit = activity.showFragment(f, tag)
+  override protected def onSSOConfirm(code: String): Unit = activity.showFragment(SSOWebViewFragment.newInstance(code.toString), SSOWebViewFragment.Tag)
 
   def activity = getActivity.asInstanceOf[AppEntryActivity]
 }
