@@ -60,32 +60,39 @@ class SSOWebViewWrapper(webView: WebView, backendHost: String) {
 
     val url = URI.parse(s"$backendHost/${InitiateLoginPath(code)}")
       .buildUpon
-      .appendQueryParameter("success_redirect", "wire://localhost/?$cookie&user=$userid")
-      .appendQueryParameter("error_redirect", "wire://localhost/?$label")
+      .appendQueryParameter("success_redirect", s"/success/?$CookieQuery=$$cookie&$UserIdQuery=$$userid")
+      .appendQueryParameter("error_redirect", s"/error/?$FailureQuery=$$label")
       .build
       .toString
 
     webView.loadUrl(url)
     loginPromise.future
   }
-
-  protected def parseURL(url: String): Option[SSOResponse] = {
-    val uri = URI.parse(url)
-    val cookie = Option(uri.getQueryParameter("cookie"))
-    val userId = Option(uri.getQueryParameter("user"))
-    val failure = Option(uri.getQueryParameter("failure"))
-
-    (cookie, userId, failure) match {
-      case (Some(c), Some(uId), _) => Some(Right(Cookie(c), UserId(uId)))
-      case (_, _, Some(f)) => Some(Left(f))
-      case _ => None
-    }
-  }
-
 }
 
 object SSOWebViewWrapper {
 
+  val ResponseSchema = "wire"
+  val CookieQuery = "cookie"
+  val UserIdQuery = "user"
+  val FailureQuery = "failure"
+
   type SSOResponse = Either[String, (Cookie, UserId)]
   def InitiateLoginPath(code: String) = s"sso/initiate-login/$code"
+
+  def parseURL(url: String): Option[SSOResponse] = {
+    val uri = URI.parse(url)
+
+    if (uri.getScheme.equals(ResponseSchema)) {
+      val cookie = Option(uri.getQueryParameter(CookieQuery))
+      val userId = Option(uri.getQueryParameter(UserIdQuery))
+      val failure = Option(uri.getQueryParameter(FailureQuery))
+
+      (cookie, userId, failure) match {
+        case (Some(c), Some(uId), _) => Some(Right(Cookie(c), UserId(uId)))
+        case (_, _, Some(f)) => Some(Left(f))
+        case _ => None
+      }
+    } else None
+  }
 }
