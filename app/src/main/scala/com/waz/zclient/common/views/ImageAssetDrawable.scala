@@ -108,15 +108,6 @@ class ImageAssetDrawable(src: Signal[ImageSource],
 
   override def draw(canvas: Canvas): Unit = {
 
-    // will only use fadeIn if we previously displayed an empty bitmap
-    // this way we can avoid animating if view was recycled
-    def resetAnimation(state: State) = {
-      animator.cancel()
-      if (state.bmp.nonEmpty && prev.exists(_.bmp.isEmpty)) {
-        animator.start()
-      }
-    }
-
     def updateMatrix(b: Bitmap) = {
       val bounds = fixedBounds.currentValue.flatten.fold(getBounds)(b => b)
       val p = padding.currentValue.getOrElse(Offset.Empty)
@@ -124,14 +115,20 @@ class ImageAssetDrawable(src: Signal[ImageSource],
       matrix.postTranslate(bounds.left + p.l, bounds.top + p.t)
     }
 
-    def updateDrawingState(state: State) = {
-      state.bmp foreach updateMatrix
-      if (prev.forall(p => p.src != state.src || p.bmp.isEmpty != state.bmp.isEmpty)) resetAnimation(state)
-    }
+    // will only use fadeIn if we previously displayed an empty bitmap
+    // this way we can avoid animating if view was recycled
+    def updateAnimationState(state: State) =
+      if (prev.forall(p => p.src != state.src || p.bmp.isEmpty != state.bmp.isEmpty)) {
+        animator.cancel()
+        if (state.bmp.nonEmpty && prev.exists(_.bmp.isEmpty)) {
+          animator.start()
+        }
+      }
 
     _state foreach { st =>
+      st.bmp foreach updateMatrix
       if (!prev.contains(st)) {
-        updateDrawingState(st)
+        updateAnimationState(st)
         prev = Some(st)
       }
 
