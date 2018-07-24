@@ -27,6 +27,7 @@ import com.waz.ZLog
 import com.waz.service.{AccountsService, ZMessaging}
 import com.waz.threading.Threading
 import com.waz.utils._
+import com.waz.utils.wrappers.URI
 import com.waz.zclient.appentry.SSOWebViewFragment._
 import com.waz.zclient.utils.ViewUtils
 import com.waz.zclient.{FragmentHelper, R}
@@ -52,7 +53,9 @@ class SSOWebViewFragment extends FragmentHelper {
 
     webView.foreach { webView =>
       val webViewWrapper = new SSOWebViewWrapper(webView, ZMessaging.currentGlobal.backend.baseUrl.toString)
-      webViewWrapper.onTitleChanged.onUi(title.setText(_))
+      webViewWrapper.onUrlChanged.onUi { url =>
+        title.setText(Option(URI.parse(url).getHost).getOrElse(""))
+      }
       import Threading.Implicits.Ui
 
       webViewWrapper.loginWithCode(code).flatMap {
