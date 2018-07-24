@@ -23,13 +23,13 @@ import android.util.AttributeSet
 import android.view.View
 import android.widget.LinearLayout
 import com.waz.ZLog.ImplicitTag._
-import com.waz.service.{AccountManager, ZMessaging}
+import com.waz.service.AccountManager
 import com.waz.threading.{CancellableFuture, Threading}
 import com.waz.utils.events.Signal
 import com.waz.utils.returning
 import com.waz.zclient.preferences.views.SwitchPreference
 import com.waz.zclient.tracking.GlobalTrackingController.analyticsPrefKey
-import com.waz.zclient.tracking.{CrashController, MixpanelGuard}
+import com.waz.zclient.tracking.{CrashController, GlobalTrackingController, MixpanelGuard}
 import com.waz.zclient.utils.{BackStackKey, ContextUtils}
 import com.waz.zclient.{R, ViewHelper}
 
@@ -42,7 +42,8 @@ class DataUsagePermissionsView(context: Context, attrs: AttributeSet, style: Int
   import Threading.Implicits.Ui
   inflate(R.layout.data_usage_permissions_layout)
 
-  private val am = inject[Signal[AccountManager]]
+  private val am       = inject[Signal[AccountManager]]
+  private val tracking = inject[GlobalTrackingController]
 
   val analyticsSwitch = returning(findById[SwitchPreference](R.id.preferences_send_anonymous_data)) { v =>
 
@@ -53,9 +54,9 @@ class DataUsagePermissionsView(context: Context, attrs: AttributeSet, style: Int
 
     v.setPreference(analyticsPrefKey, global = true)
     v.pref.flatMap(_.signal).onChanged { pref =>
-      if (pref) ZMessaging.currentGlobal.trackingService.optIn()
+      if (pref) tracking.optIn()
       else {
-        ZMessaging.currentGlobal.trackingService.optOut()
+        tracking.optOut()
         CrashController.deleteCrashReports(context.getApplicationContext)
       }
       setAnalyticsSwitchEnabled(false)
