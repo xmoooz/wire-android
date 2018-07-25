@@ -24,11 +24,13 @@ import android.view.{LayoutInflater, View, ViewGroup}
 import android.webkit.WebView
 import android.widget.TextView
 import com.waz.ZLog
+import com.waz.ZLog.ImplicitTag._
 import com.waz.service.{AccountsService, ZMessaging}
 import com.waz.threading.Threading
 import com.waz.utils._
 import com.waz.utils.wrappers.URI
 import com.waz.zclient.appentry.SSOWebViewFragment._
+import com.waz.zclient.appentry.fragments.FirstLaunchAfterLoginFragment
 import com.waz.zclient.utils.ViewUtils
 import com.waz.zclient.{FragmentHelper, R}
 
@@ -63,8 +65,14 @@ class SSOWebViewFragment extends FragmentHelper {
           accountsService.ssoLogin(userId, cookie).map {
             case Left(error) =>
               showSSOError(error.label)
+            case Right(true) =>
+              activity.showFragment(FirstLaunchAfterLoginFragment(userId), FirstLaunchAfterLoginFragment.Tag)
             case _ =>
-              getActivity.asInstanceOf[AppEntryActivity].onEnterApplication(openSettings = false)
+              for {
+                am <- accountsService.accountManagers.head.map(_.find(_.userId == userId))
+                clState <- am.fold2(Future.successful(None), _.getOrRegisterClient().map(_.fold(_ => None, Some(_))))
+                _ <- accountsService.setAccount(Some(userId))
+              } getActivity.asInstanceOf[AppEntryActivity].onEnterApplication(openSettings = false, clState)
           }
         case Left(error) => showSSOError(error)
       }
@@ -92,6 +100,8 @@ class SSOWebViewFragment extends FragmentHelper {
       getFragmentManager.popBackStack()
     true
   }
+
+  def activity = getActivity.asInstanceOf[AppEntryActivity]
 
 }
 
