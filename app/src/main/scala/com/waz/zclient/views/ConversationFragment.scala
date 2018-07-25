@@ -47,11 +47,11 @@ import com.waz.zclient.calling.controllers.{CallController, CallStartController}
 import com.waz.zclient.camera.controllers.GlobalCameraController
 import com.waz.zclient.collection.controllers.CollectionController
 import com.waz.zclient.common.controllers.global.KeyboardController
-import com.waz.zclient.common.controllers.{ThemeController, UserAccountsController}
+import com.waz.zclient.common.controllers.{ScreenController, ThemeController, UserAccountsController}
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver
 import com.waz.zclient.controllers.confirmation.{ConfirmationCallback, ConfirmationRequest, IConfirmationController}
 import com.waz.zclient.controllers.drawing.IDrawingController
-import com.waz.zclient.controllers.giphy.GiphyObserver
+import com.waz.zclient.controllers.drawing.IDrawingController.DrawingDestination.CAMERA_PREVIEW_VIEW
 import com.waz.zclient.controllers.globallayout.KeyboardVisibilityObserver
 import com.waz.zclient.controllers.navigation.{NavigationControllerObserver, Page, PagerControllerObserver}
 import com.waz.zclient.controllers.orientation.OrientationControllerObserver
@@ -64,13 +64,13 @@ import com.waz.zclient.messages.{MessagesController, MessagesListView}
 import com.waz.zclient.pages.BaseFragment
 import com.waz.zclient.pages.extendedcursor.ExtendedCursorContainer
 import com.waz.zclient.pages.extendedcursor.emoji.EmojiKeyboardLayout
-import com.waz.zclient.pages.extendedcursor.image.{CursorImagesLayout}
+import com.waz.zclient.pages.extendedcursor.image.CursorImagesLayout
 import com.waz.zclient.pages.extendedcursor.voicefilter.VoiceFilterLayout
-import com.waz.zclient.pages.main.{ImagePreviewCallback, ImagePreviewLayout}
 import com.waz.zclient.pages.main.conversation.{AssetIntentsManager, MessageStreamAnimation}
 import com.waz.zclient.pages.main.conversationlist.ConversationListAnimation
 import com.waz.zclient.pages.main.conversationpager.controller.SlidingPaneObserver
 import com.waz.zclient.pages.main.profile.camera.CameraContext
+import com.waz.zclient.pages.main.{ImagePreviewCallback, ImagePreviewLayout}
 import com.waz.zclient.participants.ParticipantsController
 import com.waz.zclient.participants.fragments.SingleParticipantFragment
 import com.waz.zclient.ui.animation.interpolators.penner.Expo
@@ -93,6 +93,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
 
   private lazy val convController         = inject[ConversationController]
   private lazy val messagesController     = inject[MessagesController]
+  private lazy val screenController       = inject[ScreenController]
   private lazy val collectionController   = inject[CollectionController]
   private lazy val permissions            = inject[PermissionsService]
   private lazy val participantsController = inject[ParticipantsController]
@@ -325,7 +326,6 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
 
     getControllerFactory.getNavigationController.addNavigationControllerObserver(navigationControllerObserver)
     getControllerFactory.getNavigationController.addPagerControllerObserver(pagerControllerObserver)
-    getControllerFactory.getGiphyController.addObserver(giphyObserver)
     getControllerFactory.getSingleImageController.addSingleImageObserver(singleImageObserver)
     getControllerFactory.getAccentColorController.addAccentColorObserver(accentColorObserver)
     getControllerFactory.getGlobalLayoutController.addKeyboardVisibilityObserver(keyboardVisibilityObserver)
@@ -360,7 +360,6 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     getControllerFactory.getGlobalLayoutController.removeKeyboardVisibilityObserver(extendedCursorContainer)
 
     getControllerFactory.getOrientationController.removeOrientationControllerObserver(orientationControllerObserver)
-    getControllerFactory.getGiphyController.removeObserver(giphyObserver)
     getControllerFactory.getSingleImageController.removeSingleImageObserver(singleImageObserver)
 
     if (!cursorView.isEditingMessage) draftMap.setCurrent(cursorView.getText.trim)
@@ -424,7 +423,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     }
 
     override def onSketchOnPreviewPicture(imageAsset: ImageAsset, source: ImagePreviewLayout.Source, method: IDrawingController.DrawingMethod): Unit = {
-      getControllerFactory.getDrawingController.showDrawing(imageAsset, IDrawingController.DrawingDestination.CAMERA_PREVIEW_VIEW, method)
+      screenController.showSketch ! (imageAsset, CAMERA_PREVIEW_VIEW, method)
       extendedCursorContainer.close(true)
     }
 
@@ -692,14 +691,6 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     override def onPagerEnabledStateHasChanged(enabled: Boolean): Unit = {}
     override def onPageSelected(position: Int): Unit = {}
     override def onPageScrollStateChanged(state: Int): Unit = {}
-  }
-
-  private val giphyObserver = new GiphyObserver {
-    override def onSearch(keyword: LogTag): Unit = {}
-    override def onRandomSearch(): Unit = {}
-    override def onTrendingSearch(): Unit = {}
-    override def onCloseGiphy(): Unit = cursorView.setText("")
-    override def onCancelGiphy(): Unit = {}
   }
 
   private val singleImageObserver = new SingleImageObserver {

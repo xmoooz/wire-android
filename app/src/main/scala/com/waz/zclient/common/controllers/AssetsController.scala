@@ -61,7 +61,7 @@ class AssetsController(implicit context: Context, inj: Injector, ec: EventContex
 
   lazy val messageActionsController = inject[MessageActionsController]
   lazy val singleImage              = inject[ISingleImageController]
-  lazy val drawingController        = inject[IDrawingController]
+  lazy val screenController         = inject[ScreenController]
 
   //TODO make a preference controller for handling UI preferences in conjunction with SE preferences
   val downloadsAlwaysEnabled =
@@ -110,7 +110,7 @@ class AssetsController(implicit context: Context, inj: Injector, ec: EventContex
 
   //FIXME: don't use java api
   def openDrawingFragment(msg: MessageData, drawingMethod: DrawingMethod) =
-    drawingController.showDrawing(ZMessaging.currentUi.images.getImageAsset(msg.assetId), IDrawingController.DrawingDestination.SINGLE_IMAGE_VIEW, drawingMethod)
+    screenController.showSketch ! (ZMessaging.currentUi.images.getImageAsset(msg.assetId), IDrawingController.DrawingDestination.SINGLE_IMAGE_VIEW, drawingMethod)
 
   def openFile(asset: AssetData) =
     assets.head.flatMap(_.getContentUri(asset.id)) foreach {

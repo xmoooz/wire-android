@@ -36,7 +36,8 @@ import com.waz.zclient.calling.controllers.CallController
 import com.waz.zclient.common.controllers._
 import com.waz.zclient.controllers.camera.ICameraController
 import com.waz.zclient.controllers.drawing.IDrawingController
-import com.waz.zclient.controllers.giphy.IGiphyController
+import com.waz.zclient.controllers.drawing.IDrawingController.DrawingDestination.SKETCH_BUTTON
+import com.waz.zclient.controllers.drawing.IDrawingController.DrawingMethod.DRAW
 import com.waz.zclient.controllers.location.ILocationController
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversationlist.ConversationListController
@@ -180,6 +181,8 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
       } (Threading.Ui)
   }
 
+  screenController.hideGiphy.onUi(if (_) enteredText ! "")
+
   editHasFocus {
     case true => // TODO - reimplement for tablets
     case false => // ignore
@@ -244,13 +247,13 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
       }
     }
 
-  lazy val drawingController = inject[IDrawingController]
-  lazy val giphyController = inject[IGiphyController]
-  lazy val cameraController = inject[ICameraController]
-  lazy val locationController = inject[ILocationController]
-  lazy val soundController = inject[SoundController]
-  lazy val permissions = inject[PermissionsService]
-  lazy val activity = inject[Activity]
+  private lazy val drawingController  = inject[IDrawingController]
+  private lazy val cameraController   = inject[ICameraController]
+  private lazy val locationController = inject[ILocationController]
+  private lazy val soundController    = inject[SoundController]
+  private lazy val permissions        = inject[PermissionsService]
+  private lazy val activity           = inject[Activity]
+  private lazy val screenController   = inject[ScreenController]
 
   import CursorMenuItem._
 
@@ -269,7 +272,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
         _    <- z.convsUi.knock(cId)
       } soundController.playPingFromMe()
     case Sketch =>
-      drawingController.showDrawing(null, IDrawingController.DrawingDestination.SKETCH_BUTTON)
+      screenController.showSketch ! (null, SKETCH_BUTTON, DRAW)
     case File =>
       cursorCallback.foreach(_.openFileSharing())
     case VideoMessage =>
@@ -282,9 +285,9 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
       }
       else showToast(R.string.location_sharing__missing_play_services)
     case Gif =>
-      enteredText.head foreach { giphyController.handleInput }
+      enteredText.head.foreach(screenController.showGiphy ! Some(_))
     case Send =>
-      enteredText.head foreach { submit }
+      enteredText.head.foreach(submit)
     case _ =>
       // ignore
   }

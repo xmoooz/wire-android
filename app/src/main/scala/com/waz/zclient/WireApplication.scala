@@ -53,8 +53,6 @@ import com.waz.zclient.controllers._
 import com.waz.zclient.controllers.camera.ICameraController
 import com.waz.zclient.controllers.confirmation.IConfirmationController
 import com.waz.zclient.controllers.deviceuser.IDeviceUserController
-import com.waz.zclient.controllers.drawing.IDrawingController
-import com.waz.zclient.controllers.giphy.IGiphyController
 import com.waz.zclient.controllers.globallayout.IGlobalLayoutController
 import com.waz.zclient.controllers.location.ILocationController
 import com.waz.zclient.controllers.navigation.INavigationController
@@ -156,11 +154,9 @@ object WireApplication {
     bind [IUserPreferencesController]    toProvider controllerFactory.getUserPreferencesController
     bind [ISingleImageController]        toProvider controllerFactory.getSingleImageController
     bind [ISlidingPaneController]        toProvider controllerFactory.getSlidingPaneController
-    bind [IDrawingController]            toProvider controllerFactory.getDrawingController
     bind [IDeviceUserController]         toProvider controllerFactory.getDeviceUserController
     bind [IGlobalLayoutController]       toProvider controllerFactory.getGlobalLayoutController
     bind [ILocationController]           toProvider controllerFactory.getLocationController
-    bind [IGiphyController]              toProvider controllerFactory.getGiphyController
     bind [ICameraController]             toProvider controllerFactory.getCameraController
     bind [IConfirmationController]       toProvider controllerFactory.getConfirmationController
 

@@ -194,6 +194,12 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
     .orElse(Signal.const(defaultHintTextColor))
     .onUi(hintView.setTextColor)
 
+  //allows the controller to "empty" the text field if necessary by resetting the signal. In general, we should be careful
+  //about loops since the text field changes also update the signal
+  controller.enteredText.onUi { text =>
+    if (text == "" && text != cursorEditText.getText.toString) cursorEditText.setText(text)
+  }
+
   (controller.isEditingMessage.zip(controller.enteredText) map {
     case (editing, text) => !editing && text.isEmpty
   }).onUi { hintView.setVisible }

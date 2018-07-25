@@ -33,20 +33,18 @@ import com.waz.threading.Threading
 import com.waz.utils.events.{EventStream, Signal}
 import com.waz.utils.returning
 import com.waz.zclient._
-import com.waz.zclient.common.controllers.ThemeController
 import com.waz.zclient.common.controllers.global.{AccentColorController, KeyboardController}
+import com.waz.zclient.common.controllers.{ScreenController, ThemeController}
 import com.waz.zclient.common.views.ImageAssetDrawable
 import com.waz.zclient.common.views.ImageAssetDrawable.{ScaleType, State}
 import com.waz.zclient.common.views.ImageController.{DataImage, ImageSource, NoImage}
-import com.waz.zclient.controllers.giphy.IGiphyController
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.giphy.GiphyGridViewAdapter.ScrollGifCallback
 import com.waz.zclient.pages.BaseFragment
 import com.waz.zclient.pages.main.profile.views.{ConfirmationMenu, ConfirmationMenuListener}
 import com.waz.zclient.ui.utils.TextViewUtils
-import com.waz.zclient.utils.{ContextUtils, RichEditText}
+import com.waz.zclient.utils.{ContextUtils, RichEditText, RichView}
 import com.waz.zclient.views.LoadingIndicatorView
-import com.waz.zclient.utils.RichView
 
 class GiphySharingPreviewFragment extends BaseFragment[GiphySharingPreviewFragment.Container]
   with FragmentHelper
@@ -61,7 +59,7 @@ class GiphySharingPreviewFragment extends BaseFragment[GiphySharingPreviewFragme
   private lazy val keyboardController = inject[KeyboardController]
   private lazy val conversationController = inject[ConversationController]
   private lazy val networkService = inject[NetworkModeService]
-  private lazy val giphyController = inject[IGiphyController]
+  private lazy val screenController = inject[ScreenController]
   private lazy val giphyService = zms.map(_.giphy)
   private lazy val spinnerController = inject[SpinnerController]
 
@@ -136,7 +134,7 @@ class GiphySharingPreviewFragment extends BaseFragment[GiphySharingPreviewFragme
   }
 
   private lazy val closeButton = returning(view[View](R.id.gtv__giphy_preview__close_button)) { vh =>
-    vh.onClick { _ => giphyController.cancel() }
+    vh.onClick { _ => screenController.hideGiphy ! false }
   }
 
   private lazy val giphyGridViewAdapter = returning(new GiphyGridViewAdapter(
@@ -238,7 +236,7 @@ class GiphySharingPreviewFragment extends BaseFragment[GiphySharingPreviewFragme
         else getString(R.string.giphy_preview__message_via_search, term)
       _    <- conversationController.sendMessage(msg)
       _    <- conversationController.sendMessage(ImageAssetFactory.getImageAsset(gif.flatMap(_.source).get))
-    } yield giphyController.close()
+    } yield screenController.hideGiphy ! true
   }
 
 }

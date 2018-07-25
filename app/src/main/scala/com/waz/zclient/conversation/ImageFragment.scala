@@ -32,6 +32,7 @@ import com.waz.threading.Threading
 import com.waz.utils.events.{EventStream, Signal}
 import com.waz.utils.returning
 import com.waz.zclient.collection.controllers.CollectionController
+import com.waz.zclient.common.controllers.ScreenController
 import com.waz.zclient.common.views.ImageAssetDrawable
 import com.waz.zclient.common.views.ImageController.{ImageSource, WireImage}
 import com.waz.zclient.controllers.drawing.IDrawingController
@@ -65,7 +66,7 @@ class ImageFragment extends FragmentHelper {
   lazy val collectionController     = inject[CollectionController]
   lazy val convController           = inject[ConversationController]
   lazy val messageActionsController = inject[MessageActionsController]
-  lazy val drawingController        = inject[IDrawingController]
+  lazy val screenController         = inject[ScreenController]
   lazy val singleImageController    = inject[ISingleImageController]
 
   lazy val likedBySelf = collectionController.focusedItem flatMap {
@@ -149,7 +150,7 @@ class ImageFragment extends FragmentHelper {
         method.foreach { m =>
           getFragmentManager.popBackStack()
           imageAsset.head.foreach { asset =>
-            drawingController.showDrawing(asset, SINGLE_IMAGE_VIEW, m)
+            screenController.showSketch ! (asset, SINGLE_IMAGE_VIEW, m)
           }
         }
       case item: MessageActionToolbarItem =>

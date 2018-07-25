@@ -18,9 +18,11 @@
 package com.waz.zclient.common.controllers
 
 import android.content.Context
+import com.waz.api.ImageAsset
 import com.waz.model.MessageId
-import com.waz.utils.events.Signal
+import com.waz.utils.events.{EventStream, Signal}
 import com.waz.zclient.Intents.ShowDevicesIntent
+import com.waz.zclient.controllers.drawing.IDrawingController.{DrawingDestination, DrawingMethod}
 import com.waz.zclient.{Injectable, Injector}
 
 class ScreenController(implicit injector: Injector, context: Context) extends Injectable {
@@ -28,4 +30,16 @@ class ScreenController(implicit injector: Injector, context: Context) extends In
   def openOtrDevicePreferences(): Unit = context.startActivity(ShowDevicesIntent)
 
   val showLikesForMessage = Signal(Option.empty[MessageId])
+
+  val showGiphy = EventStream[Option[String]]()
+
+  val hideGiphy = EventStream[Boolean] //true if successfully sent gif
+
+  val showSketch = EventStream[(ImageAsset, DrawingDestination, DrawingMethod)]
+
+  val hideSketch = EventStream[DrawingDestination]
+
+  def hideSketchJava(dest: DrawingDestination) = hideSketch ! dest
+
+
 }

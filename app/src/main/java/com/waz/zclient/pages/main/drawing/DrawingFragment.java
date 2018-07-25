@@ -44,8 +44,8 @@ import com.waz.permissions.PermissionsService;
 import com.waz.utils.wrappers.URI;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
+import com.waz.zclient.common.controllers.ScreenController;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
-import com.waz.zclient.controllers.drawing.DrawingController;
 import com.waz.zclient.controllers.drawing.IDrawingController;
 import com.waz.zclient.controllers.globallayout.KeyboardVisibilityObserver;
 import com.waz.zclient.conversation.ConversationController;
@@ -117,8 +117,8 @@ public class DrawingFragment extends BaseFragment<DrawingFragment.Container> imp
     private ImageAsset backgroundImage;
     private LoadHandle bitmapLoadHandle;
 
-    private DrawingController.DrawingDestination drawingDestination;
-    private DrawingController.DrawingMethod drawingMethod;
+    private IDrawingController.DrawingDestination drawingDestination;
+    private IDrawingController.DrawingMethod drawingMethod;
     private boolean includeBackgroundImage;
     private EmojiSize currentEmojiSize = EmojiSize.SMALL;
 
@@ -141,7 +141,7 @@ public class DrawingFragment extends BaseFragment<DrawingFragment.Container> imp
                     if (getControllerFactory() == null || getControllerFactory().isTornDown()) {
                         return false;
                     }
-                    getControllerFactory().getDrawingController().hideDrawing(drawingDestination, false);
+                    inject(ScreenController.class).hideSketchJava(drawingDestination);
                     return true;
             }
             return false;
@@ -210,8 +210,8 @@ public class DrawingFragment extends BaseFragment<DrawingFragment.Container> imp
         super.onCreate(savedInstanceState);
         Bundle args = getArguments();
         backgroundImage = args.getParcelable(ARGUMENT_BACKGROUND_IMAGE);
-        drawingDestination = DrawingController.DrawingDestination.valueOf(args.getString(ARGUMENT_DRAWING_DESTINATION));
-        drawingMethod = DrawingController.DrawingMethod.valueOf(args.getString(ARGUMENT_DRAWING_METHOD));
+        drawingDestination = IDrawingController.DrawingDestination.valueOf(args.getString(ARGUMENT_DRAWING_DESTINATION));
+        drawingMethod = IDrawingController.DrawingMethod.valueOf(args.getString(ARGUMENT_DRAWING_METHOD));
         sensorManager = (SensorManager) getActivity().getSystemService(Activity.SENSOR_SERVICE);
         defaultTextColor = ContextCompat.getColor(getContext(), R.color.text__primary_light);
         assetIntentsManager = new AssetIntentsManager(getActivity(), this, savedInstanceState);
@@ -484,7 +484,7 @@ public class DrawingFragment extends BaseFragment<DrawingFragment.Container> imp
         if (drawingCanvasView != null && drawingCanvasView.undo()) {
             return true;
         }
-        getControllerFactory().getDrawingController().hideDrawing(drawingDestination, false);
+        inject(ScreenController.class).hideSketchJava(drawingDestination);
         return true;
     }
 
@@ -504,7 +504,7 @@ public class DrawingFragment extends BaseFragment<DrawingFragment.Container> imp
                 case R.id.tv__send_button:
                     if (!drawingCanvasView.isEmpty()) {
                         inject(ConversationController.class).sendMessage(getFinalSketchImage());
-                        getControllerFactory().getDrawingController().hideDrawing(drawingDestination, true);
+                        inject(ScreenController.class).hideSketchJava(drawingDestination);
                     }
                     break;
                 default:

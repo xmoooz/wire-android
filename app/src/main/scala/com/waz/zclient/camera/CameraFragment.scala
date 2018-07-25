@@ -30,9 +30,12 @@ import com.waz.api.ImageAsset
 import com.waz.utils.returning
 import com.waz.utils.wrappers.URI
 import com.waz.zclient.camera.views.CameraPreviewTextureView
+import com.waz.zclient.common.controllers.ScreenController
 import com.waz.zclient.common.controllers.global.AccentColorController
 import com.waz.zclient.controllers.camera.ICameraController
 import com.waz.zclient.controllers.drawing.IDrawingController
+import com.waz.zclient.controllers.drawing.IDrawingController.DrawingDestination.CAMERA_PREVIEW_VIEW
+import com.waz.zclient.controllers.drawing.IDrawingController.DrawingMethod.DRAW
 import com.waz.zclient.controllers.orientation.OrientationControllerObserver
 import com.waz.zclient.pages.main.conversation.AssetIntentsManager
 import com.waz.zclient.pages.main.profile.camera.controls.{CameraBottomControl, CameraTopControl}
@@ -57,7 +60,7 @@ class CameraFragment extends FragmentHelper
 
   private lazy val accentColorController = inject[AccentColorController]
   private lazy val cameraController      = inject[ICameraController]
-  private lazy val drawingController     = inject[IDrawingController]
+  private lazy val screenController      = inject[ScreenController]
 
   //TODO allow selection of a camera 'facing' for different cameraContexts
   private lazy val cameraPreview = returning(view[CameraPreviewTextureView](R.id.cptv__camera_preview)) {
@@ -240,9 +243,8 @@ class CameraFragment extends FragmentHelper
     showCameraFeed()
   }
 
-  override def onSketchOnPreviewPicture(imageAsset: ImageAsset, source: ImagePreviewLayout.Source, method: IDrawingController.DrawingMethod): Unit = {
-    drawingController.showDrawing(imageAsset, IDrawingController.DrawingDestination.CAMERA_PREVIEW_VIEW)
-  }
+  override def onSketchOnPreviewPicture(imageAsset: ImageAsset, source: ImagePreviewLayout.Source, method: IDrawingController.DrawingMethod): Unit =
+    screenController.showSketch ! (imageAsset, CAMERA_PREVIEW_VIEW, DRAW)
 
   override def onSendPictureFromPreview(imageAsset: ImageAsset, source: ImagePreviewLayout.Source): Unit = {
     cameraController.onBitmapSelected(imageAsset, cameraContext)
