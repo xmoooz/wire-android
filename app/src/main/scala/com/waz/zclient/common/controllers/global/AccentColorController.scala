@@ -22,7 +22,7 @@ import com.waz.content.GlobalPreferences
 import com.waz.content.Preferences.PrefKey
 import com.waz.service.ZMessaging
 import com.waz.utils.crypto.ZSecureRandom
-import com.waz.utils.events.Signal
+import com.waz.utils.events.{EventContext, Signal}
 import com.waz.zclient.{Injectable, Injector}
 
 class AccentColorController(implicit inj: Injector) extends Injectable {
@@ -53,4 +53,12 @@ class AccentColorController(implicit inj: Injector) extends Injectable {
       AccentColors.colors(_)
     }
   }
+
+  def accentColorForJava(callback: AccentColorCallback, ec: EventContext): Unit = {
+    accentColor.onUi(callback.color)(ec)
+  }
+}
+
+trait AccentColorCallback {
+  def color(color: com.waz.api.AccentColor): Unit
 }

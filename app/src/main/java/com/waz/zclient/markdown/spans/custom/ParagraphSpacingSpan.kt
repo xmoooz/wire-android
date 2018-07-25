@@ -43,6 +43,8 @@ class ParagraphSpacingSpan(val before: Int, val after: Int) : LineHeightSpan.Wit
     ) {
         if (text !is Spanned) return
 
+        val density = paint?.density ?: 1f
+
         // store the initial values
         if (firstTime && fm != null) {
             firstTime = false
@@ -65,16 +67,16 @@ class ParagraphSpacingSpan(val before: Int, val after: Int) : LineHeightSpan.Wit
         // if first line
         if (spanStart == start) {
             fm?.let {
-                fm.ascent -= before
-                fm.top -= before
+                fm.ascent -= (density * before).toInt()
+                fm.top -= (density * before).toInt()
             }
         }
 
         // if last line
         if (spanEnd == end) {
             fm?.let {
-                fm.descent += after
-                fm.bottom += after
+                fm.descent += (density * after).toInt()
+                fm.bottom += (density * after).toInt()
             }
         }
     }
