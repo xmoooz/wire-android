@@ -60,7 +60,7 @@ class SSOWebViewWrapper(webView: WebView, backendHost: String) {
   })
 
   def loginWithCode(code: String): Future[SSOResponse] = {
-    loginPromise.tryComplete(Success(Left("cancelled")))
+    loginPromise.tryComplete(Success(Left(-1)))
     loginPromise = Promise[SSOResponse]()
 
     val url = URI.parse(s"$backendHost/${InitiateLoginPath(code)}")
@@ -82,8 +82,32 @@ object SSOWebViewWrapper {
   val UserIdQuery = "user"
   val FailureQuery = "failure"
 
-  type SSOResponse = Either[String, (Cookie, UserId)]
+  type SSOResponse = Either[Int, (Cookie, UserId)]
   def InitiateLoginPath(code: String) = s"sso/initiate-login/$code"
+
+  val SSOErrors = Map(
+    "UnknownIdP" -> 1,
+    "Forbidden" -> 2,
+    "BadSamlResponse" -> 3,
+    "BadServerConfig" -> 4,
+    "UnknownError" -> 5,
+    "CustomServant" -> 6,
+    "SparNotFound" -> 7,
+    "SparNotInTeam" -> 8,
+    "SparNotTeamOwner" -> 9,
+    "SparNoRequestRefInResponse" -> 10,
+    "SparCouldNotSubstituteSuccessURI" -> 11,
+    "SparCouldNotSubstituteFailureURI" -> 12,
+    "SparBadInitiateLoginQueryParams" -> 13,
+    "SparBadUserName msg" -> 14,
+    "SparNoBodyInBrigResponse" -> 15,
+    "SparCouldNotParseBrigResponse" -> 16,
+    "SparCouldNotRetrieveCookie	" -> 17,
+    "SparCassandraError" -> 18,
+    "SparNewIdPBadMetaUrl" -> 19,
+    "SparNewIdPBadMetaSig" -> 20,
+    "SparNewIdPBadReqUrl" -> 21,
+    "SparNewIdPPubkeyMismatch" -> 22)
 
   def parseURL(url: String): Option[SSOResponse] = {
     val uri = URI.parse(url)
@@ -95,7 +119,7 @@ object SSOWebViewWrapper {
 
       (cookie, userId, failure) match {
         case (Some(_ @ LoginClient.CookieHeader(c)), Some(uId), _) => Some(Right(Cookie(c), UserId(uId)))
-        case (_, _, Some(f)) => Some(Left(f))
+        case (_, _, Some(f)) => Some(Left(SSOErrors.getOrElse(f, 0)))
         case _ => None
       }
     } else None

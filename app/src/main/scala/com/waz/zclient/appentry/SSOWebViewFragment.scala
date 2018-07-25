@@ -29,9 +29,10 @@ import com.waz.service.{AccountsService, ZMessaging}
 import com.waz.threading.Threading
 import com.waz.utils._
 import com.waz.utils.wrappers.URI
+import com.waz.zclient.appentry.DialogErrorMessage.EmailError
 import com.waz.zclient.appentry.SSOWebViewFragment._
 import com.waz.zclient.appentry.fragments.FirstLaunchAfterLoginFragment
-import com.waz.zclient.utils.ViewUtils
+import com.waz.zclient.utils.{ContextUtils, ViewUtils}
 import com.waz.zclient.{FragmentHelper, R}
 
 import scala.concurrent.Future
@@ -64,7 +65,7 @@ class SSOWebViewFragment extends FragmentHelper {
         case Right((cookie, userId)) =>
           accountsService.ssoLogin(userId, cookie).map {
             case Left(error) =>
-              showSSOError(error.label)
+              ContextUtils.showErrorDialog(EmailError(error))
             case Right(true) =>
               activity.showFragment(FirstLaunchAfterLoginFragment(userId), FirstLaunchAfterLoginFragment.Tag)
             case _ =>
@@ -85,10 +86,10 @@ class SSOWebViewFragment extends FragmentHelper {
 
   }
 
-  def showSSOError(label: String): Future[Unit] =
+  def showSSOError(code: Int): Future[Unit] =
     Future.successful({
       val title = getString(R.string.sso_signin_error_title)
-      val message = getString(R.string.sso_signin_error_message, label)
+      val message = getString(R.string.sso_signin_error_message, code.toString)
       val ok = getString(android.R.string.ok)
       ViewUtils.showAlertDialog(getActivity, title, message, ok, null, true)
     })
