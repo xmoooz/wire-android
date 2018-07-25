@@ -50,8 +50,7 @@ class SSOWebViewWrapper(webView: WebView, backendHost: String) {
       verbose(s"onPageFinished: $url")
     }
 
-    override def shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = {
-      val url  = request.getUrl.toString
+    override def shouldOverrideUrlLoading(view: WebView, url: LogTag): Boolean = {
       verbose(s"shouldOverrideUrlLoading: $url")
       parseURL(url).fold (false){ result =>
         loginPromise.tryComplete(Success(result))
