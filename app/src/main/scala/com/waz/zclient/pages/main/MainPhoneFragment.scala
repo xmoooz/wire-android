@@ -43,6 +43,7 @@ import com.waz.zclient.giphy.GiphySharingPreviewFragment
 import com.waz.zclient.messages.UsersController
 import com.waz.zclient.pages.main.conversationlist.ConfirmationFragment
 import com.waz.zclient.pages.main.conversationpager.ConversationPagerFragment
+import com.waz.zclient.tracking.GlobalTrackingController
 import com.waz.zclient.tracking.GlobalTrackingController.analyticsPrefKey
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.views.menus.ConfirmationMenu
@@ -97,7 +98,7 @@ class MainPhoneFragment extends FragmentHelper
           for {
             _ <- zms.userPrefs(CrashesAndAnalyticsRequestShown) := true
             _ <- zms.prefs(analyticsPrefKey) := resp //we override whatever the global value is on asking the user again
-            _ <- if (resp) zms.global.trackingService.optIn() else Future.successful(())
+            _ <- if (resp) inject[GlobalTrackingController].optIn() else Future.successful(())
           } yield {}
         }
       }
