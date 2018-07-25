@@ -17,7 +17,7 @@
   */
 package com.waz.zclient.appentry
 
-import android.webkit.{WebResourceRequest, WebView, WebViewClient}
+import android.webkit.{WebView, WebViewClient}
 import com.waz.ZLog._
 import com.waz.ZLog.ImplicitTag._
 import com.waz.model.UserId
