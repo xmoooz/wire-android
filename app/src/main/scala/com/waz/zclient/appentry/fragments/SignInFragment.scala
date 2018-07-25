@@ -35,7 +35,7 @@ import com.waz.threading.Threading
 import com.waz.utils.events.Signal
 import com.waz.utils.returning
 import com.waz.zclient._
-import com.waz.zclient.appentry.{AppEntryActivity, SSOFeatures, SSOWebViewFragment}
+import com.waz.zclient.appentry.{AppEntryActivity, SSOFragment, SSOWebViewFragment}
 import com.waz.zclient.appentry.DialogErrorMessage.{EmailError, PhoneError}
 import com.waz.zclient.appentry.fragments.SignInFragment._
 import com.waz.zclient.common.controllers.BrowserController
@@ -52,10 +52,9 @@ import com.waz.zclient.ui.views.tab.TabIndicatorLayout.Callback
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils._
 
-class SignInFragment extends FragmentHelper
+class SignInFragment extends SSOFragment
   with View.OnClickListener
-  with CountryController.Observer
-  with SSOFeatures {
+  with CountryController.Observer {
 
   implicit def context: Context = getActivity
 
@@ -306,7 +305,7 @@ class SignInFragment extends FragmentHelper
   override def onClick(v: View) = {
     v.getId match {
       case R.id.ttv_signin_sso =>
-        showSSODialog(None)
+        extractTokenAndShowSSODialog(showIfNoToken = true)
 
       case R.id.ttv__new_reg__sign_in__go_to__email =>
         uiSignInState.mutate {

@@ -109,7 +109,7 @@ class SecondPageFragment extends FragmentHelper
     pageDetails.onUi {
       case (tag, other) if connectionRequestTags.contains(tag) => open(tag, other)
       case (tag, other) =>
-        withFragmentOpt(R.id.fl__second_page_container) {
+        withChildFragmentOpt(R.id.fl__second_page_container) {
           case Some(f) if f.getTag == tag => //already showing the correct fragment - nothing to do
           case _                          => open(tag, other)
         }
@@ -118,7 +118,7 @@ class SecondPageFragment extends FragmentHelper
 
   override def onActivityResult(requestCode: Int, resultCode: Int, data: Intent): Unit = {
     super.onActivityResult(requestCode, resultCode, data)
-    withFragment(R.id.fl__second_page_container)(_.onActivityResult(requestCode, resultCode, data))
+    withChildFragment(R.id.fl__second_page_container)(_.onActivityResult(requestCode, resultCode, data))
   }
 
   override def onBackPressed(): Boolean = {

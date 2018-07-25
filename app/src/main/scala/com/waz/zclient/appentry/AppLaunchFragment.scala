@@ -21,10 +21,10 @@ import android.os.Bundle
 import android.view.{LayoutInflater, View, ViewGroup}
 import android.widget.LinearLayout
 import com.waz.ZLog
+import com.waz.zclient.R
 import com.waz.zclient.appentry.fragments.SignInFragment._
 import com.waz.zclient.appentry.fragments.{SignInFragment, TeamNameFragment}
 import com.waz.zclient.utils.{LayoutSpec, RichView}
-import com.waz.zclient.{FragmentHelper, R}
 
 object AppLaunchFragment {
   val Tag: String = ZLog.ImplicitTag.implicitLogTag
@@ -32,7 +32,7 @@ object AppLaunchFragment {
   def apply(): AppLaunchFragment = new AppLaunchFragment()
 }
 
-class AppLaunchFragment extends FragmentHelper with SSOFeatures {
+class AppLaunchFragment extends SSOFragment {
 
   private def activity = getActivity.asInstanceOf[AppEntryActivity]
 

@@ -151,7 +151,7 @@ class MainPhoneFragment extends FragmentHelper
 
   override def onActivityResult(requestCode: Int, resultCode: Int, data: Intent): Unit = {
     super.onActivityResult(requestCode, resultCode, data)
-    withFragment(R.id.fl_fragment_main_content)(_.onActivityResult(requestCode, resultCode, data))
+    withChildFragment(R.id.fl_fragment_main_content)(_.onActivityResult(requestCode, resultCode, data))
   }
 
   override def onBackPressed(): Boolean = confirmationMenu flatMap { confirmationMenu =>

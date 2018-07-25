@@ -233,7 +233,7 @@ class CallingFragment extends FragmentHelper {
   }
 
   override def onBackPressed() = {
-    withFragmentOpt(R.id.controls_layout) {
+    withChildFragmentOpt(R.id.controls_layout) {
       case Some(f: FragmentHelper) if f.onBackPressed()               => true
       case Some(_) if getChildFragmentManager.popBackStackImmediate() => true
       case _ => super.onBackPressed()

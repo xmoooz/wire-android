@@ -17,25 +17,24 @@
  */
 package com.waz.zclient.appentry
 
-import com.waz.ZLog.verbose
+import android.os.Bundle
 import com.waz.ZLog.ImplicitTag._
-import com.waz.utils.events.Subscription
+import com.waz.ZLog.verbose
 import com.waz.service.SSOService
-import com.waz.utils.events.EventContext
 import com.waz.zclient.InputDialog.{Event, OnNegativeBtn, OnPositiveBtn, ValidatorResult}
 import com.waz.zclient._
 
 import scala.concurrent.Future
 
-object SSOFeatures {
+object SSOFragment {
   val SSODialogTag = "SSO_DIALOG"
 }
 
-trait SSOFeatures extends CanInject with LifecycleStartStop with HasChildFragmentManager {
+trait SSOFragment extends FragmentHelper {
 
-  import SSOFeatures._
-  import com.waz.threading.Threading.Implicits.Background
+  import SSOFragment._
   import com.waz.threading.Threading
+  import com.waz.threading.Threading.Implicits.Background
 
   private lazy val clipboard   = inject[ClipboardUtils]
   private lazy val ssoService  = inject[SSOService]
@@ -51,32 +50,30 @@ trait SSOFeatures extends CanInject with LifecycleStartStop with HasChildFragmen
       else ValidatorResult.Invalid()
   }
 
-  private var clipboardSubscription: Subscription = _
 
-  override protected def onStartCalled(): Unit = {
-    super.onStartCalled()
+  override def onCreate(savedInstanceState: Bundle): Unit = {
+    super.onCreate(savedInstanceState)
+    clipboard.primaryClipChanged.onUi { _ => extractTokenAndShowSSODialog() }
+  }
+
+  override def onStart(): Unit = {
+    super.onStart()
     findChildFragment[InputDialog](SSODialogTag).foreach(_.setListener(dialogStaff).setValidator(dialogStaff))
-    clipboardSubscription = clipboard.primaryClipChanged.onUi { _ => showSSODialogIfNeeded() } (EventContext.Global)
-    showSSODialogIfNeeded()
+    extractTokenAndShowSSODialog()
   }
 
-  override protected def onStopCalled(): Unit = {
-    super.onStopCalled()
-    clipboardSubscription.destroy()
+  private def extractTokenFromClipboard: Future[Option[String]] = Future {
+    for {
+      clipboardText <- clipboard.getPrimaryClipItemsAsText.headOption
+      token <- ssoService.extractToken(clipboardText.toString)
+    } yield token
   }
 
-  private def extractTokenFromClipboard: Future[Option[String]] = {
-    Future {
-      for {
-        clipboardText <- clipboard.getPrimaryClipItemsAsText.headOption
-        token <- ssoService.extractToken(clipboardText.toString)
-      } yield token
-    }
-  }
-
-  protected def showSSODialogIfNeeded(): Unit = {
+  protected def extractTokenAndShowSSODialog(showIfNoToken: Boolean = false): Unit = {
     if (findChildFragment[InputDialog](SSODialogTag).isEmpty) {
-      extractTokenFromClipboard.filter(_.nonEmpty).foreach(showSSODialog)(Threading.Ui)
+      extractTokenFromClipboard
+        .filter(_.nonEmpty || showIfNoToken)
+        .foreach(showSSODialog)(Threading.Ui)
     }
   }
 
@@ -94,7 +91,7 @@ trait SSOFeatures extends CanInject with LifecycleStartStop with HasChildFragmen
       )
       .setListener(dialogStaff)
       .setValidator(dialogStaff)
-      .show(childFragmentManager, SSODialogTag)
+      .show(getChildFragmentManager, SSODialogTag)
   }
 
   protected def cancelSSODialog(): Unit = {
