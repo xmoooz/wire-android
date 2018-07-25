@@ -17,11 +17,12 @@
   */
 package com.waz.zclient.appentry
 
-import android.webkit.{WebView, WebViewClient}
+import android.webkit.{WebResourceRequest, WebView, WebViewClient}
 import com.waz.ZLog._
 import com.waz.ZLog.ImplicitTag._
 import com.waz.model.UserId
 import com.waz.sync.client.AuthenticationManager.Cookie
+import com.waz.sync.client.LoginClient
 import com.waz.utils.events.EventStream
 import com.waz.utils.wrappers.URI
 import com.waz.zclient.appentry.SSOWebViewWrapper._
@@ -46,11 +47,16 @@ class SSOWebViewWrapper(webView: WebView, backendHost: String) {
         Option(URI.parse(title).getHost).filter(_.nonEmpty).getOrElse(title)
       }
       onUrlChanged ! url
-
-      parseURL(url).foreach { result =>
-        loginPromise.tryComplete(Success(result))
-      }
       verbose(s"onPageFinished: $url")
+    }
+
+    override def shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = {
+      val url  = request.getUrl.toString
+      verbose(s"shouldOverrideUrlLoading: $url")
+      parseURL(url).fold (false){ result =>
+        loginPromise.tryComplete(Success(result))
+        true
+      }
     }
   })
 
@@ -60,8 +66,8 @@ class SSOWebViewWrapper(webView: WebView, backendHost: String) {
 
     val url = URI.parse(s"$backendHost/${InitiateLoginPath(code)}")
       .buildUpon
-      .appendQueryParameter("success_redirect", s"/success/?$CookieQuery=$$cookie&$UserIdQuery=$$userid")
-      .appendQueryParameter("error_redirect", s"/error/?$FailureQuery=$$label")
+      .appendQueryParameter("success_redirect", s"$ResponseSchema://success/?$CookieQuery=$$cookie&$UserIdQuery=$$userid")
+      .appendQueryParameter("error_redirect", s"$ResponseSchema://error/?$FailureQuery=$$label")
       .build
       .toString
 
@@ -89,7 +95,7 @@ object SSOWebViewWrapper {
       val failure = Option(uri.getQueryParameter(FailureQuery))
 
       (cookie, userId, failure) match {
-        case (Some(c), Some(uId), _) => Some(Right(Cookie(c), UserId(uId)))
+        case (Some(_ @ LoginClient.CookieHeader(c)), Some(uId), _) => Some(Right(Cookie(c), UserId(uId)))
         case (_, _, Some(f)) => Some(Left(f))
         case _ => None
       }
