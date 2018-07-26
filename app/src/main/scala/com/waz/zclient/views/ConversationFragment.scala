@@ -18,7 +18,7 @@
 package com.waz.zclient.views
 
 import android.Manifest.permission.{CAMERA, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE}
-import android.content.{Context, DialogInterface, Intent}
+import android.content.{DialogInterface, Intent}
 import android.os.Bundle
 import android.provider.MediaStore
 import android.support.annotation.Nullable
@@ -40,8 +40,8 @@ import com.waz.service.ZMessaging
 import com.waz.service.call.CallingService
 import com.waz.threading.{CancellableFuture, Threading}
 import com.waz.utils.events.{EventStreamWithAuxSignal, Signal}
-import com.waz.utils.returningF
 import com.waz.utils.wrappers.URI
+import com.waz.utils.{returning, returningF}
 import com.waz.zclient.Intents.ShowDevicesIntent
 import com.waz.zclient.calling.controllers.{CallController, CallStartController}
 import com.waz.zclient.camera.controllers.GlobalCameraController
@@ -76,7 +76,6 @@ import com.waz.zclient.participants.fragments.SingleParticipantFragment
 import com.waz.zclient.ui.animation.interpolators.penner.Expo
 import com.waz.zclient.ui.cursor.CursorMenuItem
 import com.waz.zclient.ui.text.TypefaceTextView
-import com.waz.zclient.ui.utils.KeyboardUtils
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.{RichView, SquareOrientation, ViewUtils}
 import com.waz.zclient.views.e2ee.ShieldView
@@ -122,7 +121,10 @@ class ConversationFragment extends FragmentHelper {
 
   private var assetIntentsManager: Option[AssetIntentsManager] = None
 
-  private var loadingIndicatorView: LoadingIndicatorView = _
+  private lazy val loadingIndicatorView = returning(view[LoadingIndicatorView](R.id.lbv__conversation__loading_indicator)) { vh =>
+    inject[Signal[AccentColor]].map(_.getColor)(c => vh.foreach(_.setColor(c)))
+  }
+
   private var containerPreview: ViewGroup = _
   private var cursorView: CursorView = _
   private var audioMessageRecordingView: AudioMessageRecordingView = _
@@ -216,11 +218,8 @@ class ConversationFragment extends FragmentHelper {
     if (savedInstanceState != null) previewShown ! savedInstanceState.getBoolean(SAVED_STATE_PREVIEW, false)
     zms.flatMap(_.errors.getErrors).onUi { _.foreach(handleSyncError) }
 
-    implicit val ctx: Context = getActivity
-
     findById(R.id.tiv_typing_indicator_view)
 
-    loadingIndicatorView = findById(R.id.lbv__conversation__loading_indicator)
     containerPreview = findById(R.id.fl__conversation_overlay)
     cursorView = findById(R.id.cv__cursor)
 
@@ -279,8 +278,8 @@ class ConversationFragment extends FragmentHelper {
             case Some(toConv) =>
               from.foreach{ id => draftMap.set(id, cursorView.getText.trim) }
               if (toConv.convType != ConversationType.WaitForConnection) {
-                KeyboardUtils.hideKeyboard(getActivity)
-                loadingIndicatorView.hide()
+                keyboardController.hideKeyboardIfVisible()
+                loadingIndicatorView.foreach(_.hide())
                 cursorView.enableMessageWriting()
 
                 from.filter(_ != toConv.id).foreach { id =>
@@ -303,7 +302,6 @@ class ConversationFragment extends FragmentHelper {
     }
 
     inject[Signal[AccentColor]].map(_.getColor).onUi { color =>
-      loadingIndicatorView.setColor(color)
       extendedCursorContainer.setAccentColor(color)
     }
   }
@@ -332,7 +330,7 @@ class ConversationFragment extends FragmentHelper {
       override def onClick(v: View): Unit = {
         cursorView.closeEditMessage(false)
         getActivity.onBackPressed()
-        KeyboardUtils.closeKeyboardIfShown(getActivity)
+        keyboardController.hideKeyboardIfVisible()
       }
     })
 
@@ -370,7 +368,7 @@ class ConversationFragment extends FragmentHelper {
 
   override def onPause(): Unit = {
     super.onPause()
-    KeyboardUtils.hideKeyboard(getActivity)
+    keyboardController.hideKeyboardIfVisible()
     audioMessageRecordingView.hide()
   }
 
@@ -559,67 +557,65 @@ class ConversationFragment extends FragmentHelper {
   private def openExtendedCursor(cursorType: ExtendedCursorContainer.Type): Unit = cursorType match {
       case ExtendedCursorContainer.Type.NONE =>
       case ExtendedCursorContainer.Type.EMOJIS =>
-        extendedCursorContainer.openEmojis(userPreferencesController.getRecentEmojis, userPreferencesController.getUnsupportedEmojis, emojiKeyboardLayoutCallback)
+        extendedCursorContainer.openEmojis(userPreferencesController.getRecentEmojis, userPreferencesController.getUnsupportedEmojis, new EmojiKeyboardLayout.Callback {
+          override def onEmojiSelected(emoji: LogTag) = {
+            cursorView.insertText(emoji)
+            userPreferencesController.addRecentEmoji(emoji)
+          }
+        })
       case ExtendedCursorContainer.Type.EPHEMERAL =>
         convController.currentConv.map(_.ephemeralExpiration).head.foreach {
           case Some(ConvExpiry(_)) => //do nothing - global timer is set
-          case exp => extendedCursorContainer.openEphemeral(ephemeralLayoutCallback, exp.map(_.duration))
+          case exp => extendedCursorContainer.openEphemeral(new EphemeralLayout.Callback {
+            override def onEphemeralExpirationSelected(expiration: Option[FiniteDuration], close: Boolean) = {
+              if (close) extendedCursorContainer.close(false)
+              convController.setEphemeralExpiration(expiration)
+            }
+          }, exp.map(_.duration))
         }
       case ExtendedCursorContainer.Type.VOICE_FILTER_RECORDING =>
-        extendedCursorContainer.openVoiceFilter(voiceFilterLayoutCallback)
+        extendedCursorContainer.openVoiceFilter(new VoiceFilterLayout.Callback {
+          override def onAudioMessageRecordingStarted(): Unit = {
+            globalLayoutController.keepScreenAwake()
+          }
+
+          override def onCancel(): Unit = extendedCursorContainer.close(false)
+
+          override def sendRecording(audioAssetForUpload: AudioAssetForUpload, appliedAudioEffect: AudioEffect): Unit = {
+            audioAssetForUpload match {
+              case a: com.waz.api.impl.AudioAssetForUpload => convController.sendMessage(a, errorHandler)
+              case _ =>
+            }
+
+            extendedCursorContainer.close(true)
+          }
+        })
       case ExtendedCursorContainer.Type.IMAGES =>
-        extendedCursorContainer.openCursorImages(cursorImageLayoutCallback)
+        extendedCursorContainer.openCursorImages(new CursorImagesLayout.Callback {
+          override def openCamera(): Unit = cameraController.openCamera(CameraContext.MESSAGE)
+
+          override def openVideo(): Unit = captureVideoAskPermissions()
+
+          override def onGalleryPictureSelected(uri: URI): Unit = {
+            previewShown ! true
+            showImagePreview {
+              _.setImage(uri, ImagePreviewLayout.Source.InAppGallery)
+            }
+          }
+
+          override def openGallery(): Unit = assetIntentsManager.foreach {
+            _.openGallery()
+          }
+
+          override def onPictureTaken(imageData: Array[Byte], isMirrored: Boolean): Unit =
+            showImagePreview {
+              _.setImage(imageData, isMirrored)
+            }
+        })
       case _ =>
         verbose(s"openExtendedCursor(unknown)")
     }
 
-
-  private val emojiKeyboardLayoutCallback = new EmojiKeyboardLayout.Callback {
-    override def onEmojiSelected(emoji: LogTag) = {
-      cursorView.insertText(emoji)
-      userPreferencesController.addRecentEmoji(emoji)
-    }
-  }
-
-  private val ephemeralLayoutCallback = new EphemeralLayout.Callback {
-    override def onEphemeralExpirationSelected(expiration: Option[FiniteDuration], close: Boolean) = {
-      if (close) extendedCursorContainer.close(false)
-      convController.setEphemeralExpiration(expiration)
-    }
-  }
-
-  private val voiceFilterLayoutCallback = new VoiceFilterLayout.Callback {
-    override def onAudioMessageRecordingStarted(): Unit = {
-      globalLayoutController.keepScreenAwake()
-    }
-
-    override def onCancel(): Unit = extendedCursorContainer.close(false)
-
-    override def sendRecording(audioAssetForUpload: AudioAssetForUpload, appliedAudioEffect: AudioEffect): Unit = {
-      audioAssetForUpload match {
-        case a: com.waz.api.impl.AudioAssetForUpload => convController.sendMessage(a, errorHandler)
-        case _ =>
-      }
-
-      extendedCursorContainer.close(true)
-    }
-  }
-
-  private val cursorImageLayoutCallback = new CursorImagesLayout.Callback {
-    override def openCamera(): Unit = cameraController.openCamera(CameraContext.MESSAGE)
-
-    override def openVideo(): Unit = captureVideoAskPermissions()
-
-    override def onGalleryPictureSelected(uri: URI): Unit = {
-      previewShown ! true
-      showImagePreview { _.setImage(uri, ImagePreviewLayout.Source.InAppGallery) }
-    }
-
-    override def openGallery(): Unit = assetIntentsManager.foreach { _.openGallery() }
-
-    override def onPictureTaken(imageData: Array[Byte], isMirrored: Boolean): Unit =
-      showImagePreview { _.setImage(imageData, isMirrored) }
-  }
 
   private def captureVideoAskPermissions() = for {
     _ <- inject[GlobalCameraController].releaseCamera() //release camera so the camera app can use it
@@ -750,7 +746,7 @@ class ConversationFragment extends FragmentHelper {
 
   private def onErrorCanNotSentMessageToUnverifiedConversation(err: ErrorData, convId: ConvId) =
     if (navigationController.getCurrentPage == Page.MESSAGE_STREAM) {
-      KeyboardUtils.hideKeyboard(getActivity)
+      keyboardController.hideKeyboardIfVisible()
 
       (for {
         self <- inject[UserAccountsController].currentUser.head
@@ -817,7 +813,7 @@ class ConversationFragment extends FragmentHelper {
 
   private val slidingPaneObserver = new SlidingPaneObserver {
     override def onPanelSlide(panel: View, slideOffset: Float): Unit = {}
-    override def onPanelOpened(panel: View): Unit = KeyboardUtils.closeKeyboardIfShown(getActivity)
+    override def onPanelOpened(panel: View): Unit = keyboardController.hideKeyboardIfVisible()
     override def onPanelClosed(panel: View): Unit = {}
   }
 
