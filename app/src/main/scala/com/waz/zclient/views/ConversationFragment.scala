@@ -146,11 +146,11 @@ class ConversationFragment extends FragmentHelper {
       enter,
       getInt(R.integer.wire__animation__duration__medium),
       0,
-      getOrientationDependentDisplayWidth - getResources.getDimensionPixelSize(R.dimen.framework__sidebar_width)
+      getOrientationDependentDisplayWidth - getDimenPx(R.dimen.framework__sidebar_width)
     )
     else if (enter) new ConversationListAnimation(
       0,
-      getResources.getDimensionPixelSize(R.dimen.open_new_conversation__thread_list__max_top_distance),
+      getDimenPx(R.dimen.open_new_conversation__thread_list__max_top_distance),
       enter,
       getInt(R.integer.framework_animation_duration_long),
       getInt(R.integer.framework_animation_duration_medium),
@@ -159,7 +159,7 @@ class ConversationFragment extends FragmentHelper {
     )
     else new ConversationListAnimation(
       0,
-      getResources.getDimensionPixelSize(R.dimen.open_new_conversation__thread_list__max_top_distance),
+      getDimenPx(R.dimen.open_new_conversation__thread_list__max_top_distance),
       enter,
       getInt(R.integer.framework_animation_duration_medium),
       0,
@@ -237,7 +237,7 @@ class ConversationFragment extends FragmentHelper {
     // invisible footer to scroll over inputfield
     returningF( new FrameLayout(getActivity) ){ footer: FrameLayout =>
       footer.setLayoutParams(
-        new AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, getResources.getDimensionPixelSize(R.dimen.cursor__list_view_footer__height))
+        new AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, getDimenPx(R.dimen.cursor__list_view_footer__height))
       )
     }
 
@@ -273,12 +273,28 @@ class ConversationFragment extends FragmentHelper {
     }
 
     convChange.onUi {
-      case ConversationChange(from, Some(to), requester) =>
-        CancellableFuture.delay(getResources.getInteger(R.integer.framework_animation_duration_short).millis).map { _ =>
+      case ConversationChange(from, Some(to), _) =>
+        CancellableFuture.delay(getInt(R.integer.framework_animation_duration_short).millis).map { _ =>
           convController.loadConv(to).map {
             case Some(toConv) =>
               from.foreach{ id => draftMap.set(id, cursorView.getText.trim) }
-              if (toConv.convType != ConversationType.WaitForConnection) updateConv(from, toConv)
+              if (toConv.convType != ConversationType.WaitForConnection) {
+                KeyboardUtils.hideKeyboard(getActivity)
+                loadingIndicatorView.hide()
+                cursorView.enableMessageWriting()
+
+                from.filter(_ != toConv.id).foreach { id =>
+
+                  cursorView.setVisible(toConv.isActive)
+                  draftMap.get(toConv.id).map { draftText =>
+                    cursorView.setText(draftText)
+                    cursorView.setConversation()
+                  }
+                  audioMessageRecordingView.hide()
+                }
+                // TODO: ConversationScreenController should listen to this signal and do it itself
+                extendedCursorContainer.close(true)
+              }
             case None =>
           }
         }
@@ -381,24 +397,6 @@ class ConversationFragment extends FragmentHelper {
     super.onStop()
   }
 
-  private def updateConv(fromId: Option[ConvId], toConv: ConversationData): Unit = {
-    KeyboardUtils.hideKeyboard(getActivity)
-    loadingIndicatorView.hide()
-    cursorView.enableMessageWriting()
-
-    fromId.filter(_ != toConv.id).foreach { id =>
-
-      cursorView.setVisible(toConv.isActive)
-      draftMap.get(toConv.id).map { draftText =>
-        cursorView.setText(draftText)
-        cursorView.setConversation()
-      }
-      audioMessageRecordingView.hide()
-    }
-    // TODO: ConversationScreenController should listen to this signal and do it itself
-    extendedCursorContainer.close(true)
-  }
-
   private def inflateCollectionIcon(): Unit = {
     leftMenu.getMenu.clear()
 
@@ -421,7 +419,7 @@ class ConversationFragment extends FragmentHelper {
       containerPreview
         .animate
         .translationY(getView.getMeasuredHeight)
-        .setDuration(getResources.getInteger(R.integer.animation_duration_medium))
+        .setDuration(getInt(R.integer.animation_duration_medium))
         .setInterpolator(new Expo.EaseIn)
         .withEndAction(new Runnable() {
           override def run(): Unit = if (containerPreview != null) containerPreview.removeAllViews()
@@ -769,9 +767,9 @@ class ConversationFragment extends FragmentHelper {
         }
 
         val header =
-          if (unverifiedUsers.isEmpty) getResources.getString(R.string.conversation__degraded_confirmation__header__someone)
+          if (unverifiedUsers.isEmpty) getString(R.string.conversation__degraded_confirmation__header__someone)
           else if (unverifiedUsers.size == 1)
-            getResources.getQuantityString(R.plurals.conversation__degraded_confirmation__header__single_user, unverifiedDevices, unverifiedNames.head)
+            getQuantityString(R.plurals.conversation__degraded_confirmation__header__single_user, unverifiedDevices, unverifiedNames.head)
           else getString(R.string.conversation__degraded_confirmation__header__multiple_user, unverifiedNames.mkString(","))
 
         val onlySelfChanged = unverifiedUsers.size == 1 && self.map(_.id).contains(unverifiedUsers.head.id)
@@ -796,10 +794,10 @@ class ConversationFragment extends FragmentHelper {
         val positiveButton = getString(R.string.conversation__degraded_confirmation__positive_action)
         val negativeButton =
           if (onlySelfChanged) getString(R.string.conversation__degraded_confirmation__negative_action_self)
-          else getResources.getQuantityString(R.plurals.conversation__degraded_confirmation__negative_action, unverifiedUsers.size)
+          else getQuantityString(R.plurals.conversation__degraded_confirmation__negative_action, unverifiedUsers.size)
 
         val messageCount = Math.max(1, err.messages.size)
-        val message = getResources.getQuantityString(R.plurals.conversation__degraded_confirmation__message, messageCount)
+        val message = getQuantityString(R.plurals.conversation__degraded_confirmation__message, messageCount)
 
         val request =
           new ConfirmationRequest.Builder()
@@ -830,7 +828,7 @@ class ConversationFragment extends FragmentHelper {
     previewShown ! true
     navigationController.setPagerEnabled(false)
     containerPreview.setTranslationY(getView.getMeasuredHeight)
-    containerPreview.animate.translationY(0).setDuration(getResources.getInteger(R.integer.animation_duration_medium)).setInterpolator(new Expo.EaseOut)
+    containerPreview.animate.translationY(0).setDuration(getInt(R.integer.animation_duration_medium)).setInterpolator(new Expo.EaseOut)
   }
 
   override def onBackPressed(): Boolean = {
