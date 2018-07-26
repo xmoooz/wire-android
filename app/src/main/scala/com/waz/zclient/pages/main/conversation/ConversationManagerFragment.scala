@@ -40,6 +40,7 @@ import android.view.{LayoutInflater, View, ViewGroup}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api._
 import com.waz.model.{MessageContent => _, _}
+import com.waz.service.assets.AssetService.RawAssetInput
 import com.waz.service.tracking.GroupConversationEvent
 import com.waz.threading.Threading
 import com.waz.zclient.camera.CameraFragment
@@ -56,10 +57,10 @@ import com.waz.zclient.controllers.navigation.{INavigationController, Page}
 import com.waz.zclient.conversation.creation.{CreateConversationController, CreateConversationManagerFragment}
 import com.waz.zclient.conversation.{ConversationController, LikesListFragment}
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
+import com.waz.zclient.drawing.DrawingFragment
 import com.waz.zclient.giphy.GiphySharingPreviewFragment
 import com.waz.zclient.pages.main.connect.UserProfileContainer
 import com.waz.zclient.pages.main.conversation.controller.{ConversationScreenControllerObserver, IConversationScreenController}
-import com.waz.zclient.pages.main.drawing.DrawingFragment
 import com.waz.zclient.pages.main.profile.camera.CameraContext
 import com.waz.zclient.participants.ParticipantsController
 import com.waz.zclient.participants.fragments.ParticipantFragment
@@ -68,7 +69,6 @@ import com.waz.zclient.{FragmentHelper, R}
 
 class ConversationManagerFragment extends FragmentHelper
   with ConversationScreenControllerObserver
-  with DrawingFragment.Container
   with LocationObserver
   with CollectionsObserver
   with UserProfileContainer
@@ -168,13 +168,12 @@ class ConversationManagerFragment extends FragmentHelper
     }
     subs += screenController.hideGiphy.onUi(_ => hideFragment(GiphySharingPreviewFragment.Tag))
 
-    subs += screenController.showSketch.onUi {
-      case (image, dest, method) =>
+    subs += screenController.showSketch.onUi { sketch =>
         import DrawingFragment._
-        showFragment(newInstance(image, dest, method), TAG, Page.DRAWING)
+        showFragment(newInstance(sketch), Tag, Page.DRAWING)
     }
     subs += screenController.hideSketch.onUi { dest =>
-      hideFragment(DrawingFragment.TAG)
+      hideFragment(DrawingFragment.Tag)
       if (dest == CAMERA_PREVIEW_VIEW) cameraController.closeCamera(CameraContext.MESSAGE)
     }
   }
@@ -230,9 +229,9 @@ class ConversationManagerFragment extends FragmentHelper
     navigationController.setRightPage(Page.MESSAGE_STREAM, ConversationManagerFragment.Tag)
   }
 
-  override def onBitmapSelected(imageAsset: ImageAsset, cameraContext: CameraContext): Unit =
+  override def onBitmapSelected(input: RawAssetInput, cameraContext: CameraContext): Unit =
     if (cameraContext == CameraContext.MESSAGE) {
-      inject[ConversationController].sendMessage(imageAsset)
+      inject[ConversationController].sendMessage(input)
       cameraController.closeCamera(CameraContext.MESSAGE)
   }
 

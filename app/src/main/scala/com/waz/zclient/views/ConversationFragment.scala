@@ -36,6 +36,7 @@ import com.waz.model.ConversationData.ConversationType
 import com.waz.model.{MessageContent => _, _}
 import com.waz.permissions.PermissionsService
 import com.waz.service.ZMessaging
+import com.waz.service.assets.AssetService.RawAssetInput
 import com.waz.service.call.CallingService
 import com.waz.threading.{CancellableFuture, Threading}
 import com.waz.utils.events.{EventStreamWithAuxSignal, Signal}
@@ -50,7 +51,6 @@ import com.waz.zclient.common.controllers.{ScreenController, ThemeController, Us
 import com.waz.zclient.controllers.camera.ICameraController
 import com.waz.zclient.controllers.confirmation.{ConfirmationCallback, ConfirmationRequest, IConfirmationController}
 import com.waz.zclient.controllers.drawing.IDrawingController
-import com.waz.zclient.controllers.drawing.IDrawingController.DrawingDestination.CAMERA_PREVIEW_VIEW
 import com.waz.zclient.controllers.globallayout.{IGlobalLayoutController, KeyboardVisibilityObserver}
 import com.waz.zclient.controllers.navigation.{INavigationController, NavigationControllerObserver, Page, PagerControllerObserver}
 import com.waz.zclient.controllers.orientation.{IOrientationController, OrientationControllerObserver}
@@ -60,6 +60,7 @@ import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.ConversationController.ConversationChange
 import com.waz.zclient.conversation.toolbar.AudioMessageRecordingView
 import com.waz.zclient.cursor.{CursorCallback, CursorController, CursorView, EphemeralLayout}
+import com.waz.zclient.drawing.DrawingFragment.Sketch
 import com.waz.zclient.messages.{MessagesController, MessagesListView}
 import com.waz.zclient.pages.extendedcursor.ExtendedCursorContainer
 import com.waz.zclient.pages.extendedcursor.emoji.EmojiKeyboardLayout
@@ -423,19 +424,16 @@ class ConversationFragment extends FragmentHelper {
         })
     }
 
-    override def onSketchOnPreviewPicture(imageAsset: ImageAsset, source: ImagePreviewLayout.Source, method: IDrawingController.DrawingMethod): Unit = {
-      screenController.showSketch ! (imageAsset, CAMERA_PREVIEW_VIEW, method)
+    override def onSketchOnPreviewPicture(input: RawAssetInput, source: ImagePreviewLayout.Source, method: IDrawingController.DrawingMethod): Unit = {
+      screenController.showSketch ! Sketch.cameraPreview(input, method)
       extendedCursorContainer.close(true)
     }
 
-    override def onSendPictureFromPreview(imageAsset: ImageAsset, source: ImagePreviewLayout.Source): Unit =
-      imageAsset match {
-        case a: com.waz.api.impl.ImageAsset =>
-          convController.sendMessage(a)
-          extendedCursorContainer.close(true)
-          onCancelPreview()
-        case _ =>
-      }
+    override def onSendPictureFromPreview(input: RawAssetInput, source: ImagePreviewLayout.Source): Unit = {
+      convController.sendMessage(input)
+      extendedCursorContainer.close(true)
+      onCancelPreview()
+    }
   }
 
   private val assetIntentsManagerCallback = new AssetIntentsManager.Callback {

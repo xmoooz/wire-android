@@ -42,7 +42,8 @@ import com.waz.zclient.giphy.GiphyGridViewAdapter.ScrollGifCallback
 import com.waz.zclient.pages.BaseFragment
 import com.waz.zclient.pages.main.profile.views.{ConfirmationMenu, ConfirmationMenuListener}
 import com.waz.zclient.ui.utils.TextViewUtils
-import com.waz.zclient.utils.{ContextUtils, RichEditText, RichView}
+import com.waz.zclient.utils.ContextUtils.getColorWithTheme
+import com.waz.zclient.utils.{RichEditText, RichView}
 import com.waz.zclient.views.LoadingIndicatorView
 
 class GiphySharingPreviewFragment extends BaseFragment[GiphySharingPreviewFragment.Container]
@@ -95,7 +96,7 @@ class GiphySharingPreviewFragment extends BaseFragment[GiphySharingPreviewFragme
         v.setAccentColor(color)
         if (!themeController.isDarkTheme) {
           v.setCancelColor(color, color)
-          v.setConfirmColor(ContextUtils.getColorWithTheme(R.color.white, getContext), color)
+          v.setConfirmColor(getColorWithTheme(R.color.white), color)
         }
       }
     }

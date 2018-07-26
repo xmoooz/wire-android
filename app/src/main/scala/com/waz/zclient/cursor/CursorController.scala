@@ -36,11 +36,10 @@ import com.waz.zclient.calling.controllers.CallController
 import com.waz.zclient.common.controllers._
 import com.waz.zclient.controllers.camera.ICameraController
 import com.waz.zclient.controllers.drawing.IDrawingController
-import com.waz.zclient.controllers.drawing.IDrawingController.DrawingDestination.SKETCH_BUTTON
-import com.waz.zclient.controllers.drawing.IDrawingController.DrawingMethod.DRAW
 import com.waz.zclient.controllers.location.ILocationController
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversationlist.ConversationListController
+import com.waz.zclient.drawing.DrawingFragment
 import com.waz.zclient.messages.MessageBottomSheetDialog.MessageAction
 import com.waz.zclient.messages.controllers.MessageActionsController
 import com.waz.zclient.pages.extendedcursor.ExtendedCursorContainer
@@ -268,7 +267,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
         _    <- z.convsUi.knock(cId)
       } soundController.playPingFromMe()
     case Sketch =>
-      screenController.showSketch ! (null, SKETCH_BUTTON, DRAW)
+      screenController.showSketch ! DrawingFragment.Sketch.BlankSketch
     case File =>
       cursorCallback.foreach(_.openFileSharing())
     case VideoMessage =>

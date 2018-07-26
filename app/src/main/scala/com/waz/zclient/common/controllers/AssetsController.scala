@@ -31,15 +31,16 @@ import com.waz.api.Message
 import com.waz.content.UserPreferences.DownloadImagesAlways
 import com.waz.model.{AssetData, AssetId, MessageData, Mime}
 import com.waz.service.ZMessaging
+import com.waz.service.assets.AssetService.RawAssetInput.WireAssetInput
 import com.waz.service.assets.GlobalRecordAndPlayService
 import com.waz.service.assets.GlobalRecordAndPlayService.{AssetMediaKey, Content, UnauthenticatedContent}
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, EventStream, Signal}
 import com.waz.utils.returning
 import com.waz.utils.wrappers.{AndroidURIUtil, URI}
-import com.waz.zclient.controllers.drawing.IDrawingController
 import com.waz.zclient.controllers.drawing.IDrawingController.DrawingMethod
 import com.waz.zclient.controllers.singleimage.ISingleImageController
+import com.waz.zclient.drawing.DrawingFragment.Sketch
 import com.waz.zclient.messages.MessageBottomSheetDialog.MessageAction
 import com.waz.zclient.messages.controllers.MessageActionsController
 import com.waz.zclient.ui.utils.TypefaceUtils
@@ -110,7 +111,7 @@ class AssetsController(implicit context: Context, inj: Injector, ec: EventContex
 
   //FIXME: don't use java api
   def openDrawingFragment(msg: MessageData, drawingMethod: DrawingMethod) =
-    screenController.showSketch ! (ZMessaging.currentUi.images.getImageAsset(msg.assetId), IDrawingController.DrawingDestination.SINGLE_IMAGE_VIEW, drawingMethod)
+    screenController.showSketch ! Sketch.singleImage(WireAssetInput(msg.assetId), drawingMethod)
 
   def openFile(asset: AssetData) =
     assets.head.flatMap(_.getContentUri(asset.id)) foreach {

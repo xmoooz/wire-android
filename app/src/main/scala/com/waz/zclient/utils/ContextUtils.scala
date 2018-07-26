@@ -42,9 +42,12 @@ import scala.util.Success
 object ContextUtils {
   def getColor(resId: Int)(implicit context: Context): Int = ContextCompat.getColor(context, resId)
 
-  def getColorWithTheme(resId: Int, context: Context): Int =
+  def getColorWithThemeJava(resId: Int, context: Context): Int =
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) getColor(resId)(context)
     else context.getResources.getColor(resId, context.getTheme)
+
+  def getColorWithTheme(resId: Int)(implicit context: Context): Int =
+    getColorWithThemeJava(resId, context)
 
   def getColorStateList(resId: Int)(implicit context: Context) = ContextCompat.getColorStateList(context, resId)
 

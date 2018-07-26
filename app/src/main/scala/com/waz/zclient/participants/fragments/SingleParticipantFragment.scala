@@ -143,7 +143,7 @@ class SingleParticipantFragment extends FragmentHelper {
         }))
 
       val tabIndicatorLayout = findById[TabIndicatorLayout](v, R.id.til_single_participant_tabs)
-      tabIndicatorLayout.setPrimaryColor(getColorWithTheme(if (themeController.isDarkTheme) R.color.text__secondary_dark else R.color.text__secondary_light, getContext))
+      tabIndicatorLayout.setPrimaryColor(getColorWithTheme(if (themeController.isDarkTheme) R.color.text__secondary_dark else R.color.text__secondary_light))
       tabIndicatorLayout.setViewPager(pager)
     }
 

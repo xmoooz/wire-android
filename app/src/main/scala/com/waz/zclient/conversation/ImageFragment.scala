@@ -25,9 +25,9 @@ import android.view.View.{OnClickListener, OnLayoutChangeListener}
 import android.view.{LayoutInflater, View, ViewGroup}
 import android.widget.{FrameLayout, ImageView}
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api.ImageAsset
 import com.waz.model.{Liking, MessageId}
 import com.waz.service.ZMessaging
+import com.waz.service.assets.AssetService.RawAssetInput.WireAssetInput
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventStream, Signal}
 import com.waz.utils.returning
@@ -38,6 +38,7 @@ import com.waz.zclient.common.views.ImageController.{ImageSource, WireImage}
 import com.waz.zclient.controllers.drawing.IDrawingController
 import com.waz.zclient.controllers.singleimage.ISingleImageController
 import com.waz.zclient.conversation.toolbar._
+import com.waz.zclient.drawing.DrawingFragment.Sketch
 import com.waz.zclient.messages.MessageBottomSheetDialog.MessageAction
 import com.waz.zclient.messages.controllers.MessageActionsController
 import com.waz.zclient.ui.animation.interpolators.penner.{Expo, Quart}
@@ -112,9 +113,8 @@ class ImageFragment extends FragmentHelper {
     }
   }
 
-  lazy val imageAsset = collectionController.focusedItem.flatMap {
-    case Some(messageData) => Signal[ImageAsset](ZMessaging.currentUi.images.getImageAsset(messageData.assetId))
-    case _ => Signal.empty[ImageAsset]
+  lazy val imageInput = collectionController.focusedItem.collect {
+    case Some(messageData) => WireAssetInput(messageData.assetId)
   } disableAutowiring()
 
   var animationStarted = false
@@ -133,11 +133,10 @@ class ImageFragment extends FragmentHelper {
     topCursorItems.onUi(bottomToolbar.topToolbar.cursorItems ! _)
     bottomCursorItems.onUi(bottomToolbar.bottomToolbar.cursorItems ! _)
 
-    imageAsset
+    imageInput
 
     EventStream.union(bottomToolbar.topToolbar.onCursorButtonClicked, bottomToolbar.bottomToolbar.onCursorButtonClicked) {
       case item: CursorActionToolbarItem =>
-        import IDrawingController.DrawingDestination._
         import IDrawingController.DrawingMethod._
 
         val method = item.cursorItem match {
@@ -149,8 +148,8 @@ class ImageFragment extends FragmentHelper {
 
         method.foreach { m =>
           getFragmentManager.popBackStack()
-          imageAsset.head.foreach { asset =>
-            screenController.showSketch ! (asset, SINGLE_IMAGE_VIEW, m)
+          imageInput.head.foreach { asset =>
+            screenController.showSketch ! Sketch.singleImage(asset, m)
           }
         }
       case item: MessageActionToolbarItem =>

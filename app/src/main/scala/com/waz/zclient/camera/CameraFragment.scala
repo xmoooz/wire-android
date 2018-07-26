@@ -26,7 +26,7 @@ import android.os.Bundle
 import android.view.animation.Animation
 import android.view.{LayoutInflater, View, ViewGroup}
 import android.widget.{FrameLayout, TextView}
-import com.waz.api.ImageAsset
+import com.waz.service.assets.AssetService.RawAssetInput
 import com.waz.utils.returning
 import com.waz.utils.wrappers.URI
 import com.waz.zclient.camera.views.CameraPreviewTextureView
@@ -34,9 +34,8 @@ import com.waz.zclient.common.controllers.ScreenController
 import com.waz.zclient.common.controllers.global.AccentColorController
 import com.waz.zclient.controllers.camera.ICameraController
 import com.waz.zclient.controllers.drawing.IDrawingController
-import com.waz.zclient.controllers.drawing.IDrawingController.DrawingDestination.CAMERA_PREVIEW_VIEW
-import com.waz.zclient.controllers.drawing.IDrawingController.DrawingMethod.DRAW
 import com.waz.zclient.controllers.orientation.OrientationControllerObserver
+import com.waz.zclient.drawing.DrawingFragment.Sketch
 import com.waz.zclient.pages.main.conversation.AssetIntentsManager
 import com.waz.zclient.pages.main.profile.camera.controls.{CameraBottomControl, CameraTopControl}
 import com.waz.zclient.pages.main.profile.camera.{CameraContext, CameraFocusView, ProfileToCameraAnimation}
@@ -243,11 +242,11 @@ class CameraFragment extends FragmentHelper
     showCameraFeed()
   }
 
-  override def onSketchOnPreviewPicture(imageAsset: ImageAsset, source: ImagePreviewLayout.Source, method: IDrawingController.DrawingMethod): Unit =
-    screenController.showSketch ! (imageAsset, CAMERA_PREVIEW_VIEW, DRAW)
+  override def onSketchOnPreviewPicture(input: RawAssetInput, source: ImagePreviewLayout.Source, method: IDrawingController.DrawingMethod): Unit =
+    screenController.showSketch ! Sketch.cameraPreview(input)
 
-  override def onSendPictureFromPreview(imageAsset: ImageAsset, source: ImagePreviewLayout.Source): Unit = {
-    cameraController.onBitmapSelected(imageAsset, cameraContext)
+  override def onSendPictureFromPreview(input: RawAssetInput, source: ImagePreviewLayout.Source): Unit = {
+    cameraController.onBitmapSelected(input, cameraContext)
   }
 
   private def showPreview(setImage: (ImagePreviewLayout) => Unit) = {
