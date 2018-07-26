@@ -86,28 +86,16 @@ object SSOWebViewWrapper {
   def InitiateLoginPath(code: String) = s"sso/initiate-login/$code"
 
   val SSOErrors = Map(
-    "UnknownIdP" -> 1,
-    "Forbidden" -> 2,
-    "BadSamlResponse" -> 3,
-    "BadServerConfig" -> 4,
-    "UnknownError" -> 5,
-    "CustomServant" -> 6,
-    "SparNotFound" -> 7,
-    "SparNotInTeam" -> 8,
-    "SparNotTeamOwner" -> 9,
-    "SparNoRequestRefInResponse" -> 10,
-    "SparCouldNotSubstituteSuccessURI" -> 11,
-    "SparCouldNotSubstituteFailureURI" -> 12,
-    "SparBadInitiateLoginQueryParams" -> 13,
-    "SparBadUserName msg" -> 14,
-    "SparNoBodyInBrigResponse" -> 15,
-    "SparCouldNotParseBrigResponse" -> 16,
-    "SparCouldNotRetrieveCookie	" -> 17,
-    "SparCassandraError" -> 18,
-    "SparNewIdPBadMetaUrl" -> 19,
-    "SparNewIdPBadMetaSig" -> 20,
-    "SparNewIdPBadReqUrl" -> 21,
-    "SparNewIdPPubkeyMismatch" -> 22)
+    "server-error-unsupported-saml" -> 1,
+    "bad-success-redirect" -> 2,
+    "bad-failure-redirect" -> 3,
+    "bad-username" -> 4,
+    "bad-upstream" -> 5,
+    "server-error" -> 6,
+    "not-found" -> 7,
+    "forbidden" ->	8,
+    "no-matching-auth-req" ->	9,
+    "insufficient-permissions" -> 10)
 
   def parseURL(url: String): Option[SSOResponse] = {
     val uri = URI.parse(url)
