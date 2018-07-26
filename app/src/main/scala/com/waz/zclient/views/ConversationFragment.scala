@@ -48,27 +48,27 @@ import com.waz.zclient.camera.controllers.GlobalCameraController
 import com.waz.zclient.collection.controllers.CollectionController
 import com.waz.zclient.common.controllers.global.KeyboardController
 import com.waz.zclient.common.controllers.{ScreenController, ThemeController, UserAccountsController}
-import com.waz.zclient.controllers.accentcolor.AccentColorObserver
+import com.waz.zclient.controllers.camera.ICameraController
 import com.waz.zclient.controllers.confirmation.{ConfirmationCallback, ConfirmationRequest, IConfirmationController}
 import com.waz.zclient.controllers.drawing.IDrawingController
 import com.waz.zclient.controllers.drawing.IDrawingController.DrawingDestination.CAMERA_PREVIEW_VIEW
-import com.waz.zclient.controllers.globallayout.KeyboardVisibilityObserver
-import com.waz.zclient.controllers.navigation.{NavigationControllerObserver, Page, PagerControllerObserver}
-import com.waz.zclient.controllers.orientation.OrientationControllerObserver
-import com.waz.zclient.controllers.singleimage.SingleImageObserver
+import com.waz.zclient.controllers.globallayout.{IGlobalLayoutController, KeyboardVisibilityObserver}
+import com.waz.zclient.controllers.navigation.{INavigationController, NavigationControllerObserver, Page, PagerControllerObserver}
+import com.waz.zclient.controllers.orientation.{IOrientationController, OrientationControllerObserver}
+import com.waz.zclient.controllers.singleimage.{ISingleImageController, SingleImageObserver}
+import com.waz.zclient.controllers.userpreferences.IUserPreferencesController
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.ConversationController.ConversationChange
 import com.waz.zclient.conversation.toolbar.AudioMessageRecordingView
 import com.waz.zclient.cursor.{CursorCallback, CursorController, CursorView, EphemeralLayout}
 import com.waz.zclient.messages.{MessagesController, MessagesListView}
-import com.waz.zclient.pages.BaseFragment
 import com.waz.zclient.pages.extendedcursor.ExtendedCursorContainer
 import com.waz.zclient.pages.extendedcursor.emoji.EmojiKeyboardLayout
 import com.waz.zclient.pages.extendedcursor.image.CursorImagesLayout
 import com.waz.zclient.pages.extendedcursor.voicefilter.VoiceFilterLayout
 import com.waz.zclient.pages.main.conversation.{AssetIntentsManager, MessageStreamAnimation}
 import com.waz.zclient.pages.main.conversationlist.ConversationListAnimation
-import com.waz.zclient.pages.main.conversationpager.controller.SlidingPaneObserver
+import com.waz.zclient.pages.main.conversationpager.controller.{ISlidingPaneController, SlidingPaneObserver}
 import com.waz.zclient.pages.main.profile.camera.CameraContext
 import com.waz.zclient.pages.main.{ImagePreviewCallback, ImagePreviewLayout}
 import com.waz.zclient.participants.ParticipantsController
@@ -85,7 +85,7 @@ import com.waz.zclient.{ErrorsController, FragmentHelper, R}
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ConversationFragment extends BaseFragment[ConversationFragment.Container] with FragmentHelper {
+class ConversationFragment extends FragmentHelper {
   import ConversationFragment._
   import Threading.Implicits.Ui
 
@@ -103,6 +103,16 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
   private lazy val callStartController    = inject[CallStartController]
   private lazy val accountsController     = inject[UserAccountsController]
   private lazy val globalPrefs            = inject[GlobalPreferences]
+
+  //TODO remove use of old java controllers
+  private lazy val globalLayoutController     = inject[IGlobalLayoutController]
+  private lazy val orientationController      = inject[IOrientationController]
+  private lazy val navigationController       = inject[INavigationController]
+  private lazy val singleImageController      = inject[ISingleImageController]
+  private lazy val slidingPaneController      = inject[ISlidingPaneController]
+  private lazy val userPreferencesController  = inject[IUserPreferencesController]
+  private lazy val cameraController           = inject[ICameraController]
+  private lazy val confirmationController     = inject[IConfirmationController]
 
   private val previewShown = Signal(false)
   private lazy val convChange = convController.convChanged.filter { _.to.isDefined }
@@ -128,8 +138,9 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
 
   private var openBanner = false
 
-  override def onCreateAnimation(transit: Int, enter: Boolean, nextAnim: Int): Animation = {
-    if (nextAnim == 0 || Option(getContainer).isEmpty || getControllerFactory.isTornDown) super.onCreateAnimation(transit, enter, nextAnim)
+  override def onCreateAnimation(transit: Int, enter: Boolean, nextAnim: Int): Animation =
+    if (nextAnim == 0 || getParentFragment == null)
+      super.onCreateAnimation(transit, enter, nextAnim)
     else if (nextAnim == R.anim.fragment_animation_swap_profile_conversation_tablet_in ||
              nextAnim == R.anim.fragment_animation_swap_profile_conversation_tablet_out) new MessageStreamAnimation(
       enter,
@@ -155,7 +166,6 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       false,
       1f
     )
-  }
 
   override def onCreate(@Nullable savedInstanceState: Bundle): Unit = {
     super.onCreate(savedInstanceState)
@@ -197,9 +207,8 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     guestsBanner.foreach(_.setVisibility(View.GONE))
   }
 
-  override def onCreateView(inflater: LayoutInflater, viewGroup: ViewGroup, savedInstanceState: Bundle): View = {
+  override def onCreateView(inflater: LayoutInflater, viewGroup: ViewGroup, savedInstanceState: Bundle): View =
     inflater.inflate(R.layout.fragment_conversation, viewGroup, false)
-  }
 
   override def onViewCreated(view: View, @Nullable savedInstanceState: Bundle): Unit = {
     super.onViewCreated(view, savedInstanceState)
@@ -276,6 +285,11 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
 
       case _ =>
     }
+
+    inject[Signal[AccentColor]].map(_.getColor).onUi { color =>
+      loadingIndicatorView.setColor(color)
+      extendedCursorContainer.setAccentColor(color)
+    }
   }
 
   override def onStart(): Unit = {
@@ -315,21 +329,19 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       }
     })
 
-    getControllerFactory.getGlobalLayoutController.addKeyboardHeightObserver(extendedCursorContainer)
-    getControllerFactory.getGlobalLayoutController.addKeyboardVisibilityObserver(extendedCursorContainer)
-    extendedCursorContainer.setCallback(extendedCursorContainerCallback)
-
-    getControllerFactory.getOrientationController.addOrientationControllerObserver(orientationControllerObserver)
     cursorView.setCallback(cursorCallback)
 
-    draftMap.withCurrentDraft { draftText => if (!TextUtils.isEmpty(draftText)) cursorView.setText(draftText) }
+    globalLayoutController.addKeyboardHeightObserver(extendedCursorContainer)
+    globalLayoutController.addKeyboardVisibilityObserver(extendedCursorContainer)
+    extendedCursorContainer.setCallback(extendedCursorContainerCallback)
+    orientationController.addOrientationControllerObserver(orientationControllerObserver)
+    navigationController.addNavigationControllerObserver(navigationControllerObserver)
+    navigationController.addPagerControllerObserver(pagerControllerObserver)
+    singleImageController.addSingleImageObserver(singleImageObserver)
+    globalLayoutController.addKeyboardVisibilityObserver(keyboardVisibilityObserver)
+    slidingPaneController.addObserver(slidingPaneObserver)
 
-    getControllerFactory.getNavigationController.addNavigationControllerObserver(navigationControllerObserver)
-    getControllerFactory.getNavigationController.addPagerControllerObserver(pagerControllerObserver)
-    getControllerFactory.getSingleImageController.addSingleImageObserver(singleImageObserver)
-    getControllerFactory.getAccentColorController.addAccentColorObserver(accentColorObserver)
-    getControllerFactory.getGlobalLayoutController.addKeyboardVisibilityObserver(keyboardVisibilityObserver)
-    getControllerFactory.getSlidingPaneController.addObserver(slidingPaneObserver)
+    draftMap.withCurrentDraft { draftText => if (!TextUtils.isEmpty(draftText)) cursorView.setText(draftText) }
   }
 
   private def updateTitle(text: String): Unit = if (toolbarTitle != null) toolbarTitle.setText(text)
@@ -356,22 +368,16 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     toolbar.setNavigationOnClickListener(null)
     leftMenu.setOnMenuItemClickListener(null)
 
-    getControllerFactory.getGlobalLayoutController.removeKeyboardHeightObserver(extendedCursorContainer)
-    getControllerFactory.getGlobalLayoutController.removeKeyboardVisibilityObserver(extendedCursorContainer)
-
-    getControllerFactory.getOrientationController.removeOrientationControllerObserver(orientationControllerObserver)
-    getControllerFactory.getSingleImageController.removeSingleImageObserver(singleImageObserver)
+    globalLayoutController.removeKeyboardHeightObserver(extendedCursorContainer)
+    globalLayoutController.removeKeyboardVisibilityObserver(extendedCursorContainer)
+    orientationController.removeOrientationControllerObserver(orientationControllerObserver)
+    singleImageController.removeSingleImageObserver(singleImageObserver)
+    globalLayoutController.removeKeyboardVisibilityObserver(keyboardVisibilityObserver)
+    slidingPaneController.removeObserver(slidingPaneObserver)
+    navigationController.removePagerControllerObserver(pagerControllerObserver)
+    navigationController.removeNavigationControllerObserver(navigationControllerObserver)
 
     if (!cursorView.isEditingMessage) draftMap.setCurrent(cursorView.getText.trim)
-
-    getControllerFactory.getGlobalLayoutController.removeKeyboardVisibilityObserver(keyboardVisibilityObserver)
-    getControllerFactory.getAccentColorController.removeAccentColorObserver(accentColorObserver)
-
-    getControllerFactory.getSlidingPaneController.removeObserver(slidingPaneObserver)
-
-    getControllerFactory.getNavigationController.removePagerControllerObserver(pagerControllerObserver)
-    getControllerFactory.getNavigationController.removeNavigationControllerObserver(navigationControllerObserver)
-
     super.onStop()
   }
 
@@ -411,7 +417,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
   private lazy val imagePreviewCallback = new ImagePreviewCallback {
     override def onCancelPreview(): Unit = {
       previewShown ! false
-      getControllerFactory.getNavigationController.setPagerEnabled(true)
+      navigationController.setPagerEnabled(true)
       containerPreview
         .animate
         .translationY(getView.getMeasuredHeight)
@@ -444,7 +450,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
 
   private def sendVideo(uri: URI): Unit = {
     convController.sendMessage(ContentUriAssetForUpload(AssetId(), uri), assetErrorHandlerVideo)
-    getControllerFactory.getNavigationController.setRightPage(Page.MESSAGE_STREAM, TAG)
+    navigationController.setRightPage(Page.MESSAGE_STREAM, TAG)
     extendedCursorContainer.close(true)
   }
 
@@ -548,14 +554,14 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
           }
         }
 
-      getControllerFactory.getGlobalLayoutController.resetScreenAwakeState()
+      globalLayoutController.resetScreenAwakeState()
     }
   }
 
   private def openExtendedCursor(cursorType: ExtendedCursorContainer.Type): Unit = cursorType match {
       case ExtendedCursorContainer.Type.NONE =>
       case ExtendedCursorContainer.Type.EMOJIS =>
-        extendedCursorContainer.openEmojis(getControllerFactory.getUserPreferencesController.getRecentEmojis, getControllerFactory.getUserPreferencesController.getUnsupportedEmojis, emojiKeyboardLayoutCallback)
+        extendedCursorContainer.openEmojis(userPreferencesController.getRecentEmojis, userPreferencesController.getUnsupportedEmojis, emojiKeyboardLayoutCallback)
       case ExtendedCursorContainer.Type.EPHEMERAL =>
         convController.currentConv.map(_.ephemeralExpiration).head.foreach {
           case Some(ConvExpiry(_)) => //do nothing - global timer is set
@@ -573,7 +579,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
   private val emojiKeyboardLayoutCallback = new EmojiKeyboardLayout.Callback {
     override def onEmojiSelected(emoji: LogTag) = {
       cursorView.insertText(emoji)
-      getControllerFactory.getUserPreferencesController.addRecentEmoji(emoji)
+      userPreferencesController.addRecentEmoji(emoji)
     }
   }
 
@@ -586,7 +592,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
 
   private val voiceFilterLayoutCallback = new VoiceFilterLayout.Callback {
     override def onAudioMessageRecordingStarted(): Unit = {
-      getControllerFactory.getGlobalLayoutController.keepScreenAwake()
+      globalLayoutController.keepScreenAwake()
     }
 
     override def onCancel(): Unit = extendedCursorContainer.close(false)
@@ -602,7 +608,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
   }
 
   private val cursorImageLayoutCallback = new CursorImagesLayout.Callback {
-    override def openCamera(): Unit = getControllerFactory.getCameraController.openCamera(CameraContext.MESSAGE)
+    override def openCamera(): Unit = cameraController.openCamera(CameraContext.MESSAGE)
 
     override def openVideo(): Unit = captureVideoAskPermissions()
 
@@ -632,7 +638,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       val newInLandscape = isInLandscape
       oldInLandscape match {
         case Some(landscape) if landscape != newInLandscape =>
-          val conversationListVisible = getControllerFactory.getNavigationController.getCurrentPage == Page.CONVERSATION_LIST
+          val conversationListVisible = navigationController.getCurrentPage == Page.CONVERSATION_LIST
           if (newInLandscape && !conversationListVisible)
             CancellableFuture.delayed(getInt(R.integer.framework_animation_duration_short).millis){
               Option(getActivity).foreach(_.onBackPressed())
@@ -695,14 +701,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
 
   private val singleImageObserver = new SingleImageObserver {
     override def onShowSingleImage(messageId: String): Unit = {}
-    override def onHideSingleImage(): Unit = getControllerFactory.getNavigationController.setRightPage(Page.MESSAGE_STREAM, TAG)
-  }
-
-  private val accentColorObserver = new AccentColorObserver {
-    override def onAccentColorHasChanged(color: Int): Unit = {
-      loadingIndicatorView.setColor(color)
-      extendedCursorContainer.setAccentColor(color)
-    }
+    override def onHideSingleImage(): Unit = navigationController.setRightPage(Page.MESSAGE_STREAM, TAG)
   }
 
   private val keyboardVisibilityObserver = new KeyboardVisibilityObserver {
@@ -752,7 +751,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
   }
 
   private def onErrorCanNotSentMessageToUnverifiedConversation(err: ErrorData, convId: ConvId) =
-    if (getControllerFactory.getNavigationController.getCurrentPage == Page.MESSAGE_STREAM) {
+    if (navigationController.getCurrentPage == Page.MESSAGE_STREAM) {
       KeyboardUtils.hideKeyboard(getActivity)
 
       (for {
@@ -814,9 +813,8 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
             .withWireTheme(inject[ThemeController].getThemeDependentOptionsTheme)
             .build
 
-        getControllerFactory.getConfirmationController.requestConfirmation(request, IConfirmationController.CONVERSATION)
+        confirmationController.requestConfirmation(request, IConfirmationController.CONVERSATION)
       }
-
     }
 
   private val slidingPaneObserver = new SlidingPaneObserver {
@@ -830,7 +828,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     setImage(imagePreviewLayout)
     containerPreview.addView(imagePreviewLayout)
     previewShown ! true
-    getControllerFactory.getNavigationController.setPagerEnabled(false)
+    navigationController.setPagerEnabled(false)
     containerPreview.setTranslationY(getView.getMeasuredHeight)
     containerPreview.animate.translationY(0).setDuration(getResources.getInteger(R.integer.animation_duration_medium)).setInterpolator(new Expo.EaseOut)
   }
@@ -849,8 +847,4 @@ object ConversationFragment {
   val REQUEST_VIDEO_CAPTURE = 911
 
   def newInstance() = new ConversationFragment
-
-  trait Container {
-
-  }
 }
