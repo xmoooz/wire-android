@@ -59,5 +59,10 @@ object DialogErrorMessage {
     case 600 => (R.string.generic_error_header,               R.string.internet_connectivity_error_message)
     case _   => (R.string.generic_error_header,               R.string.generic_error_message)
   }
+
+  case class GenericDialogErrorMessage(code: Int) extends DialogErrorMessage {
+    override val headerResource: Int = genericError(code)._1
+    override val bodyResource: Int = genericError(code)._2
+  }
 }
 

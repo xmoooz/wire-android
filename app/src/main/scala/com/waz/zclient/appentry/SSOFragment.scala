@@ -17,12 +17,17 @@
  */
 package com.waz.zclient.appentry
 
+import java.util.UUID
+
 import android.os.Bundle
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.verbose
+import com.waz.api.impl.ErrorResponse
 import com.waz.service.SSOService
 import com.waz.zclient.InputDialog.{Event, OnNegativeBtn, OnPositiveBtn, ValidatorResult}
 import com.waz.zclient._
+import com.waz.zclient.appentry.DialogErrorMessage.GenericDialogErrorMessage
+import com.waz.zclient.utils.ContextUtils._
 
 import scala.concurrent.Future
 
@@ -34,16 +39,17 @@ trait SSOFragment extends FragmentHelper {
 
   import SSOFragment._
   import com.waz.threading.Threading
-  import com.waz.threading.Threading.Implicits.Background
+  import com.waz.threading.Threading.Implicits.Ui
 
   private lazy val clipboard   = inject[ClipboardUtils]
   private lazy val ssoService  = inject[SSOService]
+  private lazy val spinner  = inject[SpinnerController]
 
   private lazy val dialogStaff = new InputDialog.Listener with InputDialog.InputValidator {
     override def onDialogEvent(event: Event): Unit = event match {
       case OnNegativeBtn => verbose("Negative")
       case OnPositiveBtn(input) =>
-        ssoService.extractUUID(input).foreach(uuid => onSSOConfirm(uuid.toString))
+        ssoService.extractUUID(input).foreach(uuid => verifyCode(uuid))
     }
     override def isInputInvalid(input: String): ValidatorResult =
       if (ssoService.isTokenValid(input.trim)) ValidatorResult.Valid
@@ -98,6 +104,22 @@ trait SSOFragment extends FragmentHelper {
     findChildFragment[InputDialog](SSODialogTag).foreach(_.dismissAllowingStateLoss())
   }
 
+  private def verifyCode(code: UUID): Future[Unit] = {
+    onVerifyingCode(true)
+    ssoService.verifyToken(code).flatMap { result =>
+      onVerifyingCode(false)
+      import ErrorResponse._
+      result match {
+        case Right(true) => Future.successful(onSSOConfirm(code.toString))
+        case Right(false) => showErrorDialog(R.string.sso_signin_wrong_code_title, R.string.sso_signin_wrong_code_message)
+        case Left(ErrorResponse(ConnectionErrorCode | TimeoutCode, _, _)) => showErrorDialog(GenericDialogErrorMessage(ConnectionErrorCode))
+        case Left(error) => showConfirmationDialog(getString(R.string.sso_signin_error_title), getString(R.string.sso_signin_error_try_again_message, error.code.toString)).map(_ => ())
+      }
+    }
+  }
+
   protected def onSSOConfirm(code: String): Unit
+
+  protected def onVerifyingCode(verifying: Boolean): Unit = spinner.showSpinner(verifying)
 
 }

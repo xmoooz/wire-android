@@ -111,8 +111,6 @@ object SSOWebViewFragment {
 
   val SSOCode = "SSO_CODE"
 
-  def InitiateLoginPath(code: String) =  s"/sso/initiate-login/$code"
-
   def newInstance(code: String): SSOWebViewFragment = {
     val bundle = new Bundle()
     bundle.putString(SSOCode, code)

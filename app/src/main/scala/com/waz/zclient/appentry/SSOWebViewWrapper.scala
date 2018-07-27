@@ -63,7 +63,7 @@ class SSOWebViewWrapper(webView: WebView, backendHost: String) {
     loginPromise.tryComplete(Success(Left(-1)))
     loginPromise = Promise[SSOResponse]()
 
-    val url = URI.parse(s"$backendHost/${InitiateLoginPath(code)}")
+    val url = URI.parse(s"$backendHost${LoginClient.InitiateSSOLoginPath(code)}")
       .buildUpon
       .appendQueryParameter("success_redirect", s"$ResponseSchema://success/?$CookieQuery=$$cookie&$UserIdQuery=$$userid")
       .appendQueryParameter("error_redirect", s"$ResponseSchema://error/?$FailureQuery=$$label")
@@ -83,7 +83,6 @@ object SSOWebViewWrapper {
   val FailureQuery = "failure"
 
   type SSOResponse = Either[Int, (Cookie, UserId)]
-  def InitiateLoginPath(code: String) = s"sso/initiate-login/$code"
 
   val SSOErrors = Map(
     "server-error-unsupported-saml" -> 1,
