@@ -66,8 +66,8 @@ class SSOWebViewFragment extends FragmentHelper {
           accountsService.ssoLogin(userId, cookie).map {
             case Left(error) =>
               ContextUtils.showErrorDialog(EmailError(error))
-            case Right(true) =>
-              activity.showFragment(FirstLaunchAfterLoginFragment(userId), FirstLaunchAfterLoginFragment.Tag)
+            case Right((true, hadDB)) =>
+              activity.showFragment(FirstLaunchAfterLoginFragment(userId, ssoHadDB = hadDB), FirstLaunchAfterLoginFragment.Tag)
             case _ =>
               for {
                 am <- accountsService.accountManagers.head.map(_.find(_.userId == userId))
