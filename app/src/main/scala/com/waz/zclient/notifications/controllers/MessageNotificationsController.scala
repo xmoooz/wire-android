@@ -183,14 +183,13 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
     )
 
   private def createConvNotifications(userId: UserId, silent: Boolean, nots: Seq[NotificationInfo], teamName: Option[String]): Unit = {
-      //verbose(s"createConvNotifications($userId, ${nots.map(_.convId)})")
       if (bundleEnabled) {
         val summary = createSummaryNotificationProps(userId, silent, nots, teamName)
         notificationToBuild ! (toNotificationGroupId(userId), summary)
       }
 
       val (ephemeral, normal) = nots.partition(_.isEphemeral)
-    verbose(s"createConvNotifications($userId, ${normal.map(_.convId)}, ${ephemeral.map(_.convId)})")
+      verbose(s"createConvNotifications($userId, ${normal.map(_.convId)}, ${ephemeral.map(_.convId)})")
 
       val groupedConvs =
         if (bundleEnabled)

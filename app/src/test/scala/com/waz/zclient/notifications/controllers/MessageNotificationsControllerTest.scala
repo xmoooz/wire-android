@@ -191,7 +191,6 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
       Some(convName), userPicture = None, isEphemeral = isEphemeral, hasBeenDisplayed = false
     )
 
-
   private def sendInfos(ns: Seq[NotificationInfo], userId: UserId = userId): Unit =
     globalNotifications.groupedNotifications ! Map(userId -> (true, ns))
 
@@ -199,10 +198,10 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
     globalNotifications.groupedNotifications ! Map(userId -> (true, Seq(info)))
 
   private def waitForProps(filter: Map[Int, NotificationProps] => Boolean) =
-    returning(Await.result(notsInManager.filter(filter).head, timeout)) { _ => awaitAllTasks }
+    Await.result(notsInManager.filter(filter).head, timeout)
 
   private def waitForOne(filter: NotificationProps => Boolean = _ => true) =
-    waitForProps(map => { map.size == 1 && filter(map.head._2) }).head._2
+    waitForProps(_.exists(p => filter(p._2))).head._2
 
   private var controller: MessageNotificationsController = _
 
@@ -217,21 +216,23 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
 
     controller = new MessageNotificationsController(bundleEnabled = bundleEnabled, applicationId = "")
 
-    controller.notificationsToCancel.onUi { ids =>
+    controller.notificationsToCancel { ids =>
       verbose(s"nots to cancel: $ids")
       notsToCancel.mutate(_ ++ ids)
     }
 
-    controller.notificationToBuild.onUi {
-      case (id, props) => notsInManager.mutate(_ + (id -> props))
+    controller.notificationToBuild {
+      case (id, props) =>
+        verbose(s"NEW PROPS: $id -> $props")
+        notsInManager.mutate(_ + (id -> props))
     }
 
-    globalNotifications.notificationsSourceVisible.onUi { sources =>
+    globalNotifications.notificationsSourceVisible { sources =>
       convsVisible.mutate(_ => sources)
     }
+
     module.navigationController.visiblePage ! Page.NONE
     convsVisible ! Map.empty
-
 
     module
   }
@@ -262,7 +263,7 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
 
     waitForOne { props =>
      props.contentTitle.exists(_.spans.exists(_.style == Span.StyleSpanBold)) && // the title should be in bold
-        props.style.exists(_.summaryText.contains(teamName)) // and since the user has a team account, the summary text contains the name
+     props.style.exists(_.summaryText.contains(teamName)) // and since the user has a team account, the summary text contains the name
     }
   }
 
@@ -276,7 +277,7 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
 
     waitForOne { props =>
       props.style.exists(_.lines.size == 2) && // we received two messages
-        props.contentTitle.exists(_.header.args == StringArgs(List(convName))) // but the conv is the same, so its name is the title
+        props.contentTitle.exists(_.header.args == StringArgs(List(userData.name))) // but the conv is the same, so its name is the title
     }
   }
 
@@ -360,7 +361,11 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
 
     waitForOne { props =>
       props.contentTitle.exists(_.header.args == StringArgs(Nil)) && // the title doesn't contain the username
-      props.style.exists(_.lines.map(_.body.args.asInstanceOf[StringArgs].args.headOption) == List(Some("111"), Some("222"), None)) // the body contains two first messages, but only a placeholder for the third one
+      props.style.exists(_.lines.isEmpty) // the body doesn't contain the messages - this is the ephemeral one
+    }
+
+    waitForOne { props =>
+      props.contentTitle.exists(_.header.args == StringArgs(List(userData.name))) // and there is another props with the other two messages
     }
   }
 
@@ -374,11 +379,12 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
     sendInfos(List(info1, info2))
 
     waitForOne { props =>
-      props.style.exists(_.lines.size == 2) &&  // we receive two one-liners
-      props.style.exists(_.lines.head.header.args == StringArgs(List("user1 user name", "user1 conv name"))) && // the first contains the user name and the conv name
-      props.style.exists(_.lines.head.body.args ==  StringArgs(List("111"))) &&  // and the message
-      props.style.exists(_.lines.tail.head.header.args == StringArgs(Nil)) && // the other does not have them - instead strings from the resources should be displayed
-      props.style.exists(_.lines.tail.head.body.args == StringArgs(Nil))
+      props.contentTitle.exists(_.header.args == StringArgs(Nil)) && // the title doesn't contain the username
+        props.style.exists(_.lines.isEmpty) // the body doesn't contain the messages - this is the ephemeral one
+    }
+
+    waitForOne { props =>
+      props.contentTitle.exists(_.header.args == StringArgs(List("user1 conv name"))) // and there is another props with the other two messages
     }
   }
 
@@ -396,49 +402,6 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
     sendInfos(List(info1, info2, info3))
 
     waitForProps(_.size == 2) // only the summary and one notification, not three
-  }
-
-  @Test
-  def receiveEphemeralAsFirst(): Unit = {
-    setup()
-
-    val convId = ConvId()
-
-    val info1 = createInfo(text = "111", convId = convId, isEphemeral = true)
-    val info2 = createInfo(text = "222", convId = convId, isEphemeral = false)
-
-    sendInfos(List(info1, info2))
-
-    waitForOne { props =>
-      props.contentTitle.exists(_.header.args == StringArgs(Nil)) &&  // the title doesn't contain the username
-      props.contentText.exists(_.body.args == StringArgs(List("222"))) // the body contains the second message
-    }
-  }
-
-  @Test
-  def receiveEphemeralAsFirstInTwoConvs(): Unit = {
-    setup()
-
-    val convId1 = ConvId()
-    val userName1 = "user1"
-    val convId2 = ConvId()
-    val userName2 = "user2"
-
-
-    val info1 = createInfo(text = "111", convId = convId1, userName = userName1, convName = userName1, isEphemeral = true)
-    val info2 = createInfo(text = "222", convId = convId1, userName = userName1, convName = userName1, isEphemeral = false)
-    val info3 = createInfo(text = "333", convId = convId2, userName = userName2, convName = userName2, isEphemeral = false)
-
-    sendInfos(List(info1, info2, info3))
-
-    waitForOne { props =>
-      props.contentTitle.exists(_.header.args == AnyRefArgs(List[AnyRef](3.asInstanceOf[AnyRef], "2")))  && // the title says that these are three notifications from two conversations
-      props.style.exists(_.lines.size == 3) &&  // there are three notifications
-      props.style.exists(_.lines.head.header.args == StringArgs(Nil)) && // but no information visible about the first one
-      props.style.exists(_.lines.tail.head.header.args == StringArgs(List(userName1, userName1))) && // the other two are visible
-      props.style.exists(_.lines.tail.tail.head.header.args == StringArgs(List(userName2, userName2))) &&
-      props.style.exists(_.lines.map(_.body.args.asInstanceOf[StringArgs].args.headOption) == List(None, Some("222"), Some("333")))
-    }
   }
 
   @Test
@@ -464,10 +427,7 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
     val module = setup(bundleEnabled = true)
     sendInfo(createInfo("1:1", convId = convId), userId = userId)
 
-
     waitForOne()
-
-    //Await.result(convsVisible.filter(_.isEmpty).head, timeout)
 
     // the conversation controller is already set, so this should be enough to simulate opening a conversation
     module.navigationController.visiblePage ! Page.MESSAGE_STREAM
@@ -475,4 +435,5 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
     Await.result(convsVisible.filter(map => map.get(userId).exists(_.contains(convId))).head, timeout)
 
   }
+
 }
