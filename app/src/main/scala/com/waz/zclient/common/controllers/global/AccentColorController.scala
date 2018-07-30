@@ -69,7 +69,7 @@ class AccentColorController(implicit inj: Injector) extends Injectable {
     case Some(c) => Signal.const(c)
     case None => randomColor
   }
-  
+
   def accentColorForJava(callback: AccentColorCallback, ec: EventContext): Unit = {
     accentColor.onUi(callback.color)(ec)
   }
