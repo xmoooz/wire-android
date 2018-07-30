@@ -176,7 +176,10 @@ class SignInFragment extends SSOFragment
     confirmationButton.foreach(_.setAccentColor(Color.WHITE))
     setConfirmationButtonActive(isValid.currentValue.getOrElse(false))
     forgotPasswordButton.foreach(_.setOnClickListener(this))
-    companyLoginButton.foreach(_.setOnClickListener(this))
+    companyLoginButton.foreach { btn =>
+      if (IsProd) btn.setVisibility(View.GONE)
+      else btn.setOnClickListener(this)
+    }
   }
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View =
