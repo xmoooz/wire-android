@@ -53,6 +53,22 @@ public class MarkdownTextView extends TypefaceTextView implements ViewHelper {
 
     private StyleSheet mStyleSheet;
 
+    @Override
+    public void setTextSize(int unit, float size) {
+        super.setTextSize(unit, size);
+        invalidateStyleSheet();
+    }
+
+    @Override
+    public void setTextColor(int color) {
+        super.setTextColor(color);
+        invalidateStyleSheet();
+    }
+
+    private void invalidateStyleSheet() {
+        mStyleSheet = null;
+    }
+
     /**
      * Configures the style sheet used for rendering.
      */
