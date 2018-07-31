@@ -274,7 +274,7 @@ class ConversationFragment extends FragmentHelper {
     convChange.onUi {
       case ConversationChange(from, Some(to), _) =>
         CancellableFuture.delay(getInt(R.integer.framework_animation_duration_short).millis).map { _ =>
-          convController.loadConv(to).map {
+          convController.getConversation(to).map {
             case Some(toConv) =>
               from.foreach{ id => draftMap.set(id, cursorView.getText.trim) }
               if (toConv.convType != ConversationType.WaitForConnection) {

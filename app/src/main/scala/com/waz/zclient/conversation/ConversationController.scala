@@ -60,14 +60,22 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
 
   private var lastConvId = Option.empty[ConvId]
 
-  val currentConvIdOpt: Signal[Option[ConvId]] = convsStats.flatMap(_.selectedConversationId)
-  val currentConvId: Signal[ConvId] = currentConvIdOpt.collect { case Some(convId) => convId }
-  val currentConvOpt: Signal[Option[ConversationData]] = currentConvId.flatMap { conversationData } // updates on every change of the conversation data, not only on switching
-  val currentConv: Signal[ConversationData] = currentConvOpt.collect { case Some(conv) => conv }
+  val currentConvId: Signal[ConvId] =
+    convsStats.flatMap(_.selectedConversationId).collect { case Some(convId) => convId }
+
+  val currentConvOpt: Signal[Option[ConversationData]] =
+    currentConvId.flatMap(conversationData) // updates on every change of the conversation data, not only on switching
+
+  val currentConv: Signal[ConversationData] =
+    currentConvOpt.collect { case Some(conv) => conv }
 
   val convChanged: SourceStream[ConversationChange] = EventStream[ConversationChange]()
 
-  def conversationData(convId: ConvId): Signal[Option[ConversationData]] = convsStorage.flatMap(_.optSignal(convId))
+  def conversationData(convId: ConvId): Signal[Option[ConversationData]] =
+    convsStorage.flatMap(_.optSignal(convId))
+
+  def getConversation(convId: ConvId): Future[Option[ConversationData]] =
+    convsStorage.head.flatMap(_.get(convId))
 
   val currentConvType: Signal[ConversationType] = currentConv.map(_.convType).disableAutowiring()
   val currentConvName: Signal[String] = currentConv.map(_.displayName) // the name of the current conversation can be edited (without switching)
@@ -84,6 +92,7 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
 
   currentConvId { convId =>
     conversations(_.forceNameUpdate(convId))
+    conversations.head.foreach(_.forceNameUpdate(convId))
     if (!lastConvId.contains(convId)) { // to only catch changes coming from SE (we assume it's an account switch)
       verbose(s"a conversation change bypassed selectConv: last = $lastConvId, current = $convId")
       convChanged ! ConversationChange(from = lastConvId, to = Option(convId), requester = ConversationChangeRequester.ACCOUNT_CHANGE)
@@ -100,8 +109,7 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
       for {
         convsStats   <- convsStats.head
         convsUi      <- convsUi.head
-        convsStorage <- convsStorage.head
-        conv         <- convsStorage.get(id)
+        conv         <- getConversation(id)
         _            <- if (conv.exists(_.archived)) convsUi.setConversationArchived(id, archived = false) else Future.successful(Option.empty[ConversationData])
         _            <- convsUi.setConversationArchived(id, archived = false)
         _            <- convsStats.selectConversation(convId)
@@ -114,42 +122,26 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
   def selectConv(id: ConvId, requester: ConversationChangeRequester): Future[Unit] =
     selectConv(Some(id), requester)
 
-  def loadConv(convId: ConvId): Future[Option[ConversationData]] = convsStorage.head.flatMap(_.get(convId))
-
-  def isGroup(id: ConvId): Future[Boolean] = conversations.head.flatMap(_.isGroupConversation(id))
+  def isGroup(id: ConvId): Future[Boolean] =
+    conversations.head.flatMap(_.isGroupConversation(id))
 
   def participantsIds(conv: ConvId): Future[Seq[UserId]] =
+    membersStorage.head.flatMap(_.getActiveUsers(conv))
+
+  def setEphemeralExpiration(expiration: Option[FiniteDuration]): Future[Unit] =
     for {
-      membersStorage <- membersStorage.head
-      ms             <- membersStorage.getActiveUsers(conv)
-    } yield ms
+      id <- currentConvId.head
+      _  <- convsUi.head.flatMap(_.setEphemeral(id, expiration))
+    } yield ()
 
-  def setEphemeralExpiration(expiration: Option[FiniteDuration]): Future[Unit] = for {
-    convsUi <- convsUi.head
-    id <- currentConvId.head
-    _  <- convsUi.setEphemeral(id, expiration)
-  } yield ()
+  def loadMembers(convId: ConvId): Future[Seq[UserData]] =
+    for {
+      userIds <- membersStorage.head.flatMap(_.getActiveUsers(convId)) // TODO: maybe switch to ConversationsMembersSignal
+      users   <- usersStorage.head.flatMap(_.listAll(userIds))
+    } yield users
 
-  def loadMembers(convId: ConvId): Future[Seq[UserData]] = for {
-    membersStorage <- membersStorage.head
-    usersStorage   <- usersStorage.head
-    userIds        <- membersStorage.activeMembers(convId).head // TODO: maybe switch to ConversationsMembersSignal
-    users          <- usersStorage.listAll(userIds.toSeq)
-  } yield users
-
-  def loadClients(userId: UserId): Future[Seq[Client]] = otrClientsStorage.head.flatMap(_.getClients(userId)) // TODO: move to SE maybe?
-
-  def setCurrentConvName(name: String): Future[Unit] = for {
-    convsUi <- convsUi.head
-    convId  <- currentConvId.head
-  } yield convsUi.setConversationName(convId, name)
-
-  def addMembers(id: ConvId, users: Set[UserId]): Future[Unit] = convsUi.head.map { _.addConversationMembers(id, users) }
-
-  def removeMember(user: UserId): Future[Unit] = for {
-    convsUi <- convsUi.head
-    id      <- currentConvId.head
-  } yield convsUi.removeConversationMember(id, user)
+  def loadClients(userId: UserId): Future[Seq[Client]] =
+    otrClientsStorage.head.flatMap(_.getClients(userId)) // TODO: move to SE maybe?
 
   def sendMessage(text: String): Future[Option[MessageData]] =
     convsUiwithCurrentConv((ui, id) => ui.sendTextMessage(id, text))
@@ -177,6 +169,21 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
       res    <- f(cUi, convId)
     } yield res
 
+  def setCurrentConvName(name: String): Future[Unit] =
+    for {
+      id <- currentConvId.head
+      _  <- convsUi.head.flatMap(_.setConversationName(id, name))
+    } yield {}
+
+  def addMembers(id: ConvId, users: Set[UserId]): Future[Unit] =
+    convsUi.head.flatMap(_.addConversationMembers(id, users)).map(_ => {})
+
+  def removeMember(user: UserId): Future[Unit] =
+    for {
+      id <- currentConvId.head
+      _  <- convsUi.head.flatMap(_.removeConversationMember(id, user))
+    } yield {}
+
   def leave(convId: ConvId): CancellableFuture[Unit] =
     returning (Serialized("Conversations", convId)(CancellableFuture.lift(convsUi.head.flatMap(_.leaveConversation(convId))))) { _ =>
       currentConvId.head.map { id => if (id == convId) setCurrentConversationToNext(ConversationChangeRequester.LEAVE_CONVERSATION) }
@@ -188,30 +195,30 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
       .flatMap { convId => selectConv(convId, requester) }
 
   def archive(convId: ConvId, archive: Boolean): Unit = {
-    convsUi.head.map { _.setConversationArchived(convId, archive) }
+    convsUi.head.flatMap(_.setConversationArchived(convId, archive))
     currentConvId.head.map { id => if (id == convId) CancellableFuture.delayed(ConversationController.ARCHIVE_DELAY){
       if (!archive) selectConv(convId, ConversationChangeRequester.CONVERSATION_LIST_UNARCHIVED_CONVERSATION)
       else setCurrentConversationToNext(ConversationChangeRequester.ARCHIVED_RESULT)
     }}
   }
 
-  def setMuted(id: ConvId, muted: Boolean): Future[Unit] = convsUi.head.map { _.setConversationMuted(id, muted) }
+  def setMuted(id: ConvId, muted: Boolean): Future[Unit] =
+    convsUi.head.flatMap(_.setConversationMuted(id, muted)).map(_ => {})
 
   def delete(id: ConvId, alsoLeave: Boolean): CancellableFuture[Option[ConversationData]] = {
-    def clear(id: ConvId) = Serialized("Conversations", id) { CancellableFuture.lift( convsUi.head.flatMap { _.clearConversation(id) } ) }
-
+    def clear(id: ConvId) = Serialized("Conversations", id)(CancellableFuture.lift(convsUi.head.flatMap(_.clearConversation(id))))
     if (alsoLeave) leave(id).flatMap(_ => clear(id)) else clear(id)
   }
 
   def createGuestRoom(): Future[ConversationData] = createGroupConversation(Some(context.getString(R.string.guest_room_name)), Set(), false)
 
   def createGroupConversation(name: Option[String], users: Set[UserId], teamOnly: Boolean): Future[ConversationData] =
-    convsUi.head.flatMap { _.createGroupConversation(name, users, teamOnly).map(_._1) }
+    convsUi.head.flatMap(_.createGroupConversation(name, users, teamOnly)).map(_._1)
 
   def withCurrentConvName(callback: Callback[String]): Unit = currentConvName.head.foreach(callback.callback)(Threading.Ui)
 
   def getCurrentConvId: ConvId = currentConvId.currentValue.orNull
-  def withConvLoaded(convId: ConvId, callback: Callback[ConversationData]): Unit = loadConv(convId).foreach {
+  def withConvLoaded(convId: ConvId, callback: Callback[ConversationData]): Unit = getConversation(convId).foreach {
     case Some(data) => callback.callback(data)
     case None =>
   }(Threading.Ui)
