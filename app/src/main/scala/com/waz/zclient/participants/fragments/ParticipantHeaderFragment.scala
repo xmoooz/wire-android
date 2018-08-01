@@ -33,6 +33,7 @@ import com.waz.zclient.participants.ParticipantsController
 import com.waz.zclient.utils.ContextUtils.getColor
 import com.waz.zclient.utils.{RichView, ViewUtils}
 import com.waz.zclient.{FragmentHelper, ManagerFragment, R}
+import com.waz.ZLog.ImplicitTag._
 
 class ParticipantHeaderFragment extends FragmentHelper {
   implicit def cxt: Context = getActivity
@@ -118,10 +119,13 @@ class ParticipantHeaderFragment extends FragmentHelper {
 
     potentialMemberCount.map(_ > ConversationController.MaxParticipants).onUi {
       case true =>
-        ViewUtils.showAlertDialog(getContext,
-          R.string.max_participants_alert_title,
-          R.string.max_participants_alert_message,
-          android.R.string.ok, null, true)
+        import com.waz.threading.Threading.Implicits.Ui
+        participantsController.otherParticipants.map(_.size).head.foreach { others =>
+          ViewUtils.showAlertDialog(getContext,
+            getString(R.string.max_participants_alert_title),
+            getString(R.string.max_participants_add_alert_message, (ConversationController.MaxParticipants - others - 1).toString),
+            getString(android.R.string.ok), null, true)
+        }
       case _ =>
     }
   }

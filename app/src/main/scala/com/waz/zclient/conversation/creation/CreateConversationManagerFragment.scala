@@ -145,7 +145,7 @@ class CreateConversationManagerFragment extends FragmentHelper {
       case true =>
         ViewUtils.showAlertDialog(getContext,
           R.string.max_participants_alert_title,
-          R.string.max_participants_alert_message,
+          R.string.max_participants_create_alert_message,
           android.R.string.ok, null, true)
       case _=>
     }
