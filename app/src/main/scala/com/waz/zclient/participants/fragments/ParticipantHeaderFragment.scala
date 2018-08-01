@@ -27,10 +27,11 @@ import com.waz.utils.returning
 import com.waz.zclient.ManagerFragment.Page
 import com.waz.zclient.common.controllers.ThemeController
 import com.waz.zclient.common.controllers.global.AccentColorController
-import com.waz.zclient.conversation.creation.{CreateConversationController, AddParticipantsFragment}
+import com.waz.zclient.conversation.ConversationController
+import com.waz.zclient.conversation.creation.{AddParticipantsFragment, CreateConversationController}
 import com.waz.zclient.participants.ParticipantsController
 import com.waz.zclient.utils.ContextUtils.getColor
-import com.waz.zclient.utils.RichView
+import com.waz.zclient.utils.{RichView, ViewUtils}
 import com.waz.zclient.{FragmentHelper, ManagerFragment, R}
 
 class ParticipantHeaderFragment extends FragmentHelper {
@@ -68,9 +69,14 @@ class ParticipantHeaderFragment extends FragmentHelper {
       }
   }
 
+  private lazy val potentialMemberCount = Signal(newConvController.users, participantsController.otherParticipants).map {
+    case (newUsers, currentUsers) => newUsers.union(currentUsers).size + 1
+  }
   private lazy val confButton = returning(view[TextView](R.id.confirmation_button)) { vh =>
 
-    val confButtonEnabled = newConvController.users.map(_.nonEmpty)
+    val confButtonEnabled = Signal(newConvController.users.map(_.size), potentialMemberCount).map {
+      case (newUsers, potential) => newUsers > 0 && potential <= ConversationController.MaxParticipants
+    }
     confButtonEnabled.onUi(e => vh.foreach(_.setEnabled(e)))
 
     confButtonEnabled.flatMap {
@@ -105,6 +111,19 @@ class ParticipantHeaderFragment extends FragmentHelper {
 
       case _ => Signal.const(getString(R.string.empty_string))
     }.onUi(t => vh.foreach(_.setText(t)))
+  }
+
+  override def onCreate(savedInstanceState: Bundle): Unit = {
+    super.onCreate(savedInstanceState)
+
+    potentialMemberCount.map(_ > ConversationController.MaxParticipants).onUi {
+      case true =>
+        ViewUtils.showAlertDialog(getContext,
+          R.string.max_participants_alert_title,
+          R.string.max_participants_alert_message,
+          android.R.string.ok, null, true)
+      case _ =>
+    }
   }
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle) =

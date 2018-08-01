@@ -1430,4 +1430,7 @@
     <string name="markdown_link_dialog_message">This will take you to\n%1$s</string>
     <string name="markdown_link_dialog_confirmation">OK</string>
     <string name="markdown_link_dialog_cancel">CANCEL</string>
+
+    <string name="max_participants_alert_title">Limit reached</string>
+    <string name="max_participants_alert_message">Too many people.</string>
 </resources>
