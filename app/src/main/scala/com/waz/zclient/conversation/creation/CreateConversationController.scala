@@ -84,7 +84,7 @@ class CreateConversationController(implicit inj: Injector, ev: EventContext) ext
       userIds             <-
         if (userIds.isEmpty && shouldFullConv) {
           z.usersStorage.list().map(
-            _.filter(u => (u.isConnected || (u.teamId.isDefined && u.teamId == z.teamId)) && u.id != z.selfUserId).map(_.id).toSet.take(255)
+            _.filter(u => (u.isConnected || (u.teamId.isDefined && u.teamId == z.teamId)) && u.id != z.selfUserId).map(_.id).toSet.take(299)
           )
         } else Future.successful(userIds)
       _ = verbose(s"creating conv with ${userIds.size} users")
