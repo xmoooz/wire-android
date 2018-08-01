@@ -34,6 +34,7 @@ import com.waz.threading.Threading
 import com.waz.utils._
 import com.waz.utils.events._
 import com.waz.zclient.common.controllers.UserAccountsController
+import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.creation.{AddParticipantsFragment, CreateConversationController}
 import com.waz.zclient.integrations.IntegrationDetailsController
 import com.waz.zclient.pages.main.connect.BlockedUserProfileFragment
@@ -63,6 +64,8 @@ class GroupParticipantsFragment extends FragmentHelper {
     hasPerm <- userAccountsController.hasAddConversationMemberPermission(conv.id)
   } yield conv.isActive && isGroup && hasPerm
 
+  lazy val shouldEnableAddPeople = participantsController.otherParticipants.map(_.size + 1 < ConversationController.MaxParticipants)
+
   private lazy val footerMenu = returning(view[FooterMenu](R.id.fm__participants__footer)) { fm =>
     showAddPeople.map {
       case true  => R.string.glyph__add_people
@@ -75,6 +78,8 @@ class GroupParticipantsFragment extends FragmentHelper {
       case false => R.string.empty_string
     }.map(getString)
      .onUi(t => fm.foreach(_.setLeftActionLabelText(t)))
+
+    shouldEnableAddPeople.onUi(e => fm.foreach(_.setLeftActionEnabled(e)))
   }
 
   private lazy val participantsAdapter = returning(new ParticipantsAdapter(getInt(R.integer.participant_column__count))) { adapter =>

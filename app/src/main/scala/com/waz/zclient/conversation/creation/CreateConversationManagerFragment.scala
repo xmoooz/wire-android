@@ -38,7 +38,7 @@ import com.waz.zclient.conversation.creation.CreateConversationManagerFragment._
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
 import com.waz.zclient.ui.text.TypefaceTextView
 import com.waz.zclient.utils.ContextUtils.{getColor, getDimenPx, getInt}
-import com.waz.zclient.utils.RichView
+import com.waz.zclient.utils.{RichView, ViewUtils}
 import com.waz.zclient.views.DefaultPageTransitionAnimation
 import com.waz.zclient.{FragmentHelper, R}
 
@@ -67,8 +67,10 @@ class CreateConversationManagerFragment extends FragmentHelper {
   lazy val confButtonEnabled = for {
     currentPage <- currentPage
     name        <- ctrl.name
+    memberCount <- ctrl.users.map(_.size)
   } yield currentPage match {
     case SettingsPage if name.trim.isEmpty  => false
+    case _ if memberCount >= ConversationController.MaxParticipants => false
     case _ => true
   }
 
@@ -137,6 +139,15 @@ class CreateConversationManagerFragment extends FragmentHelper {
           case _ =>
         } (Threading.Background)
       case _ =>
+    }
+
+    ctrl.users.map(_.size >= ConversationController.MaxParticipants).onUi{
+      case true =>
+        ViewUtils.showAlertDialog(getContext,
+          R.string.max_participants_alert_title,
+          R.string.max_participants_create_alert_message,
+          android.R.string.ok, null, true)
+      case _=>
     }
 
     getChildFragmentManager.addOnBackStackChangedListener(new OnBackStackChangedListener {
