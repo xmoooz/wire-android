@@ -41,11 +41,9 @@ import com.waz.zclient.common.views.ImageController
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.{DeprecationUtils, RingtoneUtils}
 import com.waz.zms.CallWakeService
-import com.waz.utils._
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
 
 class CallingNotificationsController(implicit cxt: WireContext, eventContext: EventContext, inj: Injector) extends Injectable {
 
@@ -111,19 +109,19 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
   notifications.map(_.exists(!_.isMainCall)).onUi(soundController.playRingFromThemInCall)
 
   private def cancelNots(nots: Seq[CallingNotificationsController.CallNotification]): Unit = {
-    (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) Future.successful(notificationManager.getActiveNotifications.map(_.getId).toSet)
-    else
+    val notsIds = nots.map(_.id).toSet
+    verbose(s"cancelNots($notsIds)")
+    val toCancel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      val activeIds = notificationManager.getActiveNotifications.map(_.getId).toSet
+      Future.successful(activeIds -- notsIds)
+    } else
       for {
-        pref  <- currentNotificationsPref.head
-        value <- pref()
-        _     <- pref := Set()
-      } yield value
-    ).onComplete {
-      case Failure(ex) => verbose(s"Got exception $ex whilst fetching active notifications")
-      case Success(activeNots) =>
-        val toCancel = activeNots -- nots.map(_.id).toSet
-        Future.successful(toCancel.foreach(notificationManager.cancel(CallNotificationTag, _)))
-    }
+        pref      <- currentNotificationsPref.head
+        activeIds <- pref.apply()
+        _         <-  pref := Set.empty[Int]
+      } yield activeIds -- notsIds
+
+    toCancel.foreach(_.foreach(notificationManager.cancel(CallNotificationTag, _)))
   }
 
   notifications.onUi { nots =>
