@@ -234,4 +234,9 @@ package object utils {
         s"[[$bold]] $normal"
       } mkString " "
   }
+
+  val IsProd: Boolean = BuildConfig.APPLICATION_ID match {
+    case "com.wire" | "com.wire.candidate" => true
+    case _ => false
+  }
 }

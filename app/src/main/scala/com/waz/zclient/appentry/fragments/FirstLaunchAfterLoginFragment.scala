@@ -50,11 +50,13 @@ import scala.concurrent.Future
 object FirstLaunchAfterLoginFragment {
   val Tag: String = classOf[FirstLaunchAfterLoginFragment].getName
   val UserIdArg = "user_id_arg"
+  val SSOHadDBArg = "sso_had_db_arg"
 
   def apply(): Fragment = new FirstLaunchAfterLoginFragment
-  def apply(userId: UserId): Fragment = returning(new FirstLaunchAfterLoginFragment) { f =>
+  def apply(userId: UserId, ssoHadDB: Boolean = true): Fragment = returning(new FirstLaunchAfterLoginFragment) { f =>
     val bundle = new Bundle()
     bundle.putString(UserIdArg, userId.str)
+    bundle.putBoolean(SSOHadDBArg, ssoHadDB)
     f.setArguments(bundle)
   }
 }
@@ -101,7 +103,7 @@ class FirstLaunchAfterLoginFragment extends FragmentHelper with View.OnClickList
       restoreButton.setIsFilled(false)
       restoreButton.setAccentColor(ContextCompat.getColor(getContext, R.color.text__primary_dark))
     }
-    if (databaseExists) {
+    if (databaseExists && getBooleanArg(SSOHadDBArg)) {
       infoTitle.foreach(_.setText(R.string.second_launch__header))
       infoText.foreach(_.setText(R.string.second_launch__sub_header))
     }
@@ -140,7 +142,7 @@ class FirstLaunchAfterLoginFragment extends FragmentHelper with View.OnClickList
       null
     )
 
-    if (databaseExists) showBackupConfirmationDialog
+    if (databaseExists && getBooleanArg(SSOHadDBArg)) showBackupConfirmationDialog
     else openBackupChooser()
   }
 

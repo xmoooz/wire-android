@@ -21,9 +21,9 @@ import android.os.Bundle
 import android.view.{LayoutInflater, View, ViewGroup}
 import android.widget.LinearLayout
 import com.waz.ZLog
-import com.waz.zclient.appentry.fragments.{SignInFragment, TeamNameFragment}
+import com.waz.zclient.R
 import com.waz.zclient.appentry.fragments.SignInFragment._
-import com.waz.zclient.{FragmentHelper, R}
+import com.waz.zclient.appentry.fragments.{SignInFragment, TeamNameFragment}
 import com.waz.zclient.utils.{LayoutSpec, RichView}
 
 object AppLaunchFragment {
@@ -32,13 +32,13 @@ object AppLaunchFragment {
   def apply(): AppLaunchFragment = new AppLaunchFragment()
 }
 
-class AppLaunchFragment extends FragmentHelper {
+class AppLaunchFragment extends SSOFragment {
 
   private def activity = getActivity.asInstanceOf[AppEntryActivity]
 
-  lazy val createTeamButton = view[LinearLayout](R.id.create_team_button)
-  lazy val createAccountButton = view[LinearLayout](R.id.create_account_button)
-  lazy val loginButton = view[View](R.id.login_button)
+  private lazy val createTeamButton = view[LinearLayout](R.id.create_team_button)
+  private lazy val createAccountButton = view[LinearLayout](R.id.create_account_button)
+  private lazy val loginButton = view[View](R.id.login_button)
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View =
     inflater.inflate(R.layout.app_entry_scene, container, false)
@@ -53,4 +53,6 @@ class AppLaunchFragment extends FragmentHelper {
     })))
     loginButton.foreach(_.onClick(activity.showFragment(SignInFragment(SignInMethod(Login, Email)), SignInFragment.Tag)))
   }
+
+  override protected def onSSOConfirm(code: String): Unit = activity.showFragment(SSOWebViewFragment.newInstance(code.toString), SSOWebViewFragment.Tag)
 }

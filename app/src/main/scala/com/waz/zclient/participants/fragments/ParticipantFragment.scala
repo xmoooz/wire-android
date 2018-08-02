@@ -82,12 +82,12 @@ class ParticipantFragment extends ManagerFragment
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View =
     returning(inflater.inflate(R.layout.fragment_participant, container, false)) { _ =>
-      withFragment(R.id.fl__participant__overlay)(getChildFragmentManager.beginTransaction.remove(_).commit)
+      withChildFragment(R.id.fl__participant__overlay)(getChildFragmentManager.beginTransaction.remove(_).commit)
     }
 
   override def onViewCreated(view: View, @Nullable savedInstanceState: Bundle): Unit = {
 
-    withFragmentOpt(R.id.fl__participant__container) {
+    withChildFragmentOpt(R.id.fl__participant__container) {
       case Some(_) => //no action to take, view was already set
       case _ =>
         (getStringArg(PageToOpenArg) match {
@@ -128,7 +128,7 @@ class ParticipantFragment extends ManagerFragment
   }
 
   override def onBackPressed(): Boolean = {
-    withFragmentOpt(R.id.fl__participant__overlay) {
+    withChildFragmentOpt(R.id.fl__participant__overlay) {
       case Some(f: SingleOtrClientFragment) if f.onBackPressed() => true
       case _ =>
         withContentFragment {

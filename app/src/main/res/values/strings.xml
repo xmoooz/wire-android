@@ -1303,6 +1303,7 @@
 
     <string name="app_entry_dialog_accept">ACCEPT</string>
     <string name="app_entry_dialog_cancel">CANCEL</string>
+    <string name="app_entry_dialog_log_in">LOG IN</string>
     <string name="app_entry_dialog_no_thanks">NO, THANKS</string>
     <string name="app_entry_dialog_not_now">NOT NOW</string>
     <string name="app_entry_dialog_view">VIEW</string>
@@ -1310,6 +1311,10 @@
 
     <string name="app_entry_email_sent">Email sent</string>
     <string name="teams_set_username_subtitle">Usernames help people find you.</string>
+
+    <string name="app_entry_sso_dialog_title">Company login</string>
+    <string name="app_entry_sso_dialog_message">Enter the company SSO access code.</string>
+    <string name="app_entry_sso_input_hint"></string>
 
     <string name="pick_user_teams_invite">Invite people to join the team</string>
     <string name="teams_invitations_skip">SKIP</string>
@@ -1437,4 +1442,13 @@
         <item quantity="one">Up to 300 people can join a conversation. Currently there is only room for %1$s more person.</item>
         <item quantity="other">Up to 300 people can join a conversation. Currently there is only room for %1$s more people.</item>
     </plurals>
+    <string name="sso_signin_button">Company log in</string>
+
+    <string name="sso_signin_error_title">Something went wrong</string>
+    <string name="sso_signin_error_message">Please contact your team administrator for details (Error %1$s).</string>
+    <string name="sso_signin_error_try_again_message">Please try again later (Error %1$s).</string>
+
+    <string name="sso_signin_wrong_code_title">Invalid code</string>
+    <string name="sso_signin_wrong_code_message">Please verify your company SSO access code and try again.</string>
+
 </resources>

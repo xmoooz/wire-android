@@ -213,6 +213,7 @@ class MainActivity extends BaseActivity
               isLogin      <- z.userPrefs(IsLogin).apply()
               isNewClient  <- z.userPrefs(IsNewClient).apply()
               email        <- z.users.selfUser.map(_.email).head
+              phone        <- z.users.selfUser.map(_.phone).head
               pendingPw    <- z.userPrefs(PendingPassword).apply()
               pendingEmail <- z.userPrefs(PendingEmail).apply()
               handle       <- z.users.selfUser.map(_.handle).head
@@ -220,7 +221,8 @@ class MainActivity extends BaseActivity
               val (f, t) =
                 if (email.isDefined && pendingPw)                 (SetOrRequestPasswordFragment(email.get), SetOrRequestPasswordFragment.Tag)
                 else if (pendingEmail.isDefined)                  (VerifyEmailFragment(pendingEmail.get),   VerifyEmailFragment.Tag)
-                else if (email.isEmpty && isLogin && isNewClient) (AddEmailFragment(),                      AddEmailFragment.Tag)
+                else if (email.isEmpty && isLogin && isNewClient
+                  && phone.isDefined)                             (AddEmailFragment(),                      AddEmailFragment.Tag)
                 else if (handle.isEmpty)                          (SetHandleFragment(),                     SetHandleFragment.Tag)
                 else                                              (new MainPhoneFragment,                   MainPhoneFragment.Tag)
               replaceMainFragment(f, t, addToBackStack = false)

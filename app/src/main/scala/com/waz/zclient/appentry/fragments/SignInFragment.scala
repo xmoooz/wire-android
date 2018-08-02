@@ -35,7 +35,7 @@ import com.waz.threading.Threading
 import com.waz.utils.events.Signal
 import com.waz.utils.returning
 import com.waz.zclient._
-import com.waz.zclient.appentry.AppEntryActivity
+import com.waz.zclient.appentry.{AppEntryActivity, SSOFragment, SSOWebViewFragment}
 import com.waz.zclient.appentry.DialogErrorMessage.{EmailError, PhoneError}
 import com.waz.zclient.appentry.fragments.SignInFragment._
 import com.waz.zclient.common.controllers.BrowserController
@@ -52,7 +52,7 @@ import com.waz.zclient.ui.views.tab.TabIndicatorLayout.Callback
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils._
 
-class SignInFragment extends FragmentHelper
+class SignInFragment extends SSOFragment
   with View.OnClickListener
   with CountryController.Observer {
 
@@ -135,6 +135,7 @@ class SignInFragment extends FragmentHelper
   def termsOfService = Option(findById[TypefaceTextView](R.id.terms_of_service_text))
 
   def forgotPasswordButton = Option(findById[View](getView, R.id.ttv_signin_forgot_password))
+  def companyLoginButton = Option(findById[View](getView, R.id.ttv_signin_sso))
 
   def setupViews(): Unit = {
 
@@ -175,6 +176,10 @@ class SignInFragment extends FragmentHelper
     confirmationButton.foreach(_.setAccentColor(Color.WHITE))
     setConfirmationButtonActive(isValid.currentValue.getOrElse(false))
     forgotPasswordButton.foreach(_.setOnClickListener(this))
+    companyLoginButton.foreach { btn =>
+      if (IsProd) btn.setVisibility(View.GONE)
+      else btn.setOnClickListener(this)
+    }
   }
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View =
@@ -184,7 +189,6 @@ class SignInFragment extends FragmentHelper
     }
 
   override def onViewCreated(view: View, savedInstanceState: Bundle): Unit = {
-
     phoneButton.foreach(_.setOnClickListener(this))
     emailButton.foreach(_.setOnClickListener(this))
     closeButton.foreach(_.setOnClickListener(this))
@@ -303,6 +307,9 @@ class SignInFragment extends FragmentHelper
 
   override def onClick(v: View) = {
     v.getId match {
+      case R.id.ttv_signin_sso =>
+        extractTokenAndShowSSODialog(showIfNoToken = true)
+
       case R.id.ttv__new_reg__sign_in__go_to__email =>
         uiSignInState.mutate {
           case SignInMethod(x, Phone) => SignInMethod(x, Email)
@@ -390,6 +397,8 @@ class SignInFragment extends FragmentHelper
     } else {
       false
     }
+
+  override protected def onSSOConfirm(code: String): Unit = activity.showFragment(SSOWebViewFragment.newInstance(code.toString), SSOWebViewFragment.Tag)
 
   def activity = getActivity.asInstanceOf[AppEntryActivity]
 }

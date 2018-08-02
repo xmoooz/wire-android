@@ -128,7 +128,7 @@ trait ServiceHelper extends Service with Injectable with WireContext with EventC
 
 
 
-trait FragmentHelper extends Fragment with OnBackPressedListener with ViewFinder with Injectable with EventContext {
+trait FragmentHelper extends Fragment with OnBackPressedListener with ViewFinder with EventContext with Injectable {
 
   implicit def currentAndroidContext: Context = getContext
   lazy implicit val injector: Injector = getActivity.asInstanceOf[WireContext].injector
@@ -180,14 +180,31 @@ trait FragmentHelper extends Fragment with OnBackPressedListener with ViewFinder
   def withFragmentOpt[A](tag: String)(f: Option[Fragment] => A): A =
     f(Option(getChildFragmentManager.findFragmentByTag(tag)))
 
-  def findFragment(@IdRes id: Int): Option[Fragment] =
-    Option(getChildFragmentManager.findFragmentById(id))
+  @inline
+  private def findFragment[T <: Fragment](tag: String, manager: FragmentManager): Option[T] =
+    Option(manager.findFragmentByTag(tag)).map(_.asInstanceOf[T])
 
-  def withFragmentOpt[A](@IdRes id: Int)(f: Option[Fragment] => A): A =
-    f(findFragment(id))
+  @inline
+  private def findFragment[T <: Fragment](@IdRes id: Int, manager: FragmentManager): Option[T] =
+    Option(manager.findFragmentById(id)).map(_.asInstanceOf[T])
 
-  def withFragment(@IdRes id: Int)(f: Fragment => Unit): Unit =
-    findFragment(id).foreach(f)
+  @inline
+  def findFragment[T <: Fragment](tag: String): Option[T] =
+    findFragment(tag, getFragmentManager)
+
+  @inline
+  def findChildFragment[T <: Fragment](tag: String): Option[T] =
+    findFragment(tag, getChildFragmentManager)
+
+  @inline
+  def findChildFragment[T <: Fragment](@IdRes id: Int): Option[T] =
+    findFragment(id, getChildFragmentManager)
+
+  def withChildFragmentOpt[A](@IdRes id: Int)(f: Option[Fragment] => A): A =
+    f(findChildFragment(id))
+
+  def withChildFragment(@IdRes id: Int)(f: Fragment => Unit): Unit =
+    findChildFragment(id).foreach(f)
 
   def findById[V <: View](parent: View, id: Int): V =
     parent.findViewById(id).asInstanceOf[V]
@@ -209,17 +226,17 @@ trait FragmentHelper extends Fragment with OnBackPressedListener with ViewFinder
     false
   }
 
-  override def onResume() = {
+  override def onResume(): Unit = {
     super.onResume()
     views.foreach(_.onResume())
   }
 
-  override def onPause() = {
+  override def onPause(): Unit = {
     views.foreach(_.onPause())
     super.onPause()
   }
 
-  override def onDestroyView() = {
+  override def onDestroyView(): Unit = {
     views foreach(_.clear())
     super.onDestroyView()
   }
@@ -274,13 +291,13 @@ trait ManagerFragment extends FragmentHelper {
 
     getChildFragmentManager.addOnBackStackChangedListener(new FragmentManager.OnBackStackChangedListener {
       override def onBackStackChanged(): Unit =
-        currentContent ! withFragmentOpt(contentId)(_.map(_.getTag)).map(Page(_, getChildFragmentManager.getBackStackEntryCount <= 1))
+        currentContent ! withChildFragmentOpt(contentId)(_.map(_.getTag)).map(Page(_, getChildFragmentManager.getBackStackEntryCount <= 1))
     })
   }
 
   def getContentFragment: Option[Fragment] = withContentFragment(identity)
 
-  def withContentFragment[A](f: Option[Fragment] => A): A = withFragmentOpt(contentId)(f)
+  def withContentFragment[A](f: Option[Fragment] => A): A = withChildFragmentOpt(contentId)(f)
 }
 
 object ManagerFragment {

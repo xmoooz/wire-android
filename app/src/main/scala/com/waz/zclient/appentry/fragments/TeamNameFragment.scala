@@ -24,7 +24,7 @@ import android.os.Bundle
 import android.view.View
 import com.waz.ZLog
 import com.waz.zclient._
-import com.waz.zclient.appentry.CreateTeamFragment
+import com.waz.zclient.appentry.{CreateTeamFragment, SSOFragment, SSOWebViewFragment}
 import com.waz.zclient.common.views.InputBox
 import com.waz.zclient.common.views.InputBox.NameValidator
 import com.waz.zclient.ui.utils.KeyboardUtils
@@ -32,7 +32,7 @@ import com.waz.zclient.utils._
 
 import scala.concurrent.Future
 
-case class TeamNameFragment() extends CreateTeamFragment {
+case class TeamNameFragment() extends CreateTeamFragment with SSOFragment {
 
   override val layoutId: Int = R.layout.create_team_name_scene
 
@@ -58,6 +58,8 @@ case class TeamNameFragment() extends CreateTeamFragment {
 
   private def openUrl(id: Int): Unit =
     context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(context.getString(id))))
+
+  override protected def onSSOConfirm(code: String): Unit = showFragment(SSOWebViewFragment.newInstance(code.toString), SSOWebViewFragment.Tag)
 }
 
 object TeamNameFragment {
