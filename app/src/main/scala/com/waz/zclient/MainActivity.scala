@@ -26,7 +26,6 @@ import android.os.{Build, Bundle}
 import android.support.v4.app.{Fragment, FragmentTransaction}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.{error, info, verbose, warn}
-import com.waz.content.Preferences.Preference.PrefCodec
 import com.waz.content.UserPreferences._
 import com.waz.model.{ConvId, UserId}
 import com.waz.service.AccountManager.ClientRegistrationState.{LimitReached, PasswordMissing, Registered, Unregistered}
@@ -36,7 +35,6 @@ import com.waz.threading.{CancellableFuture, Threading}
 import com.waz.utils.events.Signal
 import com.waz.utils.{RichInstant, returning}
 import com.waz.zclient.Intents._
-import com.waz.zclient.MainActivity._
 import com.waz.zclient.SpinnerController.{Hide, Show}
 import com.waz.zclient.appentry.AppEntryActivity
 import com.waz.zclient.calling.controllers.CallStartController
@@ -201,12 +199,7 @@ class MainActivity extends BaseActivity
 
     account.head.flatMap {
       case Some(am) =>
-        (Option(getIntent).flatMap(i => Option(i.getStringExtra(ClientRegStateArg))) match {
-          case Some(clientRegState) =>
-            getIntent.removeExtra(ClientRegStateArg)
-            Future.successful(Right(PrefCodec.SelfClientIdCodec.decode(clientRegState)))
-          case _ => am.getOrRegisterClient()
-        }).map {
+        am.getOrRegisterClient().map {
           case Right(Registered(_))   =>
             for {
               z            <- zms.head
