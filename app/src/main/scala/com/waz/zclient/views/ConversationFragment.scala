@@ -173,78 +173,9 @@ class ConversationFragment extends FragmentHelper {
     super.onCreate(savedInstanceState)
     assetIntentsManager = Option(new AssetIntentsManager(getActivity, assetIntentsManagerCallback, savedInstanceState))
 
-    participantsController.containsGuest.onUi {
-      case true => openGuestsBanner()
-      case false =>  hideGuestsBanner()
-    }
-
-    keyboardController.isKeyboardVisible.onUi(visible => if(visible) collapseGuestsBanner())
-  }
-
-  private def openGuestsBanner(): Unit = {
-    if (!openBanner) {
-      openBanner = true
-      guestsBanner.foreach { banner =>
-        banner.setVisibility(View.VISIBLE)
-        banner.setPivotY(0.0f)
-        banner.setScaleY(1.0f)
-      }
-      guestsBannerText.foreach(_.setAlpha(1.0f))
-    }
-  }
-
-  private def collapseGuestsBanner(): Unit = {
-    if (openBanner) {
-      openBanner = false
-      guestsBanner.foreach { banner =>
-        banner.setPivotY(0.0f)
-        banner.animate().scaleY(0.1f).start()
-      }
-      guestsBannerText.foreach(_.animate().alpha(0.0f).start())
-    }
-  }
-
-  private def hideGuestsBanner(): Unit = {
-    openBanner = false
-    guestsBanner.foreach(_.setVisibility(View.GONE))
-  }
-
-  override def onCreateView(inflater: LayoutInflater, viewGroup: ViewGroup, savedInstanceState: Bundle): View =
-    inflater.inflate(R.layout.fragment_conversation, viewGroup, false)
-
-  override def onViewCreated(view: View, @Nullable savedInstanceState: Bundle): Unit = {
-    super.onViewCreated(view, savedInstanceState)
-
-    if (savedInstanceState != null) previewShown ! savedInstanceState.getBoolean(SAVED_STATE_PREVIEW, false)
     zms.flatMap(_.errors.getErrors).onUi { _.foreach(handleSyncError) }
 
-    findById(R.id.tiv_typing_indicator_view)
-
-    containerPreview = findById(R.id.fl__conversation_overlay)
-    cursorView = findById(R.id.cv__cursor)
-
-    extendedCursorContainer = findById(R.id.ecc__conversation)
-    listView = findById(R.id.messages_list_view)
-
-    returningF( findById(R.id.sv__conversation_toolbar__verified_shield) ){ view: ShieldView =>
-      view.setVisible(false)
-    }
-
-    // Recording audio messages
-    audioMessageRecordingView = findById[AudioMessageRecordingView](R.id.amrv_audio_message_recording)
-
-    // invisible footer to scroll over inputfield
-    returningF( new FrameLayout(getActivity) ){ footer: FrameLayout =>
-      footer.setLayoutParams(
-        new AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, getDimenPx(R.dimen.cursor__list_view_footer__height))
-      )
-    }
-
-    leftMenu = findById(R.id.conversation_left_menu)
-    toolbar = findById(R.id.t_conversation_toolbar)
-    toolbarTitle = ViewUtils.getView(toolbar, R.id.tv__conversation_toolbar__title).asInstanceOf[TextView]
     convController.currentConvName.onUi { updateTitle }
-
 
     cancelPreviewOnChange.onUi {
       case (change, Some(true)) if !change.noChange => imagePreviewCallback.onCancelPreview()
@@ -304,6 +235,79 @@ class ConversationFragment extends FragmentHelper {
     inject[Signal[AccentColor]].map(_.getColor).onUi { color =>
       extendedCursorContainer.setAccentColor(color)
     }
+
+    accountsController.isTeam.flatMap {
+      case true  => participantsController.containsGuest
+      case false => Signal.const(false)
+    }.onUi {
+      case true  => openGuestsBanner()
+      case false => hideGuestsBanner()
+    }
+
+    keyboardController.isKeyboardVisible.onUi(visible => if(visible) collapseGuestsBanner())
+  }
+
+  private def openGuestsBanner(): Unit = {
+    if (!openBanner) {
+      openBanner = true
+      guestsBanner.foreach { banner =>
+        banner.setVisibility(View.VISIBLE)
+        banner.setPivotY(0.0f)
+        banner.setScaleY(1.0f)
+      }
+      guestsBannerText.foreach(_.setAlpha(1.0f))
+    }
+  }
+
+  private def collapseGuestsBanner(): Unit = {
+    if (openBanner) {
+      openBanner = false
+      guestsBanner.foreach { banner =>
+        banner.setPivotY(0.0f)
+        banner.animate().scaleY(0.1f).start()
+      }
+      guestsBannerText.foreach(_.animate().alpha(0.0f).start())
+    }
+  }
+
+  private def hideGuestsBanner(): Unit = {
+    openBanner = false
+    guestsBanner.foreach(_.setVisibility(View.GONE))
+  }
+
+  override def onCreateView(inflater: LayoutInflater, viewGroup: ViewGroup, savedInstanceState: Bundle): View =
+    inflater.inflate(R.layout.fragment_conversation, viewGroup, false)
+
+  override def onViewCreated(view: View, @Nullable savedInstanceState: Bundle): Unit = {
+    super.onViewCreated(view, savedInstanceState)
+
+    if (savedInstanceState != null) previewShown ! savedInstanceState.getBoolean(SAVED_STATE_PREVIEW, false)
+
+    findById(R.id.tiv_typing_indicator_view)
+
+    containerPreview = findById(R.id.fl__conversation_overlay)
+    cursorView = findById(R.id.cv__cursor)
+
+    extendedCursorContainer = findById(R.id.ecc__conversation)
+    listView = findById(R.id.messages_list_view)
+
+    returningF( findById(R.id.sv__conversation_toolbar__verified_shield) ){ view: ShieldView =>
+      view.setVisible(false)
+    }
+
+    // Recording audio messages
+    audioMessageRecordingView = findById[AudioMessageRecordingView](R.id.amrv_audio_message_recording)
+
+    // invisible footer to scroll over inputfield
+    returningF( new FrameLayout(getActivity) ){ footer: FrameLayout =>
+      footer.setLayoutParams(
+        new AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, getDimenPx(R.dimen.cursor__list_view_footer__height))
+      )
+    }
+
+    leftMenu = findById(R.id.conversation_left_menu)
+    toolbar = findById(R.id.t_conversation_toolbar)
+    toolbarTitle = ViewUtils.getView(toolbar, R.id.tv__conversation_toolbar__title).asInstanceOf[TextView]
   }
 
   override def onStart(): Unit = {
@@ -612,9 +616,12 @@ class ConversationFragment extends FragmentHelper {
 
   private val navigationControllerObserver = new NavigationControllerObserver {
     override def onPageVisible(page: Page): Unit = if (page == Page.MESSAGE_STREAM) {
-      participantsController.containsGuest.currentValue.foreach {
-        case true => openGuestsBanner()
-        case false =>  hideGuestsBanner()
+      accountsController.isTeam.head.flatMap {
+        case true  => participantsController.containsGuest.head
+        case false => Future.successful(false)
+      }.foreach {
+        case true  => openGuestsBanner()
+        case false => hideGuestsBanner()
       }
       inflateCollectionIcon()
       cursorView.enableMessageWriting()
