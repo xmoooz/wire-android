@@ -257,6 +257,7 @@ dexinfo {
 }
 
 dependencies {
+
     implementation project(':lintlib')
 
     //    implementation fileTree(dir: 'libs', include: ['*.jar'])
@@ -267,7 +268,6 @@ dependencies {
     //wire libraries:
     implementation "com.wire:audio-notifications:$audioVersion"
     implementation 'com.wire:wiretranslations:1.+'
-
     // TODO  Nasty hack to be able to build add only one wire-core flavor to the build
 
     // TODO  (I know, it sucks, will think of a better way to do this, and we need this
@@ -341,7 +341,6 @@ dependencies {
     testImplementation 'com.crittercism.dexmaker:dexmaker:1.4'
     testImplementation 'com.crittercism.dexmaker:dexmaker-dx:1.4'
     testImplementation 'com.crittercism.dexmaker:dexmaker-mockito:1.4'
-
     ScalaCompileOptions.metaClass.daemonServer = true
     ScalaCompileOptions.metaClass.fork = true
     ScalaCompileOptions.metaClass.useAnt = false
