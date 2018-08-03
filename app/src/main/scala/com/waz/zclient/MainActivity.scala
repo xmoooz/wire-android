@@ -72,7 +72,7 @@ class MainActivity extends BaseActivity
 
   implicit val cxt = this
 
-  import Threading.Implicits.Background
+  import Threading.Implicits.Ui
 
   lazy val zms                      = inject[Signal[ZMessaging]]
   lazy val account                  = inject[Signal[Option[AccountManager]]]
@@ -254,7 +254,7 @@ class MainActivity extends BaseActivity
             }
           case Right(Unregistered) => warn("This shouldn't happen, going back to sign in..."); Future.successful(openSignUpPage())
           case Left(_) => showGenericErrorDialog()
-        } (Threading.Ui)
+        }
       case _ =>
         warn("No logged in account, sending to Sign in")
         Future.successful(openSignUpPage())
