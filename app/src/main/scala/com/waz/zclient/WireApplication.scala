@@ -22,6 +22,7 @@ import java.util.Calendar
 
 import android.app.{Activity, ActivityManager, NotificationManager}
 import android.content.{Context, ContextWrapper}
+import android.hardware.SensorManager
 import android.media.AudioManager
 import android.os.{Build, PowerManager, Vibrator}
 import android.renderscript.RenderScript
@@ -53,11 +54,10 @@ import com.waz.zclient.controllers._
 import com.waz.zclient.controllers.camera.ICameraController
 import com.waz.zclient.controllers.confirmation.IConfirmationController
 import com.waz.zclient.controllers.deviceuser.IDeviceUserController
-import com.waz.zclient.controllers.drawing.IDrawingController
-import com.waz.zclient.controllers.giphy.IGiphyController
 import com.waz.zclient.controllers.globallayout.IGlobalLayoutController
 import com.waz.zclient.controllers.location.ILocationController
 import com.waz.zclient.controllers.navigation.INavigationController
+import com.waz.zclient.controllers.orientation.IOrientationController
 import com.waz.zclient.controllers.singleimage.ISingleImageController
 import com.waz.zclient.controllers.userpreferences.IUserPreferencesController
 import com.waz.zclient.conversation.ConversationController
@@ -98,6 +98,7 @@ object WireApplication {
     bind [PowerManager]         to ctx.getSystemService(Context.POWER_SERVICE).asInstanceOf[PowerManager]
     bind [Vibrator]             to ctx.getSystemService(Context.VIBRATOR_SERVICE).asInstanceOf[Vibrator]
     bind [AudioManager]         to ctx.getSystemService(Context.AUDIO_SERVICE).asInstanceOf[AudioManager]
+    bind [SensorManager]        to ctx.getSystemService(Context.SENSOR_SERVICE).asInstanceOf[SensorManager]
     bind [NotificationManager]  to ctx.getSystemService(Context.NOTIFICATION_SERVICE).asInstanceOf[NotificationManager]
     bind [RenderScript]         to RenderScript.create(ctx)
 
@@ -156,13 +157,12 @@ object WireApplication {
     bind [IUserPreferencesController]    toProvider controllerFactory.getUserPreferencesController
     bind [ISingleImageController]        toProvider controllerFactory.getSingleImageController
     bind [ISlidingPaneController]        toProvider controllerFactory.getSlidingPaneController
-    bind [IDrawingController]            toProvider controllerFactory.getDrawingController
     bind [IDeviceUserController]         toProvider controllerFactory.getDeviceUserController
     bind [IGlobalLayoutController]       toProvider controllerFactory.getGlobalLayoutController
     bind [ILocationController]           toProvider controllerFactory.getLocationController
-    bind [IGiphyController]              toProvider controllerFactory.getGiphyController
     bind [ICameraController]             toProvider controllerFactory.getCameraController
     bind [IConfirmationController]       toProvider controllerFactory.getConfirmationController
+    bind [IOrientationController]        toProvider controllerFactory.getOrientationController
 
     // global controllers
     bind [CrashController]         to new CrashController

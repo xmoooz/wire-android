@@ -33,6 +33,7 @@ class KeyboardController(implicit inj: Injector, cxt: WireContext, ec: EventCont
   isKeyboardVisible(v => verbose(s"Keyboard visible: $v"))
 
   val keyboardHeight = Signal(0)
+  keyboardHeight(h => verbose(s"Keyboard height: $h"))
 
   private val rootLayout = cxt match {
     case c: Activity => Some(c.getWindow.getDecorView.findViewById(android.R.id.content).asInstanceOf[View])
@@ -44,8 +45,7 @@ class KeyboardController(implicit inj: Injector, cxt: WireContext, ec: EventCont
 
       val r = new Rect
       rootLayout.getWindowVisibleDisplayFrame(r)
-      val screenHeight: Int = rootLayout.getRootView.getHeight
-      val kbHeight = screenHeight - r.bottom - statusAndNavigationBarHeight
+      val kbHeight = math.max(0, rootLayout.getRootView.getHeight - r.bottom - statusAndNavigationBarHeight)
 
       isKeyboardVisible ! (kbHeight > 0)
       keyboardHeight ! kbHeight

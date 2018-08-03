@@ -20,7 +20,6 @@ package com.waz.zclient.controllers;
 import android.app.Activity;
 import android.content.Context;
 import android.view.View;
-
 import com.waz.zclient.controllers.accentcolor.AccentColorController;
 import com.waz.zclient.controllers.accentcolor.IAccentColorController;
 import com.waz.zclient.controllers.camera.CameraController;
@@ -29,10 +28,6 @@ import com.waz.zclient.controllers.confirmation.ConfirmationController;
 import com.waz.zclient.controllers.confirmation.IConfirmationController;
 import com.waz.zclient.controllers.deviceuser.DeviceUserController;
 import com.waz.zclient.controllers.deviceuser.IDeviceUserController;
-import com.waz.zclient.controllers.drawing.DrawingController;
-import com.waz.zclient.controllers.drawing.IDrawingController;
-import com.waz.zclient.controllers.giphy.GiphyController;
-import com.waz.zclient.controllers.giphy.IGiphyController;
 import com.waz.zclient.controllers.globallayout.GlobalLayoutController;
 import com.waz.zclient.controllers.globallayout.IGlobalLayoutController;
 import com.waz.zclient.controllers.location.ILocationController;
@@ -62,10 +57,6 @@ public class ControllerFactory implements IControllerFactory {
   protected IConfirmationController confirmationController;
 
   protected IDeviceUserController deviceUserController;
-
-  protected IDrawingController drawingController;
-
-  protected IGiphyController giphyController;
 
   protected IGlobalLayoutController globalLayoutController;
 
@@ -123,14 +114,6 @@ public class ControllerFactory implements IControllerFactory {
     if (deviceUserController != null) {
       deviceUserController.tearDown();
       deviceUserController = null;
-    }
-    if (drawingController != null) {
-      drawingController.tearDown();
-      drawingController = null;
-    }
-    if (giphyController != null) {
-      giphyController.tearDown();
-      giphyController = null;
     }
     if (globalLayoutController != null) {
       globalLayoutController.tearDown();
@@ -231,15 +214,6 @@ public class ControllerFactory implements IControllerFactory {
   }
 
   @Override
-  public IGiphyController getGiphyController() {
-    verifyLifecycle();
-    if (giphyController == null) {
-      giphyController = new GiphyController();
-    }
-    return giphyController;
-  }
-
-  @Override
   public IConfirmationController getConfirmationController() {
     verifyLifecycle();
     if (confirmationController == null) {
@@ -302,15 +276,6 @@ public class ControllerFactory implements IControllerFactory {
       deviceUserController = new DeviceUserController(this.context);
     }
     return deviceUserController;
-  }
-
-  @Override
-  public IDrawingController getDrawingController() {
-    verifyLifecycle();
-    if (drawingController == null) {
-      drawingController = new DrawingController();
-    }
-    return drawingController;
   }
 
   @Override

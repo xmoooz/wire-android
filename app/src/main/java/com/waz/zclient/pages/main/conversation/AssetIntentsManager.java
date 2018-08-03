@@ -63,12 +63,6 @@ public class AssetIntentsManager {
         pm = activity.getPackageManager();
     }
 
-    public AssetIntentsManager(Activity activity, Callback callback, URI pendingFileUri) {
-        setCallback(callback);
-        this.pendingFileUri = pendingFileUri;
-        pm = activity.getPackageManager();
-    }
-
     public void setCallback(Callback callback) {
         this.callback = callback;
     }

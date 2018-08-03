@@ -366,11 +366,10 @@ class MainActivity extends BaseActivity
   def handleIntent(intent: Intent) = {
     verbose(s"handleIntent: ${intent.log}")
 
-    def switchConversation(convId: ConvId, call: Boolean = false, exp: Option[Option[FiniteDuration]] = None) =
+    def switchConversation(convId: ConvId, call: Boolean = false) =
       CancellableFuture.delay(750.millis).map { _ =>
         verbose(s"setting conversation: $convId")
-        conversationController.selectConv(convId, ConversationChangeRequester.INTENT).map { _ =>
-          exp.foreach(conversationController.setEphemeralExpiration)
+        conversationController.selectConv(convId, ConversationChangeRequester.INTENT).foreach { _ =>
           if (call)
             for {
               Some(acc) <- account.map(_.map(_.userId)).head
@@ -413,7 +412,7 @@ class MainActivity extends BaseActivity
           convs <- sharingController.targetConvs.head
           exp   <- sharingController.ephemeralExpiration.head
           _     <- sharingController.sendContent(this)
-          _     <- if (convs.size == 1) switchConversation(convs.head, exp = Some(exp)) else Future.successful({})
+          _     <- if (convs.size == 1) switchConversation(convs.head) else Future.successful({})
         } yield clearIntent()
 
       case OpenPageIntent(page) => page match {

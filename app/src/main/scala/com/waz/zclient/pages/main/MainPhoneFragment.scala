@@ -22,8 +22,8 @@ import android.os.Bundle
 import android.support.v4.app.FragmentManager
 import android.view.{LayoutInflater, View, ViewGroup}
 import com.waz.ZLog.ImplicitTag._
-import com.waz.content.{GlobalPreferences, UserPreferences}
 import com.waz.content.UserPreferences.CrashesAndAnalyticsRequestShown
+import com.waz.content.{GlobalPreferences, UserPreferences}
 import com.waz.model.{ErrorData, Uid}
 import com.waz.service.{AccountManager, GlobalModule, ZMessaging}
 import com.waz.threading.Threading
@@ -35,7 +35,6 @@ import com.waz.zclient.common.controllers.BrowserController
 import com.waz.zclient.common.controllers.global.AccentColorController
 import com.waz.zclient.controllers.collections.CollectionsObserver
 import com.waz.zclient.controllers.confirmation.{ConfirmationObserver, ConfirmationRequest, IConfirmationController}
-import com.waz.zclient.controllers.giphy.{GiphyObserver, IGiphyController}
 import com.waz.zclient.controllers.navigation.{INavigationController, Page}
 import com.waz.zclient.controllers.singleimage.{ISingleImageController, SingleImageObserver}
 import com.waz.zclient.conversation.{ConversationController, ImageFragment}
@@ -56,7 +55,6 @@ class MainPhoneFragment extends FragmentHelper
   with OnBackPressedListener
   with ConversationPagerFragment.Container
   with SingleImageObserver
-  with GiphyObserver
   with ConfirmationObserver
   with CollectionsObserver
   with ConfirmationFragment.Container {
@@ -76,7 +74,6 @@ class MainPhoneFragment extends FragmentHelper
 
   private lazy val navigationController   = inject[INavigationController]
   private lazy val singleImageController  = inject[ISingleImageController]
-  private lazy val giphyController        = inject[IGiphyController]
   private lazy val confirmationController = inject[IConfirmationController]
 
   private lazy val confirmationMenu = returning(view[ConfirmationMenu](R.id.cm__confirm_action_light)) { vh =>
@@ -134,7 +131,6 @@ class MainPhoneFragment extends FragmentHelper
   override def onStart(): Unit = {
     super.onStart()
     singleImageController.addSingleImageObserver(this)
-    giphyController.addObserver(this)
     confirmationController.addConfirmationObserver(this)
     collectionController.addObserver(this)
 
@@ -142,7 +138,6 @@ class MainPhoneFragment extends FragmentHelper
   }
 
   override def onStop(): Unit = {
-    giphyController.removeObserver(this)
     singleImageController.removeSingleImageObserver(this)
     confirmationController.removeConfirmationObserver(this)
     collectionController.removeObserver(this)
@@ -198,30 +193,6 @@ class MainPhoneFragment extends FragmentHelper
   }
 
   override def onHideSingleImage(): Unit = ()
-
-  override def onSearch(searchTerm: String): Unit = openGiphyPreviewFragment(searchTerm = Some(searchTerm))
-
-  override def onRandomSearch(): Unit = openGiphyPreviewFragment()
-
-  override def onTrendingSearch(): Unit = openGiphyPreviewFragment()
-
-  override def onCloseGiphy(): Unit = closeGiphyPreviewFragment()
-
-  override def onCancelGiphy(): Unit = closeGiphyPreviewFragment()
-
-  private def openGiphyPreviewFragment(searchTerm: Option[String] = None): Unit = {
-    import GiphySharingPreviewFragment._
-    getChildFragmentManager
-      .beginTransaction
-      .add(R.id.fl__overlay_container, newInstance(searchTerm), Tag)
-      .addToBackStack(Tag)
-      .commit
-  }
-
-  private def closeGiphyPreviewFragment(): Unit = {
-    import GiphySharingPreviewFragment._
-    getChildFragmentManager.popBackStackImmediate(Tag, FragmentManager.POP_BACK_STACK_INCLUSIVE)
-  }
 
   override def openCollection(): Unit = ()
 
