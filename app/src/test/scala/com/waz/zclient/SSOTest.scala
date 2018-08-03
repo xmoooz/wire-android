@@ -47,7 +47,7 @@ class SSOTest extends JUnitSuite {
     val url = s"${SSOWebViewWrapper.ResponseSchema}://something/?${SSOWebViewWrapper.FailureQuery}=oops"
     val result = SSOWebViewWrapper.parseURL(url)
     assert(result.exists{
-      case Left("oops") => true
+      case Left(-1) => true
       case _ => false
     })
   }
