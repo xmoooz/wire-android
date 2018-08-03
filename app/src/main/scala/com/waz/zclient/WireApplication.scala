@@ -30,7 +30,7 @@ import android.support.multidex.MultiDexApplication
 import android.support.v4.app.{FragmentActivity, FragmentManager}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.verbose
-import com.waz.api._
+import com.waz.api.NetworkMode
 import com.waz.api.impl.AccentColor
 import com.waz.content._
 import com.waz.log.InternalLog

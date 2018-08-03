@@ -30,7 +30,8 @@ import android.view.animation.Animation
 import android.widget.{AbsListView, FrameLayout, TextView}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
-import com.waz.api._
+import com.waz.api.impl.AccentColor
+import com.waz.api.{AssetFactory, AudioAssetForUpload, AudioEffect, ErrorType}
 import com.waz.content.GlobalPreferences
 import com.waz.model.ConversationData.ConversationType
 import com.waz.model.{MessageContent => _, _}
