@@ -113,9 +113,9 @@ class MainActivity extends BaseActivity
         CrashController.checkForUpdates(this)
     }
 
-    accentColorController.accentColor.map(_.getColor).onUi { color =>
-      getControllerFactory.getUserPreferencesController.setLastAccentColor(color)
-    }
+    accentColorController.accentColor.map(_.color).onUi(
+      getControllerFactory.getUserPreferencesController.setLastAccentColor
+    )
 
     handleIntent(getIntent)
 

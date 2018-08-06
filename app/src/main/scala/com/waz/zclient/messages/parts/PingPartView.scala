@@ -70,9 +70,9 @@ class PingPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
       TextViewUtils.boldText(textViewMessage)
   }
 
-  message.map(_.userId).flatMap(users.accentColor).on(Threading.Ui) { c =>
-    textViewMessage.setTextColor(c.getColor())
-    glyphTextView.setTextColor(c.getColor())
+  message.map(_.userId).flatMap(users.accentColor).map(_.color).onUi { c =>
+    textViewMessage.setTextColor(c)
+    glyphTextView.setTextColor(c)
   }
 
   registerEphemeral(textViewMessage)

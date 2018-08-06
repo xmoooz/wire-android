@@ -37,7 +37,7 @@ class AudioAssetPartView(context: Context, attrs: AttributeSet, style: Int) exte
 
   private val progressBar: SeekBar = findById(R.id.progress)
 
-  accentColorController.accentColor.map(_.getColor).on(Threading.Ui)(progressBar.setColor)
+  accentColorController.accentColor.map(_.color).onUi(progressBar.setColor)
 
   val playControls = controller.getPlaybackControls(asset.map(_._1))
 

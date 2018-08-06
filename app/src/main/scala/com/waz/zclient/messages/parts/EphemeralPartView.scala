@@ -23,7 +23,7 @@ import android.graphics.{Canvas, Paint, RectF}
 import android.view.View
 import android.widget.{ImageView, TextView}
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api.impl.AccentColor
+import com.waz.model.AccentColor
 import com.waz.threading.Threading
 import com.waz.utils.events.{ClockSignal, Signal}
 import com.waz.utils.returning
@@ -54,7 +54,7 @@ trait EphemeralPartView extends MessageViewPart { self: ViewHelper =>
     typeface { textView.setTypeface }
     color {
       case Left(csl) => textView.setTextColor(csl)
-      case Right(ac) => textView.setTextColor(ac.getColor())
+      case Right(ac) => textView.setTextColor(ac.color)
     }
   }
 
@@ -63,7 +63,7 @@ trait EphemeralPartView extends MessageViewPart { self: ViewHelper =>
       hide <- expired
       acc <- accentController.accentColor
     } yield
-      if (hide) new ColorDrawable(ColorUtils.injectAlpha(ThemeUtils.getEphemeralBackgroundAlpha(getContext), acc.getColor()))
+      if (hide) new ColorDrawable(ColorUtils.injectAlpha(ThemeUtils.getEphemeralBackgroundAlpha(getContext), acc.color))
       else drawable
 
   def registerEphemeral(view: View, background: Drawable): Unit =

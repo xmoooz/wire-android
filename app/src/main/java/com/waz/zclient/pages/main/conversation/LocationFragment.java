@@ -55,9 +55,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.waz.api.impl.AccentColor;
+import com.waz.model.AccentColor;
 import com.waz.api.MessageContent;
-import com.waz.api.impl.AccentColors;
 import com.waz.model.ConversationData;
 import com.waz.permissions.PermissionsService;
 import com.waz.service.ZMessaging;
@@ -212,13 +211,13 @@ public class LocationFragment extends BaseFragment<LocationFragment.Container> i
         zoom = true;
 
         // retrieve the accent color to be used for the paint
-        accentColor = AccentColors.defaultColor().getColor();
+        accentColor = AccentColor.defaultColor().color();
         ((BaseActivity) getContext()).injectJava(AccentColorController.class).accentColorForJava(new AccentColorCallback() {
             @Override
             public void color(AccentColor color) {
-                selectedLocationPin.setTextColor(color.getColor());
+                selectedLocationPin.setTextColor(color.color());
                 marker = null;
-                accentColor = color.getColor();
+                accentColor = color.color();
             }
         }, EventContext.Implicits$.MODULE$.global());
     }

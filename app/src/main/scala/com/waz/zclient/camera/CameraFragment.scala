@@ -84,14 +84,14 @@ class CameraFragment extends FragmentHelper
 
   private lazy val focusView = returning(view[CameraFocusView](R.id.cfv__focus)) { vh =>
     accentColorController.accentColor.onUi { color =>
-      vh.foreach(_.setColor(color.getColor))
+      vh.foreach(_.setColor(color.color))
     }
   }
 
   private lazy val imagePreviewContainer = view[FrameLayout](R.id.fl__preview_container)
   private lazy val previewProgressBar = returning(view[ProgressView](R.id.pv__preview)) { vh =>
     accentColorController.accentColor.onUi { color =>
-      vh.foreach(_.setTextColor(color.getColor))
+      vh.foreach(_.setTextColor(color.color))
     }
   }
 

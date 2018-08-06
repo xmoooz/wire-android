@@ -17,7 +17,7 @@
  */
 package com.waz.zclient.common.controllers.global
 
-import com.waz.api.impl.{AccentColor, AccentColors}
+import com.waz.model.AccentColor
 import com.waz.content.Preferences.PrefKey
 import com.waz.content.{GlobalPreferences, UsersStorage}
 import com.waz.model.UserId
@@ -33,9 +33,9 @@ class AccentColorController(implicit inj: Injector) extends Injectable {
 
   private lazy val randomColor =
     inject[GlobalPreferences]
-      .preference(PrefKey[Int]("random_accent_color", ZSecureRandom.nextInt(AccentColors.colors.length)))
+      .preference(PrefKey[Int]("random_accent_color", ZSecureRandom.nextInt(AccentColor.getColors.length)))
       .signal
-      .map(AccentColors.colors(_))
+      .map(AccentColor.getColors.apply(_))
 
   lazy val accentColor: Signal[AccentColor] = selfUserId.flatMap(
     _.fold(Signal.const(Option.empty[AccentColor]))(accentColor(_))

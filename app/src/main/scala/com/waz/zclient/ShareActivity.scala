@@ -57,7 +57,7 @@ class ShareActivity extends BaseActivity with ActivityHelper {
       override def onHideAnimationEnd(confirmed: Boolean, canceled: Boolean, checkboxIsSelected: Boolean) = {}
     })
 
-    inject[AccentColorController].accentColor.map(_.getColor).onUi(cm.setButtonColor)
+    inject[AccentColorController].accentColor.map(_.color).onUi(cm.setButtonColor)
     accounts.accountManagers.map(_.isEmpty).onUi(cm.animateToShow)
   }
 

@@ -21,7 +21,7 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.{AttributeSet, TypedValue}
 import android.view.Gravity
-import com.waz.api.impl.AccentColor
+import com.waz.model.AccentColor
 import com.waz.model.{ConvExpiry, EphemeralDuration, MessageExpiry}
 import com.waz.utils.events.Signal
 import com.waz.zclient.paintcode.{EphemeralIcon, HourGlassIcon}
@@ -50,7 +50,7 @@ class EphemeralTimerButton(context: Context, attrs: AttributeSet, defStyleAttr: 
 
   val color =
     ephemeralExpiration.flatMap {
-      case Some(MessageExpiry(_)) => accentColor.map(_.getColor)
+      case Some(MessageExpiry(_)) => accentColor.map(_.color)
       case Some(ConvExpiry(_))    => Signal.const(getColor(R.color.light_graphite))
       case _ => darkTheme.map {
         case true  => getColor(R.color.text__primary_dark)

@@ -46,7 +46,7 @@ class ConnectRequestRow(context: Context, attrs: AttributeSet, style: Int) exten
   private val userDetailsView     = findById[UserDetailsView](R.id.udv__connect_request__user_details)
   private val chatheadView        = findById[ChatheadView](R.id.chathead)
 
-  inject[AccentColorController].accentColor.map(_.getColor()).onUi { c =>
+  inject[AccentColorController].accentColor.map(_.color).onUi { c =>
     ignoreButton.setIsFilled(false)
     ignoreButton.setAccentColor(c)
     ignoreButton.setTextColor(c)

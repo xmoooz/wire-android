@@ -78,7 +78,7 @@ class TextSearchResultRowView(context: Context, attrs: AttributeSet, style: Int)
 
   contentSignal.on(Threading.Ui){
     case (msg, query, color, Some(normalizedContent)) =>
-      val spannableString = CollectionUtils.getHighlightedSpannableString(msg.contentString, normalizedContent, query.elements, ColorUtils.injectAlpha(0.5f, color.getColor()), StartEllipsisThreshold)
+      val spannableString = CollectionUtils.getHighlightedSpannableString(msg.contentString, normalizedContent, query.elements, ColorUtils.injectAlpha(0.5f, color.color), StartEllipsisThreshold)
       contentTextView.setText(spannableString._1)
       resultsCount.setText(s"${spannableString._2}")
       if (spannableString._2 <= 1) {

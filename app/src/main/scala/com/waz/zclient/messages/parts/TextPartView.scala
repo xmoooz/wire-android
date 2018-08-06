@@ -81,7 +81,7 @@ class TextPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
     alpha <- animAlpha
   } yield
     if (alpha <= 0) Color.TRANSPARENT
-    else ColorUtils.injectAlpha(alpha, accent.getColor())
+    else ColorUtils.injectAlpha(alpha, accent.color)
 
   val isHighlighted = for {
     msg <- message
@@ -96,7 +96,7 @@ class TextPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
     part <- messagePart
     content = part.fold(msg.contentString)(_.content)
   } yield
-    CollectionUtils.getHighlightedSpannableString(content, ContentSearchQuery.transliterated(content), query.elements, ColorUtils.injectAlpha(0.5f, color.getColor()))._1
+    CollectionUtils.getHighlightedSpannableString(content, ContentSearchQuery.transliterated(content), query.elements, ColorUtils.injectAlpha(0.5f, color.color))._1
 
   searchResultText.on(Threading.Ui) { textView.setText }
 

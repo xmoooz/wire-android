@@ -99,7 +99,7 @@ class LocationPartView(context: Context, attrs: AttributeSet, style: Int) extend
   showPin.on(Threading.Ui) { pinView.setVisible }
   showPlaceholder.on(Threading.Ui) { placeholder.setVisible }
 
-  accentController.accentColor { c => pinView.setTextColor(c.getColor()) }
+  accentController.accentColor.map(_.color) (pinView.setTextColor)
 
   onClicked { _ =>
     expired.head foreach {

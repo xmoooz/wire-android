@@ -91,7 +91,7 @@ class GiphySharingPreviewFragment extends BaseFragment[GiphySharingPreviewFragme
   }
 
   private lazy val confirmationMenu = returning(view[ConfirmationMenu](R.id.cm__giphy_preview__confirmation_menu)) { vh =>
-    accentColorController.accentColor.map(_.getColor).onUi { color =>
+    accentColorController.accentColor.map(_.color).onUi { color =>
       vh.foreach { v =>
         v.setAccentColor(color)
         if (!themeController.isDarkTheme) {

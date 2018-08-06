@@ -68,7 +68,7 @@ class ShareToMultipleFragment extends FragmentHelper with OnBackPressedListener 
   lazy val messagesController = inject[MessagesController]
   lazy val sharingController = inject[SharingController]
   lazy val usersController = inject[UsersController]
-  lazy val accentColor = inject[AccentColorController].accentColor.map(_.getColor)
+  lazy val accentColor = inject[AccentColorController].accentColor.map(_.color)
 
   lazy val filterText = Signal[String]("")
 

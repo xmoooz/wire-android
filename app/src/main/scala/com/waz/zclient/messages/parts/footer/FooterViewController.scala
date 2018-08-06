@@ -118,7 +118,7 @@ class FooterViewController(implicit inj: Injector, context: Context, ec: EventCo
   }
 
   val linkColor = expiring flatMap {
-    case true => accents.accentColor.map(_.getColor())
+    case true => accents.accentColor.map(_.color)
     case false => Signal const getColor(R.color.accent_red);
   }
 

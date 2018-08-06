@@ -181,9 +181,9 @@ class ConversationListManagerFragment extends Fragment
         case _ => //
       }
 
-      accentColor.accentColor.onUi { c =>
-        Option(startUiLoadingIndicator).foreach(_.setColor(c.getColor))
-        Option(listLoadingIndicator).foreach(_.setColor(c.getColor))
+      accentColor.accentColor.map(_.color).onUi { c =>
+        Option(startUiLoadingIndicator).foreach(_.setColor(c))
+        Option(listLoadingIndicator).foreach(_.setColor(c))
       }
     }
 

@@ -25,7 +25,6 @@ import android.view.{View, ViewGroup}
 import android.widget.FrameLayout.LayoutParams
 import android.widget.{FrameLayout, ImageView, RelativeLayout}
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api.impl.AccentColors
 import com.waz.content.{AccountStorage, TeamsStorage}
 import com.waz.model._
 import com.waz.service.AccountsService
@@ -72,7 +71,7 @@ class AccountTabButton(val context: Context, val attrs: AttributeSet, val defSty
     else
       getResources.getDimensionPixelSize(R.dimen.teams_tab_default_height)
 
-  private var selectedColor = AccentColors.defaultColor.getColor()
+  private var selectedColor = AccentColor.defaultColor.color
 
   private val accountId = Signal[UserId]()
 
@@ -130,10 +129,10 @@ class AccountTabButton(val context: Context, val attrs: AttributeSet, val defSty
   unreadIndicatorName.setAlpha(0f)
 
   accentColor.on(Threading.Ui){ accentColor =>
-    selectedColor = accentColor.getColor()
-    drawable.setBorderColor(accentColor.getColor())
-    unreadIndicatorIcon.setAccentColor(accentColor.getColor())
-    unreadIndicatorName.setAccentColor(accentColor.getColor())
+    selectedColor = accentColor.color
+    drawable.setBorderColor(accentColor.color)
+    unreadIndicatorIcon.setAccentColor(accentColor.color)
+    unreadIndicatorName.setAccentColor(accentColor.color)
   }
 
   def setAccount(id: UserId) = accountId ! id

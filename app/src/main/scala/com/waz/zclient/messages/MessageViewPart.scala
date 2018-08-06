@@ -25,7 +25,6 @@ import android.view.View
 import android.widget.{LinearLayout, RelativeLayout}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api.Message
-import com.waz.api.impl.AccentColor
 import com.waz.model._
 import com.waz.service.ZMessaging
 import com.waz.service.messages.MessageAndLikes
@@ -145,7 +144,7 @@ class UnreadDot(context: Context, attrs: AttributeSet, style: Int) extends View(
   val dotPaint = new Paint(Paint.ANTI_ALIAS_FLAG)
 
   accent { color =>
-    dotPaint.setColor(color.getColor())
+    dotPaint.setColor(color.color)
     postInvalidate()
   }
 
@@ -217,7 +216,7 @@ class UserPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
       case 7 => 0.64f
       case _ => 1f
     }
-    ColorUtils.injectAlpha(alpha, AccentColor(accent).getColor())
+    ColorUtils.injectAlpha(alpha, AccentColor(accent).color)
   }
 }
 

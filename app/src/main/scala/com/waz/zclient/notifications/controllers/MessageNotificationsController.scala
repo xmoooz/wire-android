@@ -76,7 +76,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
   private var accentColors = Map[UserId, Int]()
 
   inject[AccentColorController].colors { cs =>
-    accentColors = cs.map { case (userId, color) => userId -> color.getColor }
+    accentColors = cs.map { case (userId, color) => userId -> color.color }
   }
 
   private val newNotifications =

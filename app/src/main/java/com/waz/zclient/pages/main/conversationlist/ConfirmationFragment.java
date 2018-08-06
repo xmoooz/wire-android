@@ -22,7 +22,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.waz.api.impl.AccentColor;
+import com.waz.model.AccentColor;
 import com.waz.utils.events.EventContext;
 import com.waz.zclient.BaseActivity;
 import com.waz.zclient.OnBackPressedListener;
@@ -98,7 +98,7 @@ public class ConfirmationFragment extends BaseFragment<ConfirmationFragment.Cont
         ((BaseActivity) getContext()).injectJava(AccentColorController.class).accentColorForJava(new AccentColorCallback() {
             @Override
             public void color(AccentColor color) {
-                confirmationMenu.setButtonColor(color.getColor());
+                confirmationMenu.setButtonColor(color.color());
             }
         }, EventContext.Implicits$.MODULE$.global());
 

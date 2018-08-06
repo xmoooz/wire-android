@@ -70,7 +70,7 @@ class ParticipantOtrDeviceAdapter(implicit context: Context, injector: Injector,
   } yield (cs, user.name, color)).onUi { case (cs, name, color) =>
     devices = cs
     userName = name
-    accentColor = color.getColor
+    accentColor = color.color
     notifyDataSetChanged()
 
     // request refresh of clients list, this will be executed only when UI goes to devices list,
