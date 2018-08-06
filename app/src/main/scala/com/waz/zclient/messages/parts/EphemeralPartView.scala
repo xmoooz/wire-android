@@ -23,7 +23,7 @@ import android.graphics.{Canvas, Paint, RectF}
 import android.view.View
 import android.widget.{ImageView, TextView}
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api.AccentColor
+import com.waz.api.impl.AccentColor
 import com.waz.threading.Threading
 import com.waz.utils.events.{ClockSignal, Signal}
 import com.waz.utils.returning

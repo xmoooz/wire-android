@@ -38,7 +38,7 @@ import android.os.Bundle
 import android.support.v4.app.{Fragment, FragmentManager}
 import android.view.{LayoutInflater, View, ViewGroup}
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api._
+import com.waz.api.MessageContent
 import com.waz.model.{MessageContent => _, _}
 import com.waz.service.assets.AssetService.RawAssetInput
 import com.waz.service.tracking.GroupConversationEvent

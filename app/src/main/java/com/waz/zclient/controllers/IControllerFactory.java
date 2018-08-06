@@ -19,7 +19,6 @@ package com.waz.zclient.controllers;
 
 import android.app.Activity;
 import android.view.View;
-import com.waz.zclient.controllers.accentcolor.IAccentColorController;
 import com.waz.zclient.controllers.camera.ICameraController;
 import com.waz.zclient.controllers.confirmation.IConfirmationController;
 import com.waz.zclient.controllers.deviceuser.IDeviceUserController;
@@ -60,8 +59,6 @@ public interface IControllerFactory {
   void setGlobalLayout(View globalLayoutView);
 
   ISlidingPaneController getSlidingPaneController();
-
-  IAccentColorController getAccentColorController();
 
   void setActivity(Activity activity);
 

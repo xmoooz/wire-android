@@ -73,8 +73,9 @@ class AccentColorController(implicit inj: Injector) extends Injectable {
   def accentColorForJava(callback: AccentColorCallback, ec: EventContext): Unit = {
     accentColor.onUi(callback.color)(ec)
   }
+
 }
 
 trait AccentColorCallback {
-  def color(color: com.waz.api.AccentColor): Unit
+  def color(color: AccentColor): Unit
 }

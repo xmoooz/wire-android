@@ -115,7 +115,6 @@ class MainActivity extends BaseActivity
 
     accentColorController.accentColor.map(_.getColor).onUi { color =>
       getControllerFactory.getUserPreferencesController.setLastAccentColor(color)
-      getControllerFactory.getAccentColorController.setColor(color)
     }
 
     handleIntent(getIntent)

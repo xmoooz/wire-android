@@ -26,7 +26,8 @@ import android.support.v7.widget.Toolbar
 import android.view._
 import android.widget.{FrameLayout, TextView}
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api._
+import com.waz.api.MemoryImageCache
+import com.waz.api.impl.AccentColor
 import com.waz.model.{AssetData, AssetId}
 import com.waz.permissions.PermissionsService
 import com.waz.service.ZMessaging
