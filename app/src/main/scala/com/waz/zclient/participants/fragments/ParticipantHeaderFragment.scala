@@ -42,7 +42,7 @@ class ParticipantHeaderFragment extends FragmentHelper {
   private lazy val participantsController = inject[ParticipantsController]
   private lazy val themeController        = inject[ThemeController]
   private lazy val newConvController      = inject[CreateConversationController]
-  private lazy val accentColor            = inject[AccentColorController].accentColor.map(_.getColor)
+  private lazy val accentColor            = inject[AccentColorController].accentColor.map(_.color)
 
   lazy val page = Option(getParentFragment) match {
     case Some(f: ManagerFragment) => f.currentContent

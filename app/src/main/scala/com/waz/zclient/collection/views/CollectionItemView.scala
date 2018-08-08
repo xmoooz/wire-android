@@ -26,7 +26,6 @@ import android.view.View.OnClickListener
 import android.webkit.URLUtil
 import android.widget.TextView
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api.impl.AccentColor
 import com.waz.model._
 import com.waz.service.ZMessaging
 import com.waz.threading.Threading
@@ -79,7 +78,7 @@ trait CollectionNormalItemView extends CollectionItemView with ClickableViewPart
   messageData.flatMap(msg => civZms.map(_.usersStorage).flatMap(_.signal(msg.userId))).on(Threading.Ui) {
     user =>
       messageUser.setText(user.name)
-      messageUser.setTextColor(AccentColor(user.accent).getColor())
+      messageUser.setTextColor(AccentColor(user.accent).color)
   }
 
   messageData.on(Threading.Ui) {

@@ -124,7 +124,7 @@ class AudioMessageRecordingView (val context: Context, val attrs: AttributeSet, 
     })
   }
 
-  inject[AccentColorController].accentColor.map(_.getColor).onUi { color =>
+  inject[AccentColorController].accentColor.map(_.color).onUi { color =>
     Option(recordingSeekBar.getProgressDrawable  ).foreach { drawable =>
       val filter = new LightingColorFilter(0xFF000000, color)
 

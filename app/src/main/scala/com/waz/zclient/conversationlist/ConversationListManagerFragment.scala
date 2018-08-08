@@ -25,7 +25,6 @@ import android.widget.FrameLayout
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.verbose
 import com.waz.api.SyncState._
-import com.waz.api._
 import com.waz.model._
 import com.waz.model.sync.SyncCommand._
 import com.waz.service.ZMessaging
@@ -182,9 +181,9 @@ class ConversationListManagerFragment extends Fragment
         case _ => //
       }
 
-      accentColor.accentColor.onUi { c =>
-        Option(startUiLoadingIndicator).foreach(_.setColor(c.getColor))
-        Option(listLoadingIndicator).foreach(_.setColor(c.getColor))
+      accentColor.accentColor.map(_.color).onUi { c =>
+        Option(startUiLoadingIndicator).foreach(_.setColor(c))
+        Option(listLoadingIndicator).foreach(_.setColor(c))
       }
     }
 
@@ -238,7 +237,7 @@ class ConversationListManagerFragment extends Fragment
 
   override def onShowUserProfile(userId: UserId) =
     if (!pickUserController.isShowingUserProfile) {
-      import User.ConnectionStatus._
+      import com.waz.api.User.ConnectionStatus._
 
       def show(fragment: Fragment, tag: String): Unit = {
         getChildFragmentManager

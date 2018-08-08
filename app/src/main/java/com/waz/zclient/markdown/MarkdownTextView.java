@@ -24,7 +24,7 @@ import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
 import android.util.AttributeSet;
 
-import com.waz.api.AccentColor;
+import com.waz.model.AccentColor;
 import com.waz.zclient.BaseActivity;
 import com.waz.zclient.R;
 import com.waz.zclient.ViewHelper;
@@ -104,14 +104,14 @@ public class MarkdownTextView extends TypefaceTextView implements ViewHelper {
         } else {
             activity = (BaseActivity) getContext();
         }
-        
+
         if (activity != null) {
             // update the link color whenever the accent color changes
             activity.injectJava(AccentColorController.class).accentColorForJava(new AccentColorCallback() {
                 @Override
                 public void color(AccentColor color) {
-                    mStyleSheet.setLinkColor(color.getColor());
-                    setLinkTextColor(color.getColor());
+                    mStyleSheet.setLinkColor(color.color());
+                    setLinkTextColor(color.color());
                     refreshLinks();
                 }
             }, eventContext());

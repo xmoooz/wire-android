@@ -160,8 +160,8 @@ class QuickReplyFragment extends Fragment with FragmentHelper {
     }
 
     subscriptions = Seq(
-      conv.map(_.displayName).onUi { name.setText },
-      accentColor.map(_.getColor()).onUi { message.setAccentColor },
+      conv.map(_.displayName).onUi(name.setText),
+      accentColor.map(_.color).onUi(message.setAccentColor),
       counterStr.onUi { case (visible, str) =>
         counter.setVisible(visible)
         counter.setText(str)

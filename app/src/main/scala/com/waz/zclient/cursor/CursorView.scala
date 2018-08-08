@@ -29,8 +29,7 @@ import android.widget.TextView.OnEditorActionListener
 import android.widget.{LinearLayout, TextView}
 import com.waz.ZLog.ImplicitTag._
 
-import com.waz.api.impl.AccentColor
-import com.waz.api._
+import com.waz.model.AccentColor
 import com.waz.model.{Availability, MessageExpiry}
 import com.waz.threading.Threading
 import com.waz.utils.events.Signal
@@ -183,7 +182,7 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
     cursorEditText.setImeOptions(if (enabled) EditorInfo.IME_ACTION_NONE else EditorInfo.IME_ACTION_SEND)
   }
 
-  accentColor.map(_.getColor).onUi(cursorEditText.setAccentColor)
+  accentColor.map(_.color).onUi(cursorEditText.setAccentColor)
 
   private lazy val transformer = TextTransform.get(ContextUtils.getString(R.string.single_image_message__name__font_transform))
 
@@ -208,7 +207,7 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
     Some(MessageExpiry(_)) <- controller.ephemeralExp
     Availability.None      <- controller.convAvailability
     ac                     <- accentColor
-  } yield ac.getColor)
+  } yield ac.color)
     .orElse(Signal.const(defaultHintTextColor))
     .onUi(hintView.setTextColor)
 

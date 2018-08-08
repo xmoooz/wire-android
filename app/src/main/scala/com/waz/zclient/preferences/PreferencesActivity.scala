@@ -94,8 +94,7 @@ class PreferencesActivity extends BaseActivity
     }
 
     accentColor.on(Threading.Ui) { color =>
-      getControllerFactory.getUserPreferencesController.setLastAccentColor(color.getColor())
-      getControllerFactory.getAccentColorController.setColor(color.getColor())
+      getControllerFactory.getUserPreferencesController.setLastAccentColor(color.color)
     }
 
     accountTabs.onTabClick.onUi { account =>

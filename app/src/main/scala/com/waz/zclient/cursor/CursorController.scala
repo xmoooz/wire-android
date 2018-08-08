@@ -25,7 +25,7 @@ import android.view.{MotionEvent, View}
 import android.widget.Toast
 import com.google.android.gms.common.{ConnectionResult, GoogleApiAvailability}
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api._
+import com.waz.api.NetworkMode
 import com.waz.content.{GlobalPreferences, UserPreferences}
 import com.waz.model.{ConvExpiry, MessageData}
 import com.waz.permissions.PermissionsService

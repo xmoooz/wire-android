@@ -78,7 +78,7 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
   private lazy val zms                    = inject[Signal[ZMessaging]]
   private lazy val self                   = zms.flatMap(z => UserSignal(z.selfUserId))
   private lazy val userAccountsController = inject[UserAccountsController]
-  private lazy val accentColor            = inject[AccentColorController].accentColor.map(_.getColor())
+  private lazy val accentColor            = inject[AccentColorController].accentColor.map(_.color)
   private lazy val conversationController = inject[ConversationController]
   private lazy val browser                = inject[BrowserController]
   private lazy val integrationsController = inject[IntegrationsController]

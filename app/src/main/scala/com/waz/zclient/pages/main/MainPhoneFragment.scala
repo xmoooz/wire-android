@@ -77,7 +77,7 @@ class MainPhoneFragment extends FragmentHelper
   private lazy val confirmationController = inject[IConfirmationController]
 
   private lazy val confirmationMenu = returning(view[ConfirmationMenu](R.id.cm__confirm_action_light)) { vh =>
-    accentColorController.accentColor.onUi(color => vh.foreach(_.setButtonColor(color.getColor)))
+    accentColorController.accentColor.map(_.color).onUi(color => vh.foreach(_.setButtonColor(color)))
   }
 
   lazy val consentDialogFuture = for {

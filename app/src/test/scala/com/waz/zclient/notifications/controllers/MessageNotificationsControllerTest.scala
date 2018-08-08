@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit
 import com.waz.ZLog.verbose
 import com.waz.api.IConversation
 import com.waz.api.NotificationsHandler.NotificationType
-import com.waz.api.impl.AccentColor
 import com.waz.content._
 import com.waz.model._
 import com.waz.service.conversation.{ConversationsListStateService, ConversationsService, ConversationsUiService}

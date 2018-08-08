@@ -24,7 +24,7 @@ import android.support.v7.app.AlertDialog
 import android.support.v7.widget.{LinearLayoutManager, RecyclerView}
 import android.view.View.OnClickListener
 import android.view.{LayoutInflater, View, ViewGroup}
-import com.waz.api.impl.{AccentColor, AccentColors}
+import com.waz.model.AccentColor
 import com.waz.service.ZMessaging
 import com.waz.threading.Threading
 import com.waz.utils.events.Signal
@@ -57,7 +57,7 @@ class AccentColorPickerFragment extends DialogFragment with FragmentHelper {
     //For example, we currently don't want to display yellow, so we have to create an array of colors with ids:
     //1, 2, 4, 5, 6, 7.
     private val selectableColors = getContext.getResources.getIntArray(R.array.selectable_accents_color).toSeq.map { c =>
-      AccentColors.colors.find(_.getColor() == c).getOrElse(AccentColors.defaultColor)
+      AccentColor.getColors.find(_.color == c).getOrElse(AccentColor.defaultColor)
     }
 
     def onCreateViewHolder(parent: ViewGroup, viewType: Int) = {
@@ -85,7 +85,7 @@ class AccentColorPickerFragment extends DialogFragment with FragmentHelper {
       sC <- zms.flatMap(_.users.selfUser).map(_.accent).map(AccentColor(_))
     } yield vC == sC).on(Threading.Ui)(selectionView.setVisible)
 
-    viewColor.map(_.getColor()).on(Threading.Ui)(itemView.setBackgroundColor)
+    viewColor.map(_.color).on(Threading.Ui)(itemView.setBackgroundColor)
 
     viewColor.onChanged.on(Threading.Ui) { color =>
       itemView.setOnClickListener(new OnClickListener {

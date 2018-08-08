@@ -29,10 +29,9 @@ import android.view.View.OnClickListener
 import android.widget.{ImageView, LinearLayout}
 import com.waz.ZLog
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api.impl.AccentColor
 import com.waz.content.UserPreferences
 import com.waz.model.otr.Client
-import com.waz.model.{AccountDataOld, Availability}
+import com.waz.model.{AccentColor, AccountDataOld, Availability}
 import com.waz.service.tracking.TrackingService
 import com.waz.service.{AccountsService, ZMessaging}
 import com.waz.threading.Threading
@@ -235,7 +234,7 @@ class ProfileViewController(view: ProfileView)(implicit inj: Injector, ec: Event
   view.setProfilePictureDrawable(new ImageAssetDrawable(selfPicture, scaleType = ScaleType.CenterInside, request = RequestBuilder.Round))
 
   self.on(Threading.Ui) { self =>
-    view.setAccentColor(AccentColor(self.accent).getColor())
+    view.setAccentColor(AccentColor(self.accent).color)
     self.handle.foreach(handle => view.setHandle(StringUtils.formatHandle(handle.string)))
     view.setUserName(self.getDisplayName)
   }

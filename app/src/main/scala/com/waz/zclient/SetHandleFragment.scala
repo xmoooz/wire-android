@@ -77,10 +77,10 @@ class SetHandleFragment extends BaseFragment[SetHandleFragment.Container] with F
   }
   private lazy val usernameTextView = view[TypefaceTextView](R.id.ttv__username)
   private lazy val keepButton = returning(view[ZetaButton](R.id.zb__username_first_assign__keep)){ vh =>
-    accentColor.map(_.getColor).onUi(color => vh.foreach(_.setAccentColor(color)))
+    accentColor.map(_.color).onUi(color => vh.foreach(_.setAccentColor(color)))
   }
   private lazy val chooseYourOwnButton = returning(view[ZetaButton](R.id.zb__username_first_assign__choose)) { vh =>
-    accentColor.map(_.getColor).onUi(color => vh.foreach(_.setAccentColor(color)))
+    accentColor.map(_.color).onUi(color => vh.foreach(_.setAccentColor(color)))
   }
   private lazy val summaryTextView = view[TypefaceTextView](R.id.ttv__username_first_assign__summary)
 

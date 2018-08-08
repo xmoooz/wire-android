@@ -26,7 +26,8 @@ import android.support.v7.widget.Toolbar
 import android.view._
 import android.widget.{FrameLayout, TextView}
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api._
+import com.waz.api.MemoryImageCache
+import com.waz.model.AccentColor
 import com.waz.model.{AssetData, AssetId}
 import com.waz.permissions.PermissionsService
 import com.waz.service.ZMessaging
@@ -124,7 +125,7 @@ class DrawingFragment extends FragmentHelper
   private lazy val userPrefController = inject[IUserPreferencesController] //TODO replace with SE prefs
   private lazy val sensorManager      = inject[SensorManager]
 
-  private lazy val accentColor = inject[Signal[AccentColor]].map(_.getColor)
+  private lazy val accentColor = inject[Signal[AccentColor]].map(_.color)
 
   private lazy val drawingDestination = getStringArg(ArgDrawingDestination).map(DrawingDestination.valueOf)
 

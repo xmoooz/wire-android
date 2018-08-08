@@ -101,13 +101,13 @@ class BlockedUserProfileFragment extends BaseFragment[BlockedUserProfileFragment
   private var goToConversationWithUser = false
 
   private lazy val unblockButton = returning(view[ZetaButton](R.id.zb__connect_request__unblock_button)) { vh =>
-    accentColor.onUi(color => vh.foreach(_.setAccentColor(color.getColor)))
+    accentColor.map(_.color).onUi(color => vh.foreach(_.setAccentColor(color)))
   }
   private lazy val cancelButton = returning(view[ZetaButton](R.id.zb__connect_request__ignore_button)) { vh =>
-    accentColor.onUi(color => vh.foreach(_.setAccentColor(color.getColor)))
+    accentColor.map(_.color).onUi(color => vh.foreach(_.setAccentColor(color)))
   }
   private lazy val smallUnblockButton = returning(view[ZetaButton](R.id.zb__connect_request__accept_button)) { vh =>
-    accentColor.onUi(color => vh.foreach(_.setAccentColor(color.getColor)))
+    accentColor.map(_.color).onUi(color => vh.foreach(_.setAccentColor(color)))
   }
   private lazy val unblockMenu = view[LinearLayout](R.id.ll__connect_request__accept_menu)
   private lazy val footerMenu = view[FooterMenu](R.id.fm__footer)

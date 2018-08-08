@@ -51,7 +51,7 @@ class SingleOtrClientFragment extends FragmentHelper {
 
   private lazy val userId      = Option(getArguments).map(args => UserId(args.getString(ArgUser)))
   private lazy val clientId    = Option(getArguments).map(args => ClientId(args.getString(ArgClient)))
-  private lazy val accentColor = inject[AccentColorController].accentColor.map(_.getColor)
+  private lazy val accentColor = inject[AccentColorController].accentColor.map(_.color)
 
   private lazy val client = ((userId, clientId) match {
     case (Some(uId), Some(cId)) => clientsController.client(uId, cId)

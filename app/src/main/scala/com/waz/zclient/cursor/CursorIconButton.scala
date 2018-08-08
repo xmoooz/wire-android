@@ -41,7 +41,7 @@ import android.support.v4.content.res.ResourcesCompat
 import android.util.AttributeSet
 import android.view.{HapticFeedbackConstants, MotionEvent, View}
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api.impl.AccentColor
+import com.waz.model.AccentColor
 import com.waz.threading.Threading
 import com.waz.utils.events.Signal
 import com.waz.zclient.{R, ViewHelper}
@@ -71,7 +71,7 @@ class CursorIconButton(context: Context, attrs: AttributeSet, defStyleAttr: Int)
 
   val bgColor = menuItem.flatMap {
     case Some(CursorMenuItem.Dummy) => Signal.const(Color.TRANSPARENT, Color.TRANSPARENT)
-    case Some(CursorMenuItem.Send)  => accentColor.map(ac => (ac.getColor, ac.getColor))
+    case Some(CursorMenuItem.Send)  => accentColor.map(ac => (ac.color, ac.color))
     case _ => Signal.const(Color.TRANSPARENT, getColor(R.color.light_graphite))
   }
 

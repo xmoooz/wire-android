@@ -33,7 +33,7 @@ import com.google.android.gms.security.ProviderInstaller
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.verbose
 import com.waz.api.NetworkMode
-import com.waz.api.impl.AccentColor
+import com.waz.model.AccentColor
 import com.waz.content._
 import com.waz.log.InternalLog
 import com.waz.model.{ConversationData, UserId}

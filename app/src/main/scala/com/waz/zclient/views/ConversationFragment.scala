@@ -30,7 +30,7 @@ import android.view.animation.Animation
 import android.widget.{AbsListView, FrameLayout, TextView}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
-import com.waz.api.impl.AccentColor
+import com.waz.model.AccentColor
 import com.waz.api.{AssetFactory, AudioAssetForUpload, AudioEffect, ErrorType}
 import com.waz.content.GlobalPreferences
 import com.waz.model.ConversationData.ConversationType
@@ -123,7 +123,7 @@ class ConversationFragment extends FragmentHelper {
   private var assetIntentsManager: Option[AssetIntentsManager] = None
 
   private lazy val loadingIndicatorView = returning(view[LoadingIndicatorView](R.id.lbv__conversation__loading_indicator)) { vh =>
-    inject[Signal[AccentColor]].map(_.getColor)(c => vh.foreach(_.setColor(c)))
+    inject[Signal[AccentColor]].map(_.color)(c => vh.foreach(_.setColor(c)))
   }
 
   private var containerPreview: ViewGroup = _
@@ -233,9 +233,7 @@ class ConversationFragment extends FragmentHelper {
       case _ =>
     }
 
-    inject[Signal[AccentColor]].map(_.getColor).onUi { color =>
-      extendedCursorContainer.setAccentColor(color)
-    }
+    inject[Signal[AccentColor]].map(_.color).onUi(extendedCursorContainer.setAccentColor)
 
     accountsController.isTeam.flatMap {
       case true  => participantsController.containsGuest

@@ -20,8 +20,6 @@ package com.waz.zclient.controllers;
 import android.app.Activity;
 import android.content.Context;
 import android.view.View;
-import com.waz.zclient.controllers.accentcolor.AccentColorController;
-import com.waz.zclient.controllers.accentcolor.IAccentColorController;
 import com.waz.zclient.controllers.camera.CameraController;
 import com.waz.zclient.controllers.camera.ICameraController;
 import com.waz.zclient.controllers.confirmation.ConfirmationController;
@@ -50,7 +48,6 @@ import com.waz.zclient.pages.main.pickuser.controller.IPickUserController;
 import com.waz.zclient.pages.main.pickuser.controller.PickUserController;
 
 public class ControllerFactory implements IControllerFactory {
-  protected IAccentColorController accentColorController;
 
   protected ICameraController cameraController;
 
@@ -99,10 +96,6 @@ public class ControllerFactory implements IControllerFactory {
   @Override
   public void tearDown() {
     this.isTornDown = true;
-    if (accentColorController != null) {
-      accentColorController.tearDown();
-      accentColorController = null;
-    }
     if (cameraController != null) {
       cameraController.tearDown();
       cameraController = null;
@@ -287,12 +280,4 @@ public class ControllerFactory implements IControllerFactory {
     return singleImageController;
   }
 
-  @Override
-  public IAccentColorController getAccentColorController() {
-    verifyLifecycle();
-    if (accentColorController == null) {
-      accentColorController = new AccentColorController(this.context, getUserPreferencesController());
-    }
-    return accentColorController;
-  }
 }

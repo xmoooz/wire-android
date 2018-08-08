@@ -28,7 +28,7 @@ import com.waz.ZLog.ImplicitTag._
 import com.waz.api.User
 import com.waz.api.User.ConnectionStatus
 import com.waz.api.User.ConnectionStatus._
-import com.waz.api.impl.AccentColor
+import com.waz.model.AccentColor
 import com.waz.model.{AssetData, UserData, UserId, _}
 import com.waz.service.ZMessaging
 import com.waz.service.assets.AssetService.BitmapResult
@@ -399,7 +399,7 @@ protected class ChatheadController(val setSelectable:            Boolean        
       val knownUser = user.isConnected || user.isSelf
 
       ChatheadDetails(
-        accentColor = ColorVal(AccentColor(user.accent).getColor()),
+        accentColor = ColorVal(AccentColor(user.accent).color),
         connectionStatus = user.connection,
         initials = NameParts.parseFrom(user.name).initials,
         knownUser = knownUser,

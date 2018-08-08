@@ -51,7 +51,7 @@ class CreateConversationManagerFragment extends FragmentHelper {
   private lazy val keyboard               = inject[KeyboardController]
   private lazy val themeController        = inject[ThemeController]
 
-  private lazy val accentColor = inject[AccentColorController].accentColor.map(_.getColor)
+  private lazy val accentColor = inject[AccentColorController].accentColor.map(_.color)
 
   private lazy val currentPage = Signal[Int]()
 
