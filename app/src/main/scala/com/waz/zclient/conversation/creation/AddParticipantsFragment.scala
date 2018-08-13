@@ -77,6 +77,7 @@ class AddParticipantsFragment extends FragmentHelper {
   private lazy val integrationsResults = for {
     zms     <- zms
     filter  <- searchFilter
+    true    <- peopleOrServices // this will refresh the search every time the Services tab is clicked
     results <- Signal.future(zms.integrations.searchIntegrations(if (filter.isEmpty) None else Some(filter)))
   } yield results match {
     case Right(services) => services
