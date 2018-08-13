@@ -108,7 +108,7 @@ class ConnectRequestPartView(context: Context, attrs: AttributeSet, style: Int) 
       label.setText(R.string.content__message__connect_request__footer)
     case (_, true) =>
       label.setTextColor(getColor(R.color.accent_red))
-      label.setText(R.string.add_service_warning)
+      label.setText(R.string.generic_service_warning)
   }
 
 }

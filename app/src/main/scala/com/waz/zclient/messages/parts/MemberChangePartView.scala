@@ -123,9 +123,8 @@ class MemberChangePartView(context: Context, attrs: AttributeSet, style: Int) ex
     convMembersIds <- zms.membersStorage.activeMembers(msg.convId)
     convMembers <- users.users(convMembersIds)
   } yield {
-    if (members.exists(_.isWireBot) && msg.msgType == MEMBER_JOIN)
-      Some(R.string.add_service_warning)
-    else if (members.exists(_.id == zms.selfUserId) && convMembers.exists(_.isWireBot) && msg.msgType == MEMBER_JOIN)
+    if ((members.exists(_.isWireBot) && msg.msgType == MEMBER_JOIN) ||
+      (members.exists(_.id == zms.selfUserId) && convMembers.exists(_.isWireBot) && msg.msgType == MEMBER_JOIN))
       Some(R.string.generic_service_warning)
     else
       None
