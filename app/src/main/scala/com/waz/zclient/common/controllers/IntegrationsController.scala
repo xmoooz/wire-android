@@ -60,8 +60,12 @@ class IntegrationsController(implicit injector: Injector, context: Context) exte
       (conv, syncId) <- zms.convsUi.createGroupConversation()
       _ = zms.syncRequests.scheduler.await(syncId).map {
         case SyncResult.Success =>
-          addBot(conv.id, pId, iId).collect {
+          (for {
+            postResult <- addBot(conv.id, pId, iId)
+            bot <- zms.membersStorage.getActiveUsers(conv.id)
+          } yield postResult.fold(Left(_), _ => Right(bot.find(_ != zms.selfUserId)))).collect {
             case Left(error) => showToastError(error)
+            case Right(Some(u)) => zms.messages.addConnectRequestMessage(conv.id, zms.selfUserId, u, "", "", fromSync = true)
           } (Threading.Ui)
         case result =>
           showToastError(result.error.getOrElse(ErrorResponse.InternalError))

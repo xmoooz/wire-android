@@ -39,6 +39,7 @@ import com.waz.ui.MemoryImageCache.BitmapRequest.{Round, Single}
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.utils.{NameParts, returning}
 import com.waz.zclient.common.controllers.UserAccountsController
+import com.waz.zclient.common.views.ImageAssetDrawable.ScaleType
 import com.waz.zclient.ui.utils.TypefaceUtils
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.{Injectable, Injector, R, ViewHelper}
@@ -97,7 +98,7 @@ class ChatheadView(val context: Context, val attrs: AttributeSet, val defStyleAt
 
   private lazy val matrix = new Matrix()
   private lazy val bitmapPaint = new Paint(Paint.ANTI_ALIAS_FLAG)
-  private lazy val integrationDrawHelper = IntegrationSquareDrawHelper()
+  private lazy val integrationDrawHelper = IntegrationSquareDrawHelper(ScaleType.CenterInside)
 
   ctrl.invalidate.on(Threading.Ui)(_ => invalidate())
 

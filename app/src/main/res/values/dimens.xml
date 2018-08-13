@@ -413,8 +413,8 @@
     <dimen name="system_margin_end">32dp</dimen>
     <dimen name="system_margin_start">24dp</dimen>
     <dimen name="error__image__margin">32dp</dimen>
-    <dimen name="profile__image__width_regular">260dp</dimen>
-    <dimen name="profile__image__height_regular">260dp</dimen>
+    <dimen name="profile__image__width_regular">192dp</dimen>
+    <dimen name="profile__image__height_regular">192dp</dimen>
     <dimen name="profile__image__width_small">96dp</dimen>
     <dimen name="profile__image__height_small">96dp</dimen>
     <dimen name="profile__image__width">@dimen/profile__image__width_small</dimen>
