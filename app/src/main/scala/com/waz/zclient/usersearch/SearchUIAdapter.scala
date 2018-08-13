@@ -101,14 +101,14 @@ class SearchUIAdapter(adapterCallback: SearchUIAdapter.Callback, integrationsCon
       services <-
         Signal
           .future(integrationsController.searchIntegrations(startsWith))
-          .map(_.fold[LoadServicesResult](LoadServicesResult.Error, LoadServicesResult.ServicesLoaded))
+          .map(_.fold[LoadServicesResult](LoadServicesResult.Error, LoadServicesResult.ServicesLoaded(_, startsWith)))
           .orElse(Signal.const(LoadServicesResult.LoadingServices))
     } yield services)
       .orElse(Signal.const(LoadServicesResult.NoAction))
 
   services.onUi { res =>
     integrations = res match {
-      case LoadServicesResult.ServicesLoaded(svs) => svs.toIndexedSeq.sortBy(_.name)
+      case LoadServicesResult.ServicesLoaded(svs, _) => svs.toIndexedSeq.sortBy(_.name)
       case _ => IndexedSeq.empty
     }
     updateMergedResults()
@@ -305,10 +305,10 @@ object SearchUIAdapter {
   sealed trait LoadServicesResult
 
   object LoadServicesResult {
-    case object NoAction                                  extends LoadServicesResult
-    case object LoadingServices                           extends LoadServicesResult
-    case class  ServicesLoaded(svs: Seq[IntegrationData]) extends LoadServicesResult
-    case class  Error(err: ErrorResponse)                 extends LoadServicesResult
+    case object NoAction                                                          extends LoadServicesResult
+    case object LoadingServices                                                   extends LoadServicesResult
+    case class  ServicesLoaded(svs: Seq[IntegrationData], filter: Option[String]) extends LoadServicesResult
+    case class  Error(err: ErrorResponse)                                         extends LoadServicesResult
   }
 
   sealed trait Tab

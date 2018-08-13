@@ -55,6 +55,7 @@ import com.waz.zclient.pages.BaseFragment
 import com.waz.zclient.pages.main.conversation.controller.IConversationScreenController
 import com.waz.zclient.pages.main.participants.dialog.DialogLaunchMode
 import com.waz.zclient.pages.main.pickuser.controller.IPickUserController
+import com.waz.zclient.paintcode.ManageServicesIcon
 import com.waz.zclient.ui.text.TypefaceTextView
 import com.waz.zclient.usersearch.SearchUIAdapter.{LoadServicesResult, Tab}
 import com.waz.zclient.usersearch.views.SearchEditText
@@ -117,20 +118,45 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
      .onUi(t => vh.foreach(_.setText(t)))
   }
 
+  private lazy val errorIconView = returning(view[ImageView](R.id.empty_services_icon)) { vh =>
+    adapter.services.map{
+      case LoadServicesResult.ServicesLoaded(svs, _) if svs.nonEmpty  => View.GONE
+      case LoadServicesResult.NoAction                                => View.GONE
+      case _                                                          => View.VISIBLE
+    }.onUi(vis => vh.foreach(_.setVisibility(vis)))
+  }
+
+  private lazy val errorButtonView = returning(view[TypefaceTextView](R.id.empty_services_button)) { vh =>
+    (for {
+      isAdmin <- userAccountsController.isAdmin
+      services <- adapter.services
+    } yield services match {
+      case LoadServicesResult.ServicesLoaded(svs, None) if svs.nonEmpty && isAdmin => View.VISIBLE
+      case _                                                                       => View.GONE
+    }).onUi(vis => vh.foreach(_.setVisibility(vis)))
+
+    vh.onClick(_ => onManageServicesClicked())
+  }
+
   private lazy val errorMessageView = returning(view[TypefaceTextView](R.id.pickuser__error_text)) { vh =>
     adapter.services.map {
-      case LoadServicesResult.ServicesLoaded(svs) if svs.nonEmpty => false
+      case LoadServicesResult.ServicesLoaded(svs, _) if svs.nonEmpty => false
       case LoadServicesResult.NoAction => false
       case _ => true
     }.onUi(show => vh.foreach(_.setVisible(show)))
 
-    adapter.services.map {
-      case LoadServicesResult.ServicesLoaded(svs) if svs.nonEmpty => R.string.empty_string
-      case LoadServicesResult.NoAction          => R.string.empty_string
-      case LoadServicesResult.ServicesLoaded(_) => R.string.no_matches_found
-      case LoadServicesResult.LoadingServices   => R.string.loading_services
-      case LoadServicesResult.Error(_)          => R.string.generic_error_header //TODO more informative header?
-    }.onUi(txt => vh.foreach(_.setText(txt)))
+    (for {
+      isAdmin <- userAccountsController.isAdmin
+      services <- adapter.services
+    } yield services match {
+      case LoadServicesResult.ServicesLoaded(svs, _) if svs.nonEmpty  => R.string.empty_string
+      case LoadServicesResult.NoAction                                => R.string.empty_string
+      case LoadServicesResult.ServicesLoaded(_, Some(_))              => R.string.no_matches_found
+      case LoadServicesResult.ServicesLoaded(_, None) if isAdmin      => R.string.empty_services_list_admin
+      case LoadServicesResult.ServicesLoaded(_, None)                 => R.string.empty_services_list
+      case LoadServicesResult.LoadingServices                         => R.string.loading_services
+      case LoadServicesResult.Error(_)                                => R.string.generic_error_header //TODO more informative header?
+    }).onUi(txt => vh.foreach(_.setText(txt)))
   }
 
   private lazy val emptyListButton = returning(view[RelativeLayout](R.id.empty_list_button)) { v =>
@@ -200,6 +226,7 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
     emptyListButton.foreach(_.onClick(browser.openUrl(AndroidURIUtil.parse(getString(R.string.pick_user_manage_team_url)))))
     errorMessageView
     toolbarTitle
+    errorButtonView
 
     // Use constant style for left side start ui
     startUiToolbar.foreach(_.setVisibility(View.VISIBLE))
@@ -247,6 +274,8 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
       filterEmpty = !searchBox.flatMap(v => Option(v.getSearchFilter).map(_.isEmpty)).getOrElse(true)
     } yield if (kb || filterEmpty) getColor(R.color.people_picker__loading__color) else ac)
       .onUi(getContainer.getLoadingViewIndicator.setColor))
+
+    errorIconView.foreach(_.setImageDrawable(ManageServicesIcon(R.color.white_64)))
   }
 
   override def onStart(): Unit = {
