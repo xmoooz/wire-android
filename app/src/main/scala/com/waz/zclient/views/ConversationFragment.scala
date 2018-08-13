@@ -129,7 +129,9 @@ class ConversationFragment extends FragmentHelper {
   private var containerPreview: ViewGroup = _
   private var cursorView: CursorView = _
   private var audioMessageRecordingView: AudioMessageRecordingView = _
-  private var extendedCursorContainer: ExtendedCursorContainer = _
+  private lazy val extendedCursorContainer = returning(view[ExtendedCursorContainer](R.id.ecc__conversation)) { vh =>
+    inject[Signal[AccentColor]].map(_.color).onUi(c => vh.foreach(_.setAccentColor(c)))
+  }
   private var toolbarTitle: TextView = _
   private var listView: MessagesListView = _
 
@@ -224,7 +226,7 @@ class ConversationFragment extends FragmentHelper {
                   audioMessageRecordingView.hide()
                 }
                 // TODO: ConversationScreenController should listen to this signal and do it itself
-                extendedCursorContainer.close(true)
+                extendedCursorContainer.foreach(_.close(true))
               }
             case None =>
           }
@@ -232,8 +234,6 @@ class ConversationFragment extends FragmentHelper {
 
       case _ =>
     }
-
-    inject[Signal[AccentColor]].map(_.color).onUi(extendedCursorContainer.setAccentColor)
 
     accountsController.isTeam.flatMap {
       case true  => participantsController.containsGuest
@@ -287,7 +287,6 @@ class ConversationFragment extends FragmentHelper {
     containerPreview = findById(R.id.fl__conversation_overlay)
     cursorView = findById(R.id.cv__cursor)
 
-    extendedCursorContainer = findById(R.id.ecc__conversation)
     listView = findById(R.id.messages_list_view)
 
     returningF( findById(R.id.sv__conversation_toolbar__verified_shield) ){ view: ShieldView =>
@@ -348,9 +347,9 @@ class ConversationFragment extends FragmentHelper {
 
     cursorView.setCallback(cursorCallback)
 
-    globalLayoutController.addKeyboardHeightObserver(extendedCursorContainer)
-    globalLayoutController.addKeyboardVisibilityObserver(extendedCursorContainer)
-    extendedCursorContainer.setCallback(extendedCursorContainerCallback)
+    extendedCursorContainer.foreach(globalLayoutController.addKeyboardHeightObserver)
+    extendedCursorContainer.foreach(globalLayoutController.addKeyboardVisibilityObserver)
+    extendedCursorContainer.foreach(_.setCallback(extendedCursorContainerCallback))
     orientationController.addOrientationControllerObserver(orientationControllerObserver)
     navigationController.addNavigationControllerObserver(navigationControllerObserver)
     navigationController.addPagerControllerObserver(pagerControllerObserver)
@@ -376,8 +375,8 @@ class ConversationFragment extends FragmentHelper {
   }
 
   override def onStop(): Unit = {
-    extendedCursorContainer.close(true)
-    extendedCursorContainer.setCallback(null)
+    extendedCursorContainer.foreach(_.close(true))
+    extendedCursorContainer.foreach(_.setCallback(null))
     cursorView.setCallback(null)
 
     toolbar.setOnClickListener(null)
@@ -385,8 +384,8 @@ class ConversationFragment extends FragmentHelper {
     toolbar.setNavigationOnClickListener(null)
     leftMenu.setOnMenuItemClickListener(null)
 
-    globalLayoutController.removeKeyboardHeightObserver(extendedCursorContainer)
-    globalLayoutController.removeKeyboardVisibilityObserver(extendedCursorContainer)
+    extendedCursorContainer.foreach(globalLayoutController.removeKeyboardHeightObserver)
+    extendedCursorContainer.foreach(globalLayoutController.removeKeyboardVisibilityObserver)
     orientationController.removeOrientationControllerObserver(orientationControllerObserver)
     singleImageController.removeSingleImageObserver(singleImageObserver)
     globalLayoutController.removeKeyboardVisibilityObserver(keyboardVisibilityObserver)
@@ -429,12 +428,12 @@ class ConversationFragment extends FragmentHelper {
 
     override def onSketchOnPreviewPicture(input: RawAssetInput, source: ImagePreviewLayout.Source, method: IDrawingController.DrawingMethod): Unit = {
       screenController.showSketch ! Sketch.cameraPreview(input, method)
-      extendedCursorContainer.close(true)
+      extendedCursorContainer.foreach(_.close(true))
     }
 
     override def onSendPictureFromPreview(input: RawAssetInput, source: ImagePreviewLayout.Source): Unit = {
       convController.sendMessage(input)
-      extendedCursorContainer.close(true)
+      extendedCursorContainer.foreach(_.close(true))
       onCancelPreview()
     }
   }
@@ -460,16 +459,19 @@ class ConversationFragment extends FragmentHelper {
       case _ =>
         convController.sendMessage(uri, getActivity)
         navigationController.setRightPage(Page.MESSAGE_STREAM, TAG)
-        extendedCursorContainer.close(true)
+        extendedCursorContainer.foreach(_.close(true))
     }
 
     override def openIntent(intent: Intent, intentType: AssetIntentsManager.IntentType): Unit = {
-      if (MediaStore.ACTION_VIDEO_CAPTURE.equals(intent.getAction) &&
-        extendedCursorContainer.getType == ExtendedCursorContainer.Type.IMAGES &&
-        extendedCursorContainer.isExpanded) {
-        // Close keyboard camera before requesting external camera for recording video
-        extendedCursorContainer.close(true)
+      extendedCursorContainer.foreach { ecc =>
+        if (MediaStore.ACTION_VIDEO_CAPTURE.equals(intent.getAction) &&
+          ecc.getType == ExtendedCursorContainer.Type.IMAGES &&
+          ecc.isExpanded) {
+          // Close keyboard camera before requesting external camera for recording video
+          ecc.close(true)
+        }
       }
+
       startActivityForResult(intent, intentType.requestCode)
       getActivity.overridePendingTransition(R.anim.camera_in, R.anim.camera_out)
     }
@@ -501,37 +503,37 @@ class ConversationFragment extends FragmentHelper {
   private def openExtendedCursor(cursorType: ExtendedCursorContainer.Type): Unit = cursorType match {
       case ExtendedCursorContainer.Type.NONE =>
       case ExtendedCursorContainer.Type.EMOJIS =>
-        extendedCursorContainer.openEmojis(userPreferencesController.getRecentEmojis, userPreferencesController.getUnsupportedEmojis, new EmojiKeyboardLayout.Callback {
+        extendedCursorContainer.foreach(_.openEmojis(userPreferencesController.getRecentEmojis, userPreferencesController.getUnsupportedEmojis, new EmojiKeyboardLayout.Callback {
           override def onEmojiSelected(emoji: LogTag) = {
             cursorView.insertText(emoji)
             userPreferencesController.addRecentEmoji(emoji)
           }
-        })
+        }))
       case ExtendedCursorContainer.Type.EPHEMERAL =>
         convController.currentConv.map(_.ephemeralExpiration).head.foreach {
           case Some(ConvExpiry(_)) => //do nothing - global timer is set
-          case exp => extendedCursorContainer.openEphemeral(new EphemeralLayout.Callback {
+          case exp => extendedCursorContainer.foreach(_.openEphemeral(new EphemeralLayout.Callback {
             override def onEphemeralExpirationSelected(expiration: Option[FiniteDuration], close: Boolean) = {
-              if (close) extendedCursorContainer.close(false)
+              if (close) extendedCursorContainer.foreach(_.close(false))
               convController.setEphemeralExpiration(expiration)
             }
-          }, exp.map(_.duration))
+          }, exp.map(_.duration)))
         }
       case ExtendedCursorContainer.Type.VOICE_FILTER_RECORDING =>
-        extendedCursorContainer.openVoiceFilter(new VoiceFilterLayout.Callback {
+        extendedCursorContainer.foreach(_.openVoiceFilter(new VoiceFilterLayout.Callback {
           override def onAudioMessageRecordingStarted(): Unit = {
             globalLayoutController.keepScreenAwake()
           }
 
-          override def onCancel(): Unit = extendedCursorContainer.close(false)
+          override def onCancel(): Unit = extendedCursorContainer.foreach(_.close(false))
 
           override def sendRecording(audioAssetForUpload: AudioAssetForUpload, appliedAudioEffect: AudioEffect): Unit = {
             convController.sendMessage(audioAssetForUpload, getActivity)
-            extendedCursorContainer.close(true)
+            extendedCursorContainer.foreach(_.close(true))
           }
-        })
+        }))
       case ExtendedCursorContainer.Type.IMAGES =>
-        extendedCursorContainer.openCursorImages(new CursorImagesLayout.Callback {
+        extendedCursorContainer.foreach(_.openCursorImages(new CursorImagesLayout.Callback {
           override def openCamera(): Unit = cameraController.openCamera(CameraContext.MESSAGE)
 
           override def openVideo(): Unit = captureVideoAskPermissions()
@@ -551,7 +553,7 @@ class ConversationFragment extends FragmentHelper {
             showImagePreview {
               _.setImage(imageData, isMirrored)
             }
-        })
+        }))
       case _ =>
         verbose(s"openExtendedCursor(unknown)")
     }
@@ -590,7 +592,10 @@ class ConversationFragment extends FragmentHelper {
 
     override def captureVideo(): Unit = captureVideoAskPermissions()
 
-    override def hideExtendedCursor(): Unit = if (extendedCursorContainer.isExpanded) extendedCursorContainer.close(false)
+    override def hideExtendedCursor(): Unit = extendedCursorContainer.foreach {
+      case ecc if ecc.isExpanded => ecc.close(false)
+      case _ =>
+    }
 
     override def onMessageSent(msg: MessageData): Unit = listView.scrollToBottom()
 
@@ -606,7 +611,7 @@ class ConversationFragment extends FragmentHelper {
           callController.isCallActive.head.foreach {
             case true  => showErrorDialog(R.string.calling_ongoing_call_title, R.string.calling_ongoing_call_audio_message)
             case false =>
-              extendedCursorContainer.close(true)
+              extendedCursorContainer.foreach(_.close(true))
               audioMessageRecordingView.show()
           }
         case _ => //
@@ -629,7 +634,7 @@ class ConversationFragment extends FragmentHelper {
 
   private val pagerControllerObserver = new PagerControllerObserver {
     override def onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int): Unit =
-      if (positionOffset > 0) extendedCursorContainer.close(true)
+      if (positionOffset > 0) extendedCursorContainer.foreach(_.close(true))
 
     override def onPagerEnabledStateHasChanged(enabled: Boolean): Unit = {}
     override def onPageSelected(position: Int): Unit = {}
@@ -770,12 +775,12 @@ class ConversationFragment extends FragmentHelper {
     containerPreview.animate.translationY(0).setDuration(getInt(R.integer.animation_duration_medium)).setInterpolator(new Expo.EaseOut)
   }
 
-  override def onBackPressed(): Boolean = {
-    if(extendedCursorContainer.isExpanded) {
-      extendedCursorContainer.close(false)
+  override def onBackPressed(): Boolean = extendedCursorContainer.map {
+    case ecc if ecc.isExpanded =>
+      ecc.close(false)
       true
-    } else false
-  }
+    case _ => false
+  }.getOrElse(false)
 }
 
 object ConversationFragment {
