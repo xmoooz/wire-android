@@ -35,10 +35,10 @@ import com.waz.zclient.common.views.ImageController.{NoImage, WireImage}
 import com.waz.zclient.common.views.IntegrationAssetDrawable
 import com.waz.zclient.controllers.navigation.{INavigationController, Page}
 import com.waz.zclient.conversation.ConversationController
-import com.waz.zclient.conversation.creation.CreateConversationController
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
 import com.waz.zclient.pages.main.pickuser.controller.IPickUserController
 import com.waz.zclient.paintcode.ServicePlaceholderDrawable
+import com.waz.zclient.participants.ParticipantsController
 import com.waz.zclient.ui.text.{GlyphTextView, TypefaceTextView}
 import com.waz.zclient.usersearch.SearchUIFragment
 import com.waz.zclient.utils.ContextUtils._
@@ -53,21 +53,21 @@ class IntegrationDetailsFragment extends FragmentHelper {
   import com.waz.threading.Threading.Implicits.Ui
   implicit def ctx: Context = getActivity
 
-  private lazy val integrationsController       = inject[IntegrationsController]
-  private lazy val themeController              = inject[ThemeController]
-  private lazy val tracking                     = inject[TrackingService]
-  private lazy val createConvController         = inject[CreateConversationController]
-  private lazy val convController               = inject[ConversationController]
+  private lazy val integrationsController = inject[IntegrationsController]
+  private lazy val themeController        = inject[ThemeController]
+  private lazy val tracking               = inject[TrackingService]
+  private lazy val convController         = inject[ConversationController]
 
-  private lazy val serviceId        = getStringArg(ServiceId).map(IntegrationId)
-  private lazy val providerId       = getStringArg(ProviderId).map(model.ProviderId)
-  private lazy val name             = getStringArg(Name)
-  private lazy val description      = getStringArg(Description)
-  private lazy val summary          = getStringArg(Summary)
-  private lazy val assetId          = getStringArg(Asset).map(AssetId)
+  private lazy val serviceId   = getStringArg(ServiceId).map(IntegrationId)
+  private lazy val providerId  = getStringArg(ProviderId).map(model.ProviderId) //only defined when adding to a conversation
+  private lazy val name        = getStringArg(Name)
+  private lazy val description = getStringArg(Description)
+  private lazy val summary     = getStringArg(Summary)
+  private lazy val assetId     = getStringArg(Asset).map(AssetId)
 
-  private lazy val removingFromConv = getStringArg(RemoveFromConv).map(ConvId)
-  private lazy val serviceUser      = getStringArg(ServiceUser).map(UserId)
+  //will only be defined if removing from a conversation
+  private lazy val fromConv    = getStringArg(RemoveFromConv).map(ConvId)
+  private lazy val serviceUser = getStringArg(ServiceUser).map(UserId)
 
   private lazy val isBackgroundTransparent = getBooleanArg(IsTransparent)
 
@@ -81,7 +81,7 @@ class IntegrationDetailsFragment extends FragmentHelper {
 
   override def onCreateView(inflater: LayoutInflater, viewContainer: ViewGroup, savedInstanceState: Bundle): View = {
     val localInflater =
-      if (removingFromConv.isEmpty)
+      if (fromConv.isEmpty)
         inflater.cloneInContext(new ContextThemeWrapper(getActivity, R.style.Theme_Dark))
       else
         inflater
@@ -92,24 +92,23 @@ class IntegrationDetailsFragment extends FragmentHelper {
   override def onViewCreated(v: View, @Nullable savedInstanceState: Bundle): Unit = {
     super.onViewCreated(v, savedInstanceState)
 
-    returning(findById[GlyphTextView](R.id.integration_close)) { closeButton =>
-      closeButton.setVisibility(if (removingFromConv.isDefined) View.GONE else View.VISIBLE)
-      if (removingFromConv.isDefined) closeButton.onClick(close())
+    returning(findById[GlyphTextView](R.id.integration_close)) { v =>
+      v.onClick(close())
     }
 
     returning(findById[GlyphTextView](R.id.integration_back))(_.onClick(goBack()))
 
     returning(findById[TypefaceTextView](R.id.integration_title))(v => name.foreach(v.setText(_)))
     returning(findById[TypefaceTextView](R.id.integration_name))(v => name.foreach(v.setText(_)))
+    returning(findById[ImageView](R.id.integration_picture))(_.setImageDrawable(drawable))
     returning(findById[TypefaceTextView](R.id.integration_summary))(v => summary.foreach(v.setText(_)))
     returning(findById[TypefaceTextView](R.id.integration_description))(v => description.foreach(v.setText(_)))
-    returning(findById[TypefaceTextView](R.id.button_text))(_.setText(if (removingFromConv.isDefined) R.string.remove_service_button_text else R.string.create_service_conversation_button_text))
+    returning(findById[TypefaceTextView](R.id.button_text))(_.setText(if (isRemovingFromConv) R.string.remove_service_button_text else R.string.create_service_conversation_button_text))
 
     returning(findById[View](R.id.add_remove_service_button)) { v =>
-      v.setBackground(getDrawable(if (removingFromConv.isDefined) R.drawable.red_button else R.drawable.blue_button))
+      v.setBackground(getDrawable(if (isRemovingFromConv) R.drawable.red_button else R.drawable.blue_button))
       v.onClick {
-
-        removingFromConv.fold {
+        fromConv.fold {
           for { sId <- serviceId; pId <- providerId } {
             integrationsController.createConvWithBot(pId, sId).flatMap { convId =>
               close()
@@ -130,9 +129,6 @@ class IntegrationDetailsFragment extends FragmentHelper {
       }
     }
 
-    returning(findById[GlyphTextView](R.id.integration_back))(_.onClick(goBack()))
-    returning(findById[ImageView](R.id.integration_picture))(_.setImageDrawable(drawable))
-
     // TODO: AN-5980
     if (!isBackgroundTransparent)
       v.setBackgroundColor(
@@ -148,21 +144,23 @@ class IntegrationDetailsFragment extends FragmentHelper {
 
   def goBack(): Boolean = {
     getFragmentManager.popBackStack()
-    //TODO is this needed?
-//    if (integrationDetailsController.addingToConversation.nonEmpty) {
-//      inject[INavigationController].setRightPage(Page.PICK_USER, IntegrationDetailsFragment.Tag)
-//    } else if (integrationDetailsController.removingFromConversation.isEmpty) {
-//      inject[INavigationController].setLeftPage(Page.PICK_USER, IntegrationDetailsFragment.Tag)
-//    }
     true
   }
 
-  def close(): Boolean = {
+  //TODO - move navigation logic out of this fragment
+  def close(): Boolean =
+  if (isRemovingFromConv) {
+    inject[ParticipantsController].onHideParticipants ! true
+    true
+  } else {
     getFragmentManager.popBackStack(SearchUIFragment.TAG, FragmentManager.POP_BACK_STACK_INCLUSIVE)
     inject[IPickUserController].hidePickUser()
     inject[INavigationController].setLeftPage(Page.CONVERSATION_LIST, IntegrationDetailsFragment.Tag)
     true
   }
+
+  private def isRemovingFromConv: Boolean =
+    fromConv.isDefined
 }
 
 object IntegrationDetailsFragment {

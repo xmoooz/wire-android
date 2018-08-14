@@ -39,17 +39,18 @@ import com.waz.zclient.participants.{ParticipantsAdapter, ParticipantsController
 import com.waz.zclient.utils.ContextUtils.showToast
 import com.waz.zclient.utils.ViewUtils
 import com.waz.zclient.views.menus.{FooterMenu, FooterMenuCallback}
-import com.waz.zclient.{FragmentHelper, R}
+import com.waz.zclient.{FragmentHelper, R, SpinnerController}
 
 class GroupParticipantsFragment extends FragmentHelper {
 
   implicit def ctx: Context = getActivity
   import Threading.Implicits.Ui
 
-  private lazy val participantsController       = inject[ParticipantsController]
-  private lazy val convScreenController         = inject[IConversationScreenController]
-  private lazy val userAccountsController       = inject[UserAccountsController]
-  private lazy val integrationsController       = inject[IntegrationsController]
+  private lazy val participantsController = inject[ParticipantsController]
+  private lazy val convScreenController   = inject[IConversationScreenController]
+  private lazy val userAccountsController = inject[UserAccountsController]
+  private lazy val integrationsController = inject[IntegrationsController]
+  private lazy val spinnerController      = inject[SpinnerController]
 
   private lazy val participantsView = view[RecyclerView](R.id.pgv__participants)
 
@@ -83,16 +84,20 @@ class GroupParticipantsFragment extends FragmentHelper {
         case (Some(pId), Some(iId)) =>
           for {
             conv <- participantsController.conv.head
+            _ = spinnerController.showSpinner()
             resp <- integrationsController.getIntegration(pId, iId) //TODO - show spinner?
-          } resp match {
-            case Right(service) =>
-              Option(getParentFragment) match {
-                case Some(f: ParticipantFragment) =>
-                  f.showIntegrationDetails(service, conv.id, user.id)
-                case _ =>
-              }
-            case Left(err) =>
-              showToast(R.string.generic_error_header)
+          } {
+            spinnerController.hideSpinner()
+            resp match {
+              case Right(service) =>
+                Option(getParentFragment) match {
+                  case Some(f: ParticipantFragment) =>
+                    f.showIntegrationDetails(service, conv.id, user.id)
+                  case _ =>
+                }
+              case Left(err) =>
+                showToast(R.string.generic_error_header)
+            }
           }
         case _ => participantsController.onShowUser ! Some(user.id)
       }
