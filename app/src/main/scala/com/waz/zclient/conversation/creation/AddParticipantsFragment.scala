@@ -28,8 +28,9 @@ import android.widget.TextView
 import android.widget.TextView.OnEditorActionListener
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.verbose
+import com.waz.api.impl.ErrorResponse
 import com.waz.model._
-import com.waz.service.ZMessaging
+import com.waz.service.{IntegrationsService, UserSearchService, ZMessaging}
 import com.waz.service.tracking.{OpenSelectParticipants, TrackingService}
 import com.waz.threading.Threading
 import com.waz.utils.events._
@@ -47,10 +48,13 @@ import com.waz.zclient.utils.RichView
 
 import scala.collection.immutable.Set
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class AddParticipantsFragment extends FragmentHelper {
 
   import AddParticipantsFragment._
+  import AddParticipantsAdapter._
+
   import Threading.Implicits.Background
   implicit def cxt: Context = getContext
 
@@ -60,32 +64,7 @@ class AddParticipantsFragment extends FragmentHelper {
   private lazy val tracking          = inject[TrackingService]
   private lazy val themeController   = inject[ThemeController]
 
-  private lazy val searchFilter = Signal("")
-
-  private val peopleOrServices = Signal(false)
-
-  private lazy val userResults = for {
-    zms      <- zms
-    filter   <- searchFilter
-    convId   <- newConvController.convId
-    teamOnly <- newConvController.teamOnly
-    results  <- convId match {
-      case Some(cId) => zms.userSearch.usersToAddToConversation(filter, cId)
-      case None      => zms.userSearch.usersForNewConversation(filter, teamOnly)
-    }
-  } yield results
-
-  private lazy val integrationsResults = for {
-    zms     <- zms
-    filter  <- searchFilter
-    true    <- peopleOrServices // this will refresh the search every time the Services tab is clicked
-    results <- Signal.future(zms.integrations.searchIntegrations(if (filter.isEmpty) None else Some(filter)))
-  } yield results match {
-    case Right(services) => services
-    case Left(err)       => Seq.empty
-  }
-
-  private lazy val adapter = AddParticipantsAdapter(userResults, newConvController.users, integrationsResults, newConvController.integrations, peopleOrServices)
+  private lazy val adapter = AddParticipantsAdapter(newConvController.users, newConvController.integrations)
 
   private lazy val searchBox = returning(view[SearchEditText](R.id.search_box)) { vh =>
     new FutureEventStream[(Either[UserId, (ProviderId, IntegrationId)], Boolean), (Pickable, Boolean)](adapter.onSelectionChanged, {
@@ -109,14 +88,11 @@ class AddParticipantsFragment extends FragmentHelper {
     vh.foreach { tabs =>
       tabs.setSelectedTabIndicatorColor(themeController.getThemeDependentOptionsTheme.getTextColorPrimary)
 
-      peopleOrServices.map(if (_) 1 else 0).head.foreach(tabs.getTabAt(_).select())
+      adapter.tab.map(_ == Tab.People).map(if (_) 0 else 1).head.foreach(tabs.getTabAt(_).select())
 
       tabs.addOnTabSelectedListener(new OnTabSelectedListener {
         override def onTabSelected(tab: TabLayout.Tab): Unit =
-          tab.getPosition match {
-            case 0 => peopleOrServices ! false
-            case 1 => peopleOrServices ! true
-          }
+          adapter.tab ! (if (tab.getPosition == 0) Tab.People else Tab.Services)
 
         override def onTabUnselected(tab: TabLayout.Tab): Unit = {}
         override def onTabReselected(tab: TabLayout.Tab): Unit = {}
@@ -135,22 +111,34 @@ class AddParticipantsFragment extends FragmentHelper {
     }
   }
 
-  private val errorTextState = for {
-    searchFilter <- searchFilter
-    results      <- userResults
-  } yield (results.isEmpty, searchFilter.isEmpty) match {
-    case (true, true)  => (true, R.string.new_conv_no_contacts)
-    case (true, false) => (true, R.string.new_conv_no_results)
-    case _             => (false, R.string.empty_string)
-  }
-
   private lazy val errorText = returning(view[TypefaceTextView](R.id.empty_search_message)) { vh =>
-    errorTextState.onUi { case (visible, text) =>
-      vh.foreach { errorText =>
-        errorText.setVisible(visible)
-        errorText.setText(text)
-      }
-    }
+
+    val results = for {
+      ures <- adapter.userResults
+      sres <- adapter.services
+    } yield (ures, sres)
+
+    results.map {
+      case (_, LoadServicesResult.ServicesLoaded(svs, _)) if svs.nonEmpty => false
+      case (us, LoadServicesResult.NoAction) if us.nonEmpty => false
+      case _ => true
+    }.onUi(show => vh.foreach(_.setVisible(show)))
+
+    (for {
+      isAdmin <- inject[UserAccountsController].isAdmin
+      filter  <- adapter.filter
+      res     <- results
+    } yield res match {
+      case (us, LoadServicesResult.NoAction) if us.nonEmpty                => R.string.empty_string
+      case (_, LoadServicesResult.ServicesLoaded(svs, _)) if svs.nonEmpty  => R.string.empty_string
+      case (_, LoadServicesResult.NoAction) if filter.isEmpty              => R.string.new_conv_no_contacts
+      case (_, LoadServicesResult.NoAction)                                => R.string.new_conv_no_results
+      case (_, LoadServicesResult.ServicesLoaded(_, Some(_)))              => R.string.no_matches_found
+      case (_, LoadServicesResult.ServicesLoaded(_, None)) if isAdmin      => R.string.empty_services_list_admin
+      case (_, LoadServicesResult.ServicesLoaded(_, None))                 => R.string.empty_services_list
+      case (_, LoadServicesResult.LoadingServices)                         => R.string.loading_services
+      case (_, LoadServicesResult.Error(_))                                => R.string.generic_error_header //TODO more informative header?
+    }).onUi(txt => vh.foreach(_.setText(txt)))
   }
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View =
@@ -173,7 +161,7 @@ class AddParticipantsFragment extends FragmentHelper {
           newConvController.integrations.mutate(_.filterNot(_._2.str == element.id))
         }
         override def afterTextChanged(s: String): Unit =
-          searchFilter ! s
+          adapter.filter ! s
       })
       v.setOnEditorActionListener(new OnEditorActionListener {
         override def onEditorAction(v: TextView, actionId: Int, event: KeyEvent): Boolean =
@@ -216,21 +204,48 @@ object AddParticipantsFragment {
   private case class Pickable(id : String, name: String) extends PickableElement
 }
 
-case class AddParticipantsAdapter(userResults: Signal[IndexedSeq[UserData]],
-                                  usersSelected: SourceSignal[Set[UserId]],
-                                  integrationResults: Signal[Seq[IntegrationData]],
-                                  integrationsSelected: SourceSignal[Set[(ProviderId, IntegrationId)]],
-                                  peopleOrServices: Signal[Boolean]
-                                 )
+case class AddParticipantsAdapter(usersSelected: SourceSignal[Set[UserId]],
+                                  integrationsSelected: SourceSignal[Set[(ProviderId, IntegrationId)]])
                                  (implicit context: Context, eventContext: EventContext, injector: Injector)
   extends RecyclerView.Adapter[SelectableRowViewHolder] with Injectable {
   import AddParticipantsAdapter._
 
   private implicit val ctx = context
-  private lazy val themeController = inject[ThemeController]
+  private lazy val themeController      = inject[ThemeController]
+  private lazy val userSearch           = inject[Signal[UserSearchService]]
+  private lazy val servicesService      = inject[Signal[IntegrationsService]]
+  private lazy val createConvController = inject[CreateConversationController]
+
+  val filter = Signal("")
+  val tab = Signal[Tab](Tab.People)
 
   private var results = Seq.empty[(Either[UserData, IntegrationData], Boolean)]
-  private var team = Option.empty[TeamId]
+  private var team    = Option.empty[TeamId]
+
+  lazy val userResults = for {
+    search   <- userSearch
+    filter   <- filter
+    convId   <- createConvController.convId
+    teamOnly <- createConvController.teamOnly
+    results  <- convId match {
+      case Some(cId) => search.usersToAddToConversation(filter, cId)
+      case None      => search.usersForNewConversation(filter, teamOnly)
+    }
+  } yield results
+
+  val services: Signal[LoadServicesResult] =
+    (for {
+      services     <- servicesService
+      startsWith   <- filter.map(Option(_).filterNot(_.isEmpty)).throttle(500.millis)
+      Tab.Services <- tab
+      services <-
+        Signal
+          .future(services.searchIntegrations(startsWith))
+          .map(_.fold[LoadServicesResult](LoadServicesResult.Error, svs => LoadServicesResult.ServicesLoaded(svs.sortBy(_.name), startsWith)))
+          .orElse(Signal.const(LoadServicesResult.LoadingServices))
+    } yield services)
+      .orElse(Signal.const(LoadServicesResult.NoAction))
+
 
   val onSelectionChanged = EventStream[(Either[UserId, (ProviderId, IntegrationId)], Boolean)]()
 
@@ -238,10 +253,13 @@ case class AddParticipantsAdapter(userResults: Signal[IndexedSeq[UserData]],
 
   (for {
     tId                  <- inject[Signal[ZMessaging]].map(_.teamId) //TODO - we should use the conversation's teamId when available...
-    pos                  <- peopleOrServices
-    userResults          <- if (!pos) userResults else Signal.const(IndexedSeq.empty[UserData])
+    tab                  <- tab
+    userResults          <- if (tab == Tab.People) userResults else Signal.const(IndexedSeq.empty[UserData])
     usersSelected        <- usersSelected
-    integrationResults   <- if (pos) integrationResults else Signal.const(Seq.empty[IntegrationData])
+    integrationResults   <- if (tab == Tab.Services) services.map {
+      case LoadServicesResult.ServicesLoaded(svs, _) => svs
+      case _ => Seq.empty[IntegrationData]
+    } else Signal.const(Seq.empty[IntegrationData])
     integrationsSelected <- integrationsSelected
   } yield (tId, userResults, usersSelected, integrationResults, integrationsSelected)).onUi {
     case (tId, userResults, usersSelected, integrationResults, integrationsSelected) =>
@@ -308,6 +326,23 @@ case class AddParticipantsAdapter(userResults: Signal[IndexedSeq[UserData]],
 }
 
 object AddParticipantsAdapter {
+
+  sealed trait LoadServicesResult
+
+  object LoadServicesResult {
+    case object NoAction                                                          extends LoadServicesResult
+    case object LoadingServices                                                   extends LoadServicesResult
+    case class  ServicesLoaded(svs: Seq[IntegrationData], filter: Option[String]) extends LoadServicesResult
+    case class  Error(err: ErrorResponse)                                         extends LoadServicesResult
+  }
+
+  sealed trait Tab
+
+  object Tab {
+    case object People extends Tab
+    case object Services extends Tab
+  }
+
   val USER_ITEM_TYPE = 1
   val INTEGRATION_ITEM_TYPE = 2
 }
