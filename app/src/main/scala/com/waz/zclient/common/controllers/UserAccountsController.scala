@@ -63,7 +63,7 @@ class UserAccountsController(implicit injector: Injector, context: Context, ec: 
       .map(AccountDataOld.decodeBitmask)
 
   lazy val isAdmin: Signal[Boolean] =
-    selfPermissions.map(_ == AdminPermissions)
+    selfPermissions.map(ps => AdminPermissions.subsetOf(ps))
 
   lazy val hasCreateConvPermission: Signal[Boolean] = teamId.flatMap {
     case Some(_) => selfPermissions.map(_.contains(CreateConversation))
