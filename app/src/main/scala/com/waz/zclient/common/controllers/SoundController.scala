@@ -88,7 +88,7 @@ class SoundControllerImpl(implicit inj: Injector, cxt: Context) extends SoundCon
   //TODO Refactor MessageNotificationsController and remove this. Work with normal Signal.head method instead
   private implicit class RichSignal[T](val value: Signal[T]) {
     def headSync(timeout: FiniteDuration = 3.seconds)(implicit logTag: LogTag): Option[T] =
-      Try(Await.result(value.head, timeout)).toOption
+      Try(Await.result(value.head(logTag), timeout)).toOption
   }
 
   def currentTonePrefs: (String, String, String) = tonePrefs.currentValue.getOrElse((null, null, null))
