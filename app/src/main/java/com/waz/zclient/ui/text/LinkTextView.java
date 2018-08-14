@@ -108,9 +108,11 @@ public class LinkTextView extends MarkdownTextView {
         for (URLSpan span: spans) {
             int start = s.getSpanStart(span);
             int end = s.getSpanEnd(span);
-            s.removeSpan(span);
-            URLSpan spanNew = new URLSpanNoUnderline(span.getURL());
-            s.setSpan(spanNew, start, end, 0);
+            if (start >= 0 && end < s.length()) {
+                s.removeSpan(span);
+                URLSpan spanNew = new URLSpanNoUnderline(span.getURL());
+                s.setSpan(spanNew, start, end, 0);
+            }
         }
         setText(s);
     }
