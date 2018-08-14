@@ -18,7 +18,6 @@
 package com.waz.zclient.cursor
 
 import android.content.Context
-import android.graphics._
 import android.graphics.drawable.ColorDrawable
 import android.text.{Editable, TextUtils, TextWatcher}
 import android.util.AttributeSet
@@ -102,7 +101,7 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
 
   val bgColor = controller.isEditingMessage map {
     case true => getStyledColor(R.attr.cursorEditBackground)
-    case false => Color.TRANSPARENT
+    case false => getStyledColor(R.attr.wireBackgroundColor)
   }
 
   val lineCount = Signal(0)
