@@ -127,7 +127,7 @@ class SingleUserRowView(context: Context, attrs: AttributeSet, style: Int) exten
       case _ => throw new IllegalArgumentException
     }
     nameView.forceTheme(Some(theme))
-    separator.setBackgroundColor(getStyledColor(R.attr.thinDividerColor))
+    separator.setBackgroundColor(getStyledColor(R.attr.thinDividerColor, inject[ThemeController].getTheme(theme)))
     setBackground(backgroundDrawable)
     checkbox.setButtonDrawable(returning(getDrawable(checkboxDrawable))(_.setLevel(1)))
   }

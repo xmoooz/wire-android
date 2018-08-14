@@ -310,7 +310,7 @@ case class IntegrationSquareDrawHelper(scaleType: ScaleType ) {
 
     borderPaint.setStrokeWidth(strokeW)
     val outerRect = new RectF(strokeW, strokeW, bounds.width - strokeW, bounds.height - strokeW)
-    val backgroundRect = new RectF(strokeW * 2, strokeW * 2 , bounds.width - strokeW * 2, bounds.height - strokeW * 2)
+    val backgroundRect = new RectF(strokeW, strokeW, bounds.width - strokeW, bounds.height - strokeW)
     val innerRect = new RectF(padding * bounds.width, padding * bounds.height, bounds.width - padding * bounds.width, bounds.height - padding * bounds.height)
 
     val matrix2 = new Matrix()

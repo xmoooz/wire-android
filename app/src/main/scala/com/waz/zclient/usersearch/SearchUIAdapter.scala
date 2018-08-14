@@ -172,7 +172,6 @@ class SearchUIAdapter(adapterCallback: SearchUIAdapter.Callback, integrationsCon
 
     def addIntegrations(): Unit = {
       if (integrations.nonEmpty) {
-        mergedResult = mergedResult ++ Seq(SearchResult(SectionHeader, IntegrationsSection, 0))
         mergedResult = mergedResult ++ integrations.indices.map { i =>
           SearchResult(Integration, IntegrationsSection, i, integrations(i).id.str.hashCode)
         }
@@ -465,6 +464,7 @@ object SearchUIAdapter {
     view.showArrow(false)
     view.showCheckbox(false)
     view.setTheme(Theme.Dark, background = false)
+    view.setSeparatorVisible(true)
 
     def bind(integrationData: IntegrationData): Unit = {
       this.integrationData = Some(integrationData)
