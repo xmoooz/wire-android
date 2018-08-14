@@ -19,6 +19,7 @@ package com.waz.zclient.messages
 
 import android.content.Context
 import com.waz.ZLog.ImplicitTag._
+import com.waz.content.MembersStorage
 import com.waz.model.ConversationData.ConversationType.isOneToOne
 import com.waz.model._
 import com.waz.service.ZMessaging
@@ -37,6 +38,7 @@ class UsersController(implicit injector: Injector, context: Context) extends Inj
 
   private val zMessaging = inject[Signal[ZMessaging]]
   private val tracking   = inject[TrackingService]
+  private lazy val membersStorage = inject[Signal[MembersStorage]]
 
   private lazy val itemSeparator = getString(R.string.content__system__item_separator)
   private lazy val lastSeparator = getString(R.string.content__system__last_item_separator)
@@ -49,8 +51,10 @@ class UsersController(implicit injector: Injector, context: Context) extends Inj
     zms <- zMessaging
     msg <- message
     conv <- zms.convsStorage.signal(msg.convId)
-    user <- user(UserId(conv.id.str))
-  } yield if (isOneToOne(conv.convType)) Some(user) else None
+    members <- membersStorage.flatMap(_.activeMembers(conv.id))
+    userId = if (isOneToOne(conv.convType)) Some(UserId(conv.id.str)) else members.find(_ != zms.selfUserId)
+    user <- userId.fold(Signal.const(Option.empty[UserData]))(uId => user(uId).map(Some(_)))
+  } yield user
 
   def displayNameStringIncludingSelf(id: UserId): Signal[String] =
     for {
@@ -118,7 +122,8 @@ class UsersController(implicit injector: Injector, context: Context) extends Inj
 
   def userHandle(id: UserId): Signal[Option[Handle]] = user(id).map(_.handle)
 
-  def user(id: UserId): Signal[UserData] = zMessaging flatMap { _.usersStorage.signal(id) }
+  def user(id: UserId): Signal[UserData] = zMessaging.flatMap(_.usersStorage.signal(id))
+  def users(ids: Iterable[UserId]): Signal[Vector[UserData]] = zMessaging.flatMap(_.usersStorage.listSignal(ids))
 
   def selfUser: Signal[UserData] = selfUserId.flatMap(user)
 

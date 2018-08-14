@@ -283,45 +283,50 @@ class IntegrationAssetDrawable (
                                   animate: Boolean = true
                                 )(implicit inj: Injector, eventContext: EventContext) extends ImageAssetDrawable(src, scaleType, request, background, animate) {
 
-  private val StrokeWidth = 2f
-  private val StrokeAlpha = 20
-
-  val drawHelper = IntegrationSquareDrawHelper()
+  val drawHelper = IntegrationSquareDrawHelper(scaleType)
 
   override protected def drawBitmap(canvas: Canvas, bm: Bitmap, matrix: Matrix, bitmapPaint: Paint): Unit =
     drawHelper.draw(canvas, bm, getBounds, matrix, bitmapPaint)
 }
 
-case class IntegrationSquareDrawHelper() {
+case class IntegrationSquareDrawHelper(scaleType: ScaleType ) {
 
-  private val StrokeWidth = 2f
   private val StrokeAlpha = 20
+  private val padding = 0.1f
 
   private lazy val whitePaint = returning(new Paint(Paint.ANTI_ALIAS_FLAG)){ _.setColor(Color.WHITE) }
   private lazy val borderPaint = returning(new Paint(Paint.ANTI_ALIAS_FLAG)) { paint =>
     paint.setStyle(Paint.Style.STROKE)
     paint.setColor(Color.BLACK)
     paint.setAlpha(StrokeAlpha)
-    paint.setStrokeWidth(StrokeWidth)
   }
 
   def cornerRadius(size: Float) = size * 0.2f
+  def strokeWidth(size: Float) = size * 5f / 500f
 
   def draw(canvas: Canvas, bm: Bitmap, bounds: Rect, matrix: Matrix, bitmapPaint: Paint): Unit = {
-    val tempBm = Bitmap.createBitmap(bounds.width, bounds.height, Bitmap.Config.ARGB_8888)
+
+    val strokeW = strokeWidth(bounds.width)
+
+    borderPaint.setStrokeWidth(strokeW)
+    val outerRect = new RectF(strokeW, strokeW, bounds.width - strokeW, bounds.height - strokeW)
+    val backgroundRect = new RectF(strokeW, strokeW, bounds.width - strokeW, bounds.height - strokeW)
+    val innerRect = new RectF(padding * bounds.width, padding * bounds.height, bounds.width - padding * bounds.width, bounds.height - padding * bounds.height)
+
+    val matrix2 = new Matrix()
+    scaleType(matrix2, bm.getWidth, bm.getHeight, Dim2(innerRect.width.toInt, innerRect.height.toInt))
+    matrix2.postTranslate(innerRect.left, innerRect.top)
+
+    val tempBm = Bitmap.createBitmap(bounds.width, bounds.height(), Bitmap.Config.ARGB_8888)
     val tempCanvas = new Canvas(tempBm)
-
-    tempCanvas.drawBitmap(bm, matrix, null)
-
+    tempCanvas.drawBitmap(bm, matrix2, null)
     val shader = new BitmapShader(tempBm, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
-    val outerRect = new RectF(StrokeWidth, StrokeWidth, bounds.width - StrokeWidth, bounds.height - StrokeWidth)
-    val innerRect = new RectF(StrokeWidth * 2, StrokeWidth * 2, bounds.width - StrokeWidth * 2, bounds.height - StrokeWidth * 2)
 
     val radius = cornerRadius(bounds.width)
 
     bitmapPaint.setShader(shader)
-    canvas.drawRoundRect(innerRect, radius, radius, whitePaint)
-    canvas.drawRoundRect(innerRect, radius, radius, bitmapPaint)
+    canvas.drawRoundRect(backgroundRect, radius, radius, whitePaint)
+    canvas.drawRoundRect(innerRect, 0, 0, bitmapPaint)
     canvas.drawRoundRect(outerRect, radius, radius, borderPaint)
   }
 }

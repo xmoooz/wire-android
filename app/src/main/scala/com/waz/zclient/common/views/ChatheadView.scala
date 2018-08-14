@@ -39,6 +39,7 @@ import com.waz.ui.MemoryImageCache.BitmapRequest.{Round, Single}
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.utils.{NameParts, returning}
 import com.waz.zclient.common.controllers.UserAccountsController
+import com.waz.zclient.common.views.ImageAssetDrawable.ScaleType
 import com.waz.zclient.ui.utils.TypefaceUtils
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.{Injectable, Injector, R, ViewHelper}
@@ -97,7 +98,7 @@ class ChatheadView(val context: Context, val attrs: AttributeSet, val defStyleAt
 
   private lazy val matrix = new Matrix()
   private lazy val bitmapPaint = new Paint(Paint.ANTI_ALIAS_FLAG)
-  private lazy val integrationDrawHelper = IntegrationSquareDrawHelper()
+  private lazy val integrationDrawHelper = IntegrationSquareDrawHelper(ScaleType.CenterInside)
 
   ctrl.invalidate.on(Threading.Ui)(_ => invalidate())
 
@@ -122,12 +123,17 @@ class ChatheadView(val context: Context, val attrs: AttributeSet, val defStyleAt
     invalidate()
   }
 
-  def clearUser(): Unit = ctrl.clearUser()
+  def clearUser(): Unit =
+    ctrl.clearUser()
 
-  def setUserId(userId: UserId, zms: Option[ZMessaging]): Unit = ctrl.setUserId(userId, zms)
-  def setUserId(userId: UserId): Unit = setUserId(userId, None): Unit
+  def setUserId(userId: UserId, zms: Option[ZMessaging]): Unit =
+    ctrl.setUserId(userId, zms)
 
-  def setIntegration(integration: IntegrationData): Unit = ctrl.setIntegration(integration)
+  def setUserId(userId: UserId): Unit =
+    setUserId(userId, None): Unit
+
+  def setIntegration(integration: IntegrationData): Unit =
+    ctrl.setIntegration(integration)
 
   override def isSelected = {
     ctrl.selected.currentValue.getOrElse(false)
@@ -181,7 +187,7 @@ class ChatheadView(val context: Context, val attrs: AttributeSet, val defStyleAt
             fontSize = 3f * radius / 4f
           }
           initialsTextPaint.setTextSize(fontSize)
-          canvas.drawText(initials, radius, getVerticalTextCenter(initialsTextPaint, radius), initialsTextPaint)
+          canvas.drawText(initials, getWidth / 2, getVerticalTextCenter(initialsTextPaint, getHeight / 2), initialsTextPaint)
         }
       } { bitmap =>
 
@@ -414,6 +420,7 @@ protected class ChatheadController(val setSelectable:            Boolean        
     def apply(integration: IntegrationData): ChatheadDetails =
       ChatheadDetails(
         initials = NameParts.parseFrom(integration.name).initials,
+        assetId = integration.asset,
         isBot = true
       )
   }

@@ -18,16 +18,19 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item>
-        <shape android:shape="rectangle">
-            <solid android:color="@color/separator_dark" />
-        </shape>
-    </item>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <item android:bottom="@dimen/wire__divider__height__thin">
-        <shape android:shape="rectangle">
-            <solid android:color="@color/background_dark" />
-        </shape>
-    </item>
-</layer-list>
+    <com.waz.zclient.ui.text.TypefaceTextView
+        android:id="@android:id/text1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/wire__text_size__small"
+        app:w_font="@string/wire__typeface__regular"
+        android:layout_gravity="center"
+        android:textColor="?wirePrimaryTextColor"
+        />
+
+</FrameLayout>

@@ -66,7 +66,6 @@ import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.creation.CreateConversationController
 import com.waz.zclient.conversationlist.ConversationListController
 import com.waz.zclient.cursor.CursorController
-import com.waz.zclient.integrations.IntegrationDetailsController
 import com.waz.zclient.messages.controllers.{MessageActionsController, NavigationController}
 import com.waz.zclient.messages.{LikesController, MessageViewFactory, MessagesController, UsersController}
 import com.waz.zclient.notifications.controllers.NotificationManagerWrapper.AndroidNotificationsManager
@@ -141,6 +140,7 @@ object WireApplication {
     bind [Signal[ConversationsListStateService]] to inject[Signal[ZMessaging]].map(_.convsStats)
     bind [Signal[ConversationsUiService]]        to inject[Signal[ZMessaging]].map(_.convsUi)
     bind [Signal[UserService]]                   to inject[Signal[ZMessaging]].map(_.users)
+    bind [Signal[UserSearchService]]             to inject[Signal[ZMessaging]].map(_.userSearch)
     bind [Signal[ConversationStorage]]           to inject[Signal[ZMessaging]].map(_.convsStorage)
     bind [Signal[NotificationStorage]]           to inject[Signal[ZMessaging]].map(_.notifStorage)
     bind [Signal[UsersStorage]]                  to inject[Signal[ZMessaging]].map(_.usersStorage)
@@ -149,7 +149,8 @@ object WireApplication {
     bind [Signal[AssetsStorage]]                 to inject[Signal[ZMessaging]].map(_.assetsStorage)
     bind [Signal[ImageLoader]]                   to inject[Signal[ZMessaging]].map(_.imageLoader)
     bind [Signal[MessagesService]]               to inject[Signal[ZMessaging]].map(_.messages)
-    bind [Signal[AccountsService]]               to inject[Signal[ZMessaging]].map(_.accounts)
+    bind [Signal[IntegrationsService]]           to inject[Signal[ZMessaging]].map(_.integrations)
+    bind [Signal[UserPreferences]]               to inject[Signal[ZMessaging]].map(_.userPrefs)
 
     // old controllers
     // TODO: remove controller factory, reimplement those controllers
@@ -196,7 +197,6 @@ object WireApplication {
 
     bind [NavigationController]            to new NavigationController()
     bind [InvitationsController]           to new InvitationsController()
-    bind [IntegrationDetailsController]    to new IntegrationDetailsController()
     bind [IntegrationsController]          to new IntegrationsController()
     bind [ClientsController]               to new ClientsController()
     bind [CreateTeamController]            to new CreateTeamController()
@@ -242,7 +242,6 @@ object WireApplication {
 
     bind [CursorController]             to new CursorController()
     bind [ConversationListController]   to new ConversationListController()
-    bind [IntegrationDetailsController] to new IntegrationDetailsController()
     bind [CreateConversationController] to new CreateConversationController()
     bind [ParticipantsController]       to new ParticipantsController()
     bind [UsersController]              to new UsersController()

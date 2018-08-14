@@ -30,9 +30,11 @@ import com.waz.service.ZMessaging
 import com.waz.service.messages.MessageAndLikes
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventStream, Signal}
-import com.waz.zclient.common.views.ChatheadView
+import com.waz.utils.returning
 import com.waz.zclient.common.controllers.global.AccentColorController
+import com.waz.zclient.common.views.ChatheadView
 import com.waz.zclient.messages.MessageView.MsgBindOptions
+import com.waz.zclient.paintcode.ManageServicesIcon
 import com.waz.zclient.ui.text.{GlyphTextView, TypefaceTextView}
 import com.waz.zclient.ui.theme.ThemeUtils
 import com.waz.zclient.ui.utils.ColorUtils
@@ -164,7 +166,7 @@ class UserPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
 
   private val chathead: ChatheadView = findById(R.id.chathead)
   private val tvName: TypefaceTextView = findById(R.id.tvName)
-  private val isBot: TypefaceTextView = findById(R.id.is_bot)
+  private val isBot: View = returning(findById[View](R.id.is_bot))(_.setBackground(ManageServicesIcon(R.color.light_graphite)))
   private val tvStateGlyph: GlyphTextView = findById(R.id.gtvStateGlyph)
 
   private val zms = inject[Signal[ZMessaging]]
