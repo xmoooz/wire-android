@@ -39,6 +39,7 @@ import com.waz.zclient.common.controllers.ThemeController.Theme
 import com.waz.zclient.common.controllers.global.KeyboardController
 import com.waz.zclient.common.controllers.{ThemeController, UserAccountsController}
 import com.waz.zclient.common.views.{PickableElement, SingleUserRowView}
+import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.participants.ParticipantsController
 import com.waz.zclient.ui.text.TypefaceTextView
 import com.waz.zclient.usersearch.views.{PickerSpannableEditText, SearchEditText}
@@ -124,12 +125,12 @@ class AddParticipantsFragment extends FragmentHelper {
       tabs.setVisible(false)
 
       (for {
-        isCreateConvFlow   <- newConvController.convId.map(_.isEmpty)
+        false              <- newConvController.convId.map(_.isEmpty)
         isTeamAccount      <- inject[UserAccountsController].isTeam
-        isTeamOnlyConv     <- newConvController.teamOnly
-        isCurrentUserGuest <- if (!isCreateConvFlow) inject[ParticipantsController].isCurrentUserGuest else Signal.const(false)
-        _ = verbose(s"should the tabs be visible: (is create conv flow: $isCreateConvFlow, is team account: $isTeamAccount, team only: $isTeamOnlyConv, is guest: $isCurrentUserGuest)")
-      } yield !isCreateConvFlow && isTeamAccount && !isTeamOnlyConv && !isCurrentUserGuest)
+        isTeamOnlyConv     <- inject[ConversationController].currentConvIsTeamOnly
+        currentUserInTeam  <- inject[ParticipantsController].currentUserBelongsToConversationTeam
+        _ = verbose(s"should the tabs be visible: (is team account: $isTeamAccount, team only: $isTeamOnlyConv, in team: $currentUserInTeam)")
+      } yield isTeamAccount && !isTeamOnlyConv && currentUserInTeam)
         .onUi(tabs.setVisible)
     }
   }

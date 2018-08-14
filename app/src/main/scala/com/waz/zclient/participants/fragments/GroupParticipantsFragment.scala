@@ -150,7 +150,7 @@ class GroupParticipantsFragment extends FragmentHelper {
         showAddParticipants.head.map {
           case true =>
             participantsController.conv.head.foreach { conv =>
-              inject[CreateConversationController].setAddToConversation(conv.id, conv.isTeamOnly)
+              inject[CreateConversationController].setAddToConversation(conv.id)
               getFragmentManager.beginTransaction
                 .setCustomAnimations(
                   R.anim.in_from_bottom_enter,

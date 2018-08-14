@@ -70,7 +70,6 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
   with FragmentHelper
   with SearchUIAdapter.Callback {
 
-  import SearchUIFragment._
   import Threading.Implicits.Ui
 
   private implicit lazy val uiStorage = inject[UiStorage]
@@ -264,7 +263,7 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
       override def onTabReselected(tab: TabLayout.Tab): Unit = {}
     })
 
-    zms.map(_.teamId.nonEmpty && internalVersion).head.foreach(tabs.setVisible)(Threading.Ui)
+    userAccountsController.isTeam.head.foreach(tabs.setVisible)(Threading.Ui)
 
     adapter.filter ! ""
 
