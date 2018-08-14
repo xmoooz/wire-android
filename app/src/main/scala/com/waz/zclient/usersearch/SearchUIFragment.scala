@@ -50,7 +50,7 @@ import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.creation.{CreateConversationController, CreateConversationManagerFragment}
 import com.waz.zclient.conversationlist.ConversationListController
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
-import com.waz.zclient.integrations.{IntegrationDetailsController, IntegrationDetailsFragment}
+import com.waz.zclient.integrations.IntegrationDetailsFragment
 import com.waz.zclient.pages.BaseFragment
 import com.waz.zclient.pages.main.conversation.controller.IConversationScreenController
 import com.waz.zclient.pages.main.participants.dialog.DialogLaunchMode
@@ -435,8 +435,6 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
     keyboard.hideKeyboardIfVisible()
     verbose(s"onIntegrationClicked(${data.id})")
 
-    val detailsController = inject[IntegrationDetailsController]
-    detailsController.setPicking()
     import IntegrationDetailsFragment._
     getFragmentManager.beginTransaction
       .setCustomAnimations(
@@ -444,7 +442,7 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
         R.anim.open_new_conversation__thread_list_out,
         R.anim.open_new_conversation__thread_list_in,
         R.anim.slide_out_to_bottom_pick_user)
-      .replace(R.id.fl__conversation_list_main, newInstance(data.provider, data.id), Tag)
+      .replace(R.id.fl__conversation_list_main, newAddingInstance(data), Tag)
       .addToBackStack(Tag)
       .commit()
 

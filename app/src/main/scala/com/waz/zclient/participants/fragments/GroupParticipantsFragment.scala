@@ -31,12 +31,12 @@ import com.waz.service.NetworkModeService
 import com.waz.threading.Threading
 import com.waz.utils._
 import com.waz.utils.events._
-import com.waz.zclient.common.controllers.UserAccountsController
+import com.waz.zclient.common.controllers.{IntegrationsController, UserAccountsController}
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.creation.{AddParticipantsFragment, CreateConversationController}
-import com.waz.zclient.integrations.IntegrationDetailsController
 import com.waz.zclient.pages.main.conversation.controller.IConversationScreenController
 import com.waz.zclient.participants.{ParticipantsAdapter, ParticipantsController}
+import com.waz.zclient.utils.ContextUtils.showToast
 import com.waz.zclient.utils.ViewUtils
 import com.waz.zclient.views.menus.{FooterMenu, FooterMenuCallback}
 import com.waz.zclient.{FragmentHelper, R}
@@ -49,7 +49,7 @@ class GroupParticipantsFragment extends FragmentHelper {
   private lazy val participantsController       = inject[ParticipantsController]
   private lazy val convScreenController         = inject[IConversationScreenController]
   private lazy val userAccountsController       = inject[UserAccountsController]
-  private lazy val integrationDetailsController = inject[IntegrationDetailsController]
+  private lazy val integrationsController       = inject[IntegrationsController]
 
   private lazy val participantsView = view[RecyclerView](R.id.pgv__participants)
 
@@ -81,14 +81,18 @@ class GroupParticipantsFragment extends FragmentHelper {
     new FutureEventStream[UserId, Option[UserData]](adapter.onClick, participantsController.getUser).onUi {
       case Some(user) => (user.providerId, user.integrationId) match {
         case (Some(pId), Some(iId)) =>
-          participantsController.conv.head.map { conv =>
-            Option(getParentFragment) match {
-              case Some(f: ParticipantFragment) =>
-                integrationDetailsController.setRemoving(conv.id, user.id)
-                f.showIntegrationDetails(pId, iId)
-              case _ =>
-            }
-
+          for {
+            conv <- participantsController.conv.head
+            resp <- integrationsController.getIntegration(pId, iId) //TODO - show spinner?
+          } resp match {
+            case Right(service) =>
+              Option(getParentFragment) match {
+                case Some(f: ParticipantFragment) =>
+                  f.showIntegrationDetails(service, conv.id, user.id)
+                case _ =>
+              }
+            case Left(err) =>
+              showToast(R.string.generic_error_header)
           }
         case _ => participantsController.onShowUser ! Some(user.id)
       }

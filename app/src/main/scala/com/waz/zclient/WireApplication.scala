@@ -66,7 +66,6 @@ import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.creation.CreateConversationController
 import com.waz.zclient.conversationlist.ConversationListController
 import com.waz.zclient.cursor.CursorController
-import com.waz.zclient.integrations.IntegrationDetailsController
 import com.waz.zclient.messages.controllers.{MessageActionsController, NavigationController}
 import com.waz.zclient.messages.{LikesController, MessageViewFactory, MessagesController, UsersController}
 import com.waz.zclient.notifications.controllers.NotificationManagerWrapper.AndroidNotificationsManager
@@ -198,7 +197,6 @@ object WireApplication {
 
     bind [NavigationController]            to new NavigationController()
     bind [InvitationsController]           to new InvitationsController()
-    bind [IntegrationDetailsController]    to new IntegrationDetailsController()
     bind [IntegrationsController]          to new IntegrationsController()
     bind [ClientsController]               to new ClientsController()
     bind [CreateTeamController]            to new CreateTeamController()
@@ -244,7 +242,6 @@ object WireApplication {
 
     bind [CursorController]             to new CursorController()
     bind [ConversationListController]   to new ConversationListController()
-    bind [IntegrationDetailsController] to new IntegrationDetailsController()
     bind [CreateConversationController] to new CreateConversationController()
     bind [ParticipantsController]       to new ParticipantsController()
     bind [UsersController]              to new UsersController()

@@ -194,7 +194,7 @@ class ParticipantFragment extends ManagerFragment
       .commit
 
   // TODO: AN-5980
-  def showIntegrationDetails(pId: ProviderId, iId: IntegrationId): Unit = {
+  def showIntegrationDetails(service: IntegrationData, convId: ConvId, userId: UserId): Unit = {
     getChildFragmentManager
       .beginTransaction
       .setCustomAnimations(
@@ -205,7 +205,7 @@ class ParticipantFragment extends ManagerFragment
       )
       .replace(
         R.id.fl__participant__overlay,
-        IntegrationDetailsFragment.newInstance(pId, iId, isTransparent = false),
+        IntegrationDetailsFragment.newRemovingInstance(service, convId, userId),
         IntegrationDetailsFragment.Tag
       )
       .addToBackStack(IntegrationDetailsFragment.Tag)
