@@ -127,7 +127,7 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
     }
 
     private val soundController = returning(mock[SoundController]) { ctrl =>
-      (ctrl.isVibrationEnabled _).expects().anyNumberOfTimes().returning(false)
+      (ctrl.isVibrationEnabled _).expects(*).anyNumberOfTimes().returning(false)
       (ctrl.soundIntensityFull _).expects().anyNumberOfTimes().returning(false)
       (ctrl.soundIntensityNone _).expects().anyNumberOfTimes().returning(true)
     }
