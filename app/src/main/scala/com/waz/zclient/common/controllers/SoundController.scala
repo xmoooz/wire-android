@@ -23,7 +23,7 @@ import android.net.Uri
 import android.os.Vibrator
 import android.text.TextUtils
 import com.waz.ZLog.ImplicitTag._
-import com.waz.ZLog.{error, verbose}
+import com.waz.ZLog.{LogTag, error, verbose}
 import com.waz.content.UserPreferences
 import com.waz.media.manager.MediaManager
 import com.waz.media.manager.context.IntensityLevel
@@ -35,6 +35,11 @@ import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.{DeprecationUtils, RingtoneUtils}
 import com.waz.zclient.utils.RingtoneUtils.{getUriForRawId, isDefaultValue}
 import com.waz.zclient.{R, _}
+
+import scala.concurrent.Await
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
+import scala.util.Try
 
 
 trait SoundController {
@@ -79,6 +84,12 @@ class SoundControllerImpl(implicit inj: Injector, cxt: Context) extends SoundCon
 
   private var _mediaManager = Option.empty[MediaManager]
   mediaManager(m => _mediaManager = Some(m))
+
+  //TODO Refactor MessageNotificationsController and remove this. Work with normal Signal.head method instead
+  private implicit class RichSignal[T](val value: Signal[T]) {
+    def headSync(timeout: FiniteDuration = 3.seconds)(implicit logTag: LogTag): Option[T] =
+      Try(Await.result(value.head, timeout)).toOption
+  }
 
   def currentTonePrefs: (String, String, String) = tonePrefs.currentValue.getOrElse((null, null, null))
 
