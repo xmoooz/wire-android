@@ -17,20 +17,17 @@
  */
 package com.waz.zclient.messages.parts
 
-import com.waz.utils.wrappers.AndroidURIUtil
 import android.content.Context
 import android.util.AttributeSet
-import android.widget.{ImageView, LinearLayout, TextView}
+import android.widget.{LinearLayout, TextView}
 import com.waz.model.{UserData, UserId}
 import com.waz.service.IntegrationsService
 import com.waz.threading.Threading
 import com.waz.utils.events.Signal
+import com.waz.utils.wrappers.AndroidURIUtil
 import com.waz.zclient.common.controllers.BrowserController
-import com.waz.zclient.common.views.ImageAssetDrawable.{RequestBuilder, ScaleType}
-import com.waz.zclient.common.views.ImageController.{ImageSource, NoImage, WireImage}
 import com.waz.zclient.common.views._
 import com.waz.zclient.messages.{MessageViewPart, MsgPart, UsersController}
-import com.waz.zclient.paintcode.ServicePlaceholderDrawable
 import com.waz.zclient.ui.utils.TextViewUtils
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.{R, ViewHelper}
@@ -45,7 +42,7 @@ class ConnectRequestPartView(context: Context, attrs: AttributeSet, style: Int) 
 
   override val tpe: MsgPart = MsgPart.ConnectRequest
 
-  lazy val chathead     : ImageView    = findById(R.id.cv__row_conversation__connect_request__chat_head)
+  lazy val chathead     : ChatheadView    = findById(R.id.cv__row_conversation__connect_request__chat_head)
   lazy val label        : TextView        = findById(R.id.ttv__row_conversation__connect_request__label)
   lazy val userDetails  : UserDetailsView = findById(R.id.udv__row_conversation__connect_request__user_details)
 
@@ -78,25 +75,10 @@ class ConnectRequestPartView(context: Context, attrs: AttributeSet, style: Int) 
   })
   } yield integration
 
-
-  val integrationImageSource: Signal[ImageSource] = integration.map(_.flatMap(_.asset.map(WireImage)).getOrElse(NoImage()))
-
-  val integrationDrawable = new IntegrationAssetDrawable(
-    src          = integrationImageSource,
-    scaleType    = ScaleType.CenterInside,
-    request      = RequestBuilder.Regular,
-    background   = Some(ServicePlaceholderDrawable(getDimenPx(R.dimen.wire__padding__regular))),
-    animate      = true)
-
-
-  val userImageSource: Signal[ImageSource] = user.map(_.picture.map(WireImage).getOrElse(NoImage()))
-
-  val userDrawable = new ImageAssetDrawable(userImageSource, scaleType = ScaleType.CenterInside, request = RequestBuilder.Round)
-
-  integration.map{
-    case Some(_) => integrationDrawable
-    case _ => userDrawable
-  }.onUi(chathead.setImageDrawable(_))
+  Signal(integration, user.map(_.id)).onUi {
+    case (Some(i), _) => chathead.setIntegration(i)
+    case (_, usr) => chathead.setUserId(usr)
+  }
 
   user.map(_.id)(userDetails.setUserId)
 

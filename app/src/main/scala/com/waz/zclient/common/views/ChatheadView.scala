@@ -187,7 +187,7 @@ class ChatheadView(val context: Context, val attrs: AttributeSet, val defStyleAt
             fontSize = 3f * radius / 4f
           }
           initialsTextPaint.setTextSize(fontSize)
-          canvas.drawText(initials, radius, getVerticalTextCenter(initialsTextPaint, radius), initialsTextPaint)
+          canvas.drawText(initials, getWidth / 2, getVerticalTextCenter(initialsTextPaint, getHeight / 2), initialsTextPaint)
         }
       } { bitmap =>
 

@@ -291,7 +291,6 @@ class IntegrationAssetDrawable (
 
 case class IntegrationSquareDrawHelper(scaleType: ScaleType ) {
 
-  private val StrokeWidth = 2f
   private val StrokeAlpha = 20
   private val padding = 0.1f
 
@@ -300,15 +299,18 @@ case class IntegrationSquareDrawHelper(scaleType: ScaleType ) {
     paint.setStyle(Paint.Style.STROKE)
     paint.setColor(Color.BLACK)
     paint.setAlpha(StrokeAlpha)
-    paint.setStrokeWidth(StrokeWidth)
   }
 
   def cornerRadius(size: Float) = size * 0.2f
+  def strokeWidth(size: Float) = size * 5f / 500f
 
   def draw(canvas: Canvas, bm: Bitmap, bounds: Rect, matrix: Matrix, bitmapPaint: Paint): Unit = {
 
-    val outerRect = new RectF(StrokeWidth, StrokeWidth, bounds.width - StrokeWidth, bounds.height - StrokeWidth)
-    val backgroundRect = new RectF(StrokeWidth * 2, StrokeWidth * 2 , bounds.width - StrokeWidth * 2, bounds.height - StrokeWidth * 2)
+    val strokeW = strokeWidth(bounds.width)
+
+    borderPaint.setStrokeWidth(strokeW)
+    val outerRect = new RectF(strokeW, strokeW, bounds.width - strokeW, bounds.height - strokeW)
+    val backgroundRect = new RectF(strokeW * 2, strokeW * 2 , bounds.width - strokeW * 2, bounds.height - strokeW * 2)
     val innerRect = new RectF(padding * bounds.width, padding * bounds.height, bounds.width - padding * bounds.width, bounds.height - padding * bounds.height)
 
     val matrix2 = new Matrix()
