@@ -35,6 +35,7 @@ import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.DateConvertUtils.asZonedDateTime
 import com.waz.zclient.utils._
 import com.waz.zclient.{BuildConfig, R, ViewHelper}
+
 import scala.concurrent.duration._
 import com.waz.utils.RichWireInstant
 
@@ -89,10 +90,11 @@ class MessageView(context: Context, attrs: AttributeSet, style: Int)
           (if (canHaveLink) Seq(PartDesc(WirelessLink)) else Seq.empty)
       }
       else if (msg.msgType == Message.Type.RICH_MEDIA){
-        if (msg.content.size > 1){
-          Seq(PartDesc(MsgPart(Message.Type.TEXT, isOneToOne))) ++ (msg.content map { content => PartDesc(MsgPart(content.tpe), Some(content)) }).filter(_.tpe == WebLink)
+        val contentWithOG = msg.content.filter(_.openGraph.isDefined)
+        if (contentWithOG.size == 1 && msg.content.size == 1) {
+          msg.content.map(content => PartDesc(MsgPart(content.tpe), Some(content)))
         } else {
-          msg.content map { content => PartDesc(MsgPart(content.tpe), Some(content)) }
+          Seq(PartDesc(MsgPart(Message.Type.TEXT, isOneToOne))) ++ contentWithOG.map(content => PartDesc(MsgPart(content.tpe), Some(content))).filter(_.tpe == WebLink)
         }
       }
       else
