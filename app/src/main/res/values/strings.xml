@@ -1397,20 +1397,20 @@
     <string name="participants_divider_services">SERVICES (%1$s)</string>
     <string name="participants_divider_people">PEOPLE (%1$s)</string>
     <string name="group_name_hint">GROUP NAME</string>
-    <string name="allow_guests_toggle_text">Allow guests</string>
-    <string name="allow_guests_toggle_info_text">Open this conversation to people outside your team. You can always change it later.</string>
+    <string name="allow_guests_toggle_text">Allow Guests and Services</string>
+    <string name="allow_guests_toggle_info_text">Open this conversation to services and people outside your team. You can always change it later.</string>
 
-    <string name="open_this_conversation_to_people_outside_your_team">Open this conversation to people outside your team.</string>
-    <string name="allow_guests">Allow Guests</string>
-    <string name="guest_options_title">Guests</string>
+    <string name="open_this_conversation_to_people_outside_your_team">Open this conversation to services and people outside your team.</string>
+    <string name="allow_guests">Allow Guests and Services</string>
+    <string name="guest_options_title">Guests and Services</string>
     <string name="ephemeral_options_title">Timed messages</string>
     <string name="ephemeral_explanation_text">Timed messages will be turned on for all the participants in this conversation</string>
     <string name="show_all_participants">Show all (%1$s)</string>
 
     <string name="allow_guests_error_title">Something went wrong</string>
-    <string name="allow_guests_error_body">Could not allow guests. Please try again.</string>
-    <string name="allow_guests_warning_body">Current guests will be removed from the conversation. New guests will not be allowed.</string>
-    <string name="allow_guests_warning_confirm">Remove Guests</string>
+    <string name="allow_guests_error_body">Could not allow guests nor services. Please try again.</string>
+    <string name="allow_guests_warning_body">Current guests and services will be removed from the conversation. New guests and services will not be allowed.</string>
+    <string name="allow_guests_warning_confirm">Remove</string>
     <string name="guests_are_present">GUESTS ARE PRESENT</string>
     <string name="services_are_present">SERVICES ARE PRESENT</string>
     <string name="guests_and_services_are_present">GUESTS AND SERVICES ARE PRESENT</string>
