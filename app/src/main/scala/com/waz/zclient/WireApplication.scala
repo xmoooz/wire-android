@@ -19,8 +19,8 @@ package com.waz.zclient
 
 import java.io.File
 import java.util.Calendar
-import javax.net.ssl.SSLContext
 
+import javax.net.ssl.SSLContext
 import android.app.{Activity, ActivityManager, NotificationManager}
 import android.content.{Context, ContextWrapper}
 import android.hardware.SensorManager
@@ -33,10 +33,9 @@ import com.google.android.gms.security.ProviderInstaller
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.verbose
 import com.waz.api.NetworkMode
-import com.waz.model.AccentColor
+import com.waz.model.{AccentColor, ConversationData, TeamId, UserId}
 import com.waz.content._
 import com.waz.log.InternalLog
-import com.waz.model.{ConversationData, UserId}
 import com.waz.permissions.PermissionsService
 import com.waz.service._
 import com.waz.service.conversation.{ConversationsListStateService, ConversationsService, ConversationsUiService}
@@ -132,7 +131,8 @@ object WireApplication {
 
     // the current user's id
     bind [Signal[Option[UserId]]] to ZMessaging.currentUi.currentZms.map(_.map(_.selfUserId))
-    bind [Signal[UserId]] to inject[Signal[ZMessaging]].map(_.selfUserId)
+    bind [Signal[UserId]]         to inject[Signal[ZMessaging]].map(_.selfUserId)
+    bind [Signal[Option[TeamId]]] to inject[Signal[ZMessaging]].map(_.teamId)
 
 
     // services  and storages of the current zms
@@ -200,6 +200,7 @@ object WireApplication {
     bind [IntegrationsController]          to new IntegrationsController()
     bind [ClientsController]               to new ClientsController()
     bind [CreateTeamController]            to new CreateTeamController()
+    bind [CreateConversationController]    to new CreateConversationController()
 
     // current conversation data
     bind [Signal[ConversationData]] to inject[ConversationController].currentConv
@@ -242,7 +243,6 @@ object WireApplication {
 
     bind [CursorController]             to new CursorController()
     bind [ConversationListController]   to new ConversationListController()
-    bind [CreateConversationController] to new CreateConversationController()
     bind [ParticipantsController]       to new ParticipantsController()
     bind [UsersController]              to new UsersController()
 
