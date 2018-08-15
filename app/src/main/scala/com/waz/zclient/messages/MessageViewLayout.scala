@@ -51,14 +51,17 @@ abstract class MessageViewLayout(context: Context, attrs: AttributeSet, style: I
       case pv: MessageViewPart => factory.recycle(pv)
       case _ =>
     }
-    removeAllViewsInLayout() // TODO: avoid removing views if not really needed, compute proper diff with previous state
 
     val views = parts.zipWithIndex map { case (PartDesc(tpe, content), index) =>
       val view = factory.get(tpe, this)
       view.setVisibility(View.VISIBLE)
       view.set(msg, content, opts)
-      addViewInLayout(view, index, Option(view.getLayoutParams).getOrElse(defaultLayoutParams))
+      if (view.getParent == null) addViewInLayout(view, index, Option(view.getLayoutParams).getOrElse(defaultLayoutParams))
       view
+    }
+
+    (0 until getChildCount).map(getChildAt(_)).foreach { v =>
+      if (!views.contains(v)) removeView(v)
     }
 
     val (fps, lps) = views.partition {
