@@ -116,7 +116,7 @@ class AddEmailFragment extends CredentialsFragment {
 
   lazy val confirmationButton = returning(view[PhoneConfirmationButton](R.id.confirmation_button)) { vh =>
     vh.onClick { _ =>
-      spinner.showSpinner(LoadingIndicatorView.Spinner, forcedTheme = Some(true))
+      spinner.showSpinner(LoadingIndicatorView.Spinner, forcedIsDarkTheme = Some(true))
       for {
         am      <- am.head
         pending <- am.storage.userPrefs(PendingEmail).apply()
@@ -268,7 +268,7 @@ class SetOrRequestPasswordFragment extends CredentialsFragment {
 
   lazy val confirmationButton = returning(view[PhoneConfirmationButton](R.id.confirmation_button)) { vh =>
     vh.onClick { _ =>
-      spinner.showSpinner(LoadingIndicatorView.Spinner, forcedTheme = Some(true))
+      spinner.showSpinner(LoadingIndicatorView.Spinner, forcedIsDarkTheme = Some(true))
       for {
         am       <- am.head
         Some(pw) <- password.head //pw should be defined

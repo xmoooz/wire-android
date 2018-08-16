@@ -1372,7 +1372,7 @@
     <string name="team_invitation_add_from_address_book">ADD FROM ADDRESSBOOK</string>
     <string name="invitation_screen_title">Build your team</string>
     <string name="invitation_screen_subtitle">Invite your colleagues to join.</string>
-    <string name="create_service_conversation_button_text">Create Conversation</string>
+    <string name="open_service_conversation_button_text">Open Conversation</string>
     <string name="remove_service_button_text">Remove Service</string>
     <string name="integrations_create_conversation">Create a new conversation</string>
 

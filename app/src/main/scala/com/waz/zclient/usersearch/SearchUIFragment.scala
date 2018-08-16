@@ -93,7 +93,7 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
   private lazy val shareContactsPref      = zms.map(_.userPrefs.preference(UserPreferences.ShareContacts))
   private lazy val showShareContactsPref  = zms.map(_.userPrefs.preference(UserPreferences.ShowShareContacts))
 
-  private lazy val adapter = new SearchUIAdapter(this, inject[IntegrationsController])
+  private lazy val adapter = new SearchUIAdapter(this)
 
   private lazy val searchResultRecyclerView = view[RecyclerView](R.id.rv__pickuser__header_list_view)
   private lazy val startUiToolbar           = view[Toolbar](R.id.pickuser_toolbar)

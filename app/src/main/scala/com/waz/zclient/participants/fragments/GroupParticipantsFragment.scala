@@ -27,11 +27,11 @@ import android.view.{LayoutInflater, View, ViewGroup}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api.NetworkMode
 import com.waz.model.{UserData, UserId}
-import com.waz.service.NetworkModeService
+import com.waz.service.{IntegrationsService, NetworkModeService}
 import com.waz.threading.Threading
 import com.waz.utils._
 import com.waz.utils.events._
-import com.waz.zclient.common.controllers.{IntegrationsController, UserAccountsController}
+import com.waz.zclient.common.controllers.UserAccountsController
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.creation.{AddParticipantsFragment, CreateConversationController}
 import com.waz.zclient.pages.main.conversation.controller.IConversationScreenController
@@ -49,7 +49,7 @@ class GroupParticipantsFragment extends FragmentHelper {
   private lazy val participantsController = inject[ParticipantsController]
   private lazy val convScreenController   = inject[IConversationScreenController]
   private lazy val userAccountsController = inject[UserAccountsController]
-  private lazy val integrationsController = inject[IntegrationsController]
+  private lazy val integrationsService    = inject[Signal[IntegrationsService]]
   private lazy val spinnerController      = inject[SpinnerController]
 
   private lazy val participantsView = view[RecyclerView](R.id.pgv__participants)
@@ -85,7 +85,7 @@ class GroupParticipantsFragment extends FragmentHelper {
           for {
             conv <- participantsController.conv.head
             _ = spinnerController.showSpinner()
-            resp <- integrationsController.getIntegration(pId, iId) //TODO - show spinner?
+            resp <- integrationsService.head.flatMap(_.getIntegration(pId, iId))
           } {
             spinnerController.hideSpinner()
             resp match {

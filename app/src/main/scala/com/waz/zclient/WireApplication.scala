@@ -197,7 +197,6 @@ object WireApplication {
 
     bind [NavigationController]            to new NavigationController()
     bind [InvitationsController]           to new InvitationsController()
-    bind [IntegrationsController]          to new IntegrationsController()
     bind [ClientsController]               to new ClientsController()
     bind [CreateTeamController]            to new CreateTeamController()
     bind [CreateConversationController]    to new CreateConversationController()
