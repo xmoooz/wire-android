@@ -21,16 +21,17 @@ import android.content.Context
 import android.os.Bundle
 import android.support.design.widget.TabLayout
 import android.support.design.widget.TabLayout.OnTabSelectedListener
+import android.support.v4.graphics.ColorUtils
 import android.support.v7.widget.{LinearLayoutManager, RecyclerView}
 import android.view._
 import android.view.inputmethod.EditorInfo
-import android.widget.{ImageView, TextView}
 import android.widget.TextView.OnEditorActionListener
+import android.widget.{ImageView, TextView}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.verbose
 import com.waz.model._
+import com.waz.service.ZMessaging
 import com.waz.service.tracking.{OpenSelectParticipants, TrackingService}
-import com.waz.service.{IntegrationsService, UserSearchService, ZMessaging}
 import com.waz.threading.Threading
 import com.waz.utils.events._
 import com.waz.utils.returning
@@ -120,7 +121,7 @@ class AddParticipantsFragment extends FragmentHelper {
     }.onUi(vis => vh.foreach(_.setVisibility(vis)))
 
     themeController.currentTheme.map(themeController.getTheme).onUi { th =>
-      vh.foreach(_.setImageDrawable(ManageServicesIcon(ResColor.fromColor(getStyledColor(R.attr.wirePrimaryTextColor, th)))))
+      vh.foreach(_.setImageDrawable(ManageServicesIcon(ResColor.fromColor(ColorUtils.setAlphaComponent(getStyledColor(R.attr.wirePrimaryTextColor, th), 52)))))
     }
   }
 
@@ -185,8 +186,6 @@ class AddParticipantsFragment extends FragmentHelper {
       })
     }
 
-
-
     (for {
       zms                    <- zms.head
       selectedUserIds        <- newConvController.users.head
@@ -231,9 +230,7 @@ case class AddParticipantsAdapter(usersSelected: SourceSignal[Set[UserId]],
   import AddParticipantsAdapter._
 
   private implicit val ctx = context
-  private lazy val themeController      = inject[ThemeController]
-  private lazy val userSearch           = inject[Signal[UserSearchService]]
-  private lazy val servicesService      = inject[Signal[IntegrationsService]]
+  private lazy val themeController = inject[ThemeController]
 
   private val searchController = new SearchController()
 

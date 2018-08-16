@@ -1397,12 +1397,12 @@
     <string name="participants_divider_services">SERVICES (%1$s)</string>
     <string name="participants_divider_people">PEOPLE (%1$s)</string>
     <string name="group_name_hint">GROUP NAME</string>
-    <string name="allow_guests_toggle_text">Allow Guests and Services</string>
+    <string name="allow_guests_toggle_text">Allow guests and services</string>
     <string name="allow_guests_toggle_info_text">Open this conversation to services and people outside your team. You can always change it later.</string>
 
     <string name="open_this_conversation_to_people_outside_your_team">Open this conversation to services and people outside your team.</string>
-    <string name="allow_guests">Allow Guests and Services</string>
-    <string name="guest_options_title">Guests and Services</string>
+    <string name="allow_guests">Allow guests and services</string>
+    <string name="guest_options_title">Guests and services</string>
     <string name="ephemeral_options_title">Timed messages</string>
     <string name="ephemeral_explanation_text">Timed messages will be turned on for all the participants in this conversation</string>
     <string name="show_all_participants">Show all (%1$s)</string>
@@ -1497,5 +1497,5 @@
     <string name="participant_search_hint">SEARCH FOR NAMES</string>
     <string name="participant_search_title">PEOPLE</string>
     <string name="generic_service_warning">Services have access to the content of the conversation</string>
-    <string name="add_services_button_text">Manage Services</string>
+    <string name="add_services_button_text">Manage services</string>
 </resources>

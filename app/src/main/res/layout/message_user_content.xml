@@ -50,7 +50,7 @@
         android:layout_height="@dimen/user_part_view_bot_size"
         android:layout_gravity="center_vertical"
         android:visibility="gone"
-        android:layout_marginStart="@dimen/wire__padding__4"
+        android:layout_marginStart="@dimen/wire__padding__8"
         />
 
     <com.waz.zclient.ui.text.GlyphTextView

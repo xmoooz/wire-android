@@ -273,7 +273,7 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
     } yield if (kb || filterEmpty) getColor(R.color.people_picker__loading__color) else ac)
       .onUi(getContainer.getLoadingViewIndicator.setColor))
 
-    emptyServicesIcon.foreach(_.setImageDrawable(ManageServicesIcon(ResColor.fromId(R.color.white_64))))
+    emptyServicesIcon.foreach(_.setImageDrawable(ManageServicesIcon(ResColor.fromId(R.color.white_24))))
   }
 
   override def onStart(): Unit = {

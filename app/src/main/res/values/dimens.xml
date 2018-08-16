@@ -963,8 +963,8 @@
     <dimen name="hangup_call_icon_size">20dp</dimen>
     <dimen name="calling_profile_margin_side">32dp</dimen>
     <dimen name="services_warning_icon_width">48dp</dimen>
-    <dimen name="services_warning_icon_height">32dp</dimen>
-    <dimen name="services_warning_text_width">260dp</dimen>
+    <dimen name="services_warning_icon_height">48dp</dimen>
+    <dimen name="services_warning_text_width">204dp</dimen>
     <dimen name="user_part_view_bot_size">12dp</dimen>
 
 </resources>
