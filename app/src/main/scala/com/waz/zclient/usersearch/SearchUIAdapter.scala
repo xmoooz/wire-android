@@ -24,23 +24,21 @@ import android.view.{LayoutInflater, View, ViewGroup}
 import android.widget.TextView
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.verbose
-import com.waz.api.impl.ErrorResponse
 import com.waz.model._
-import com.waz.service.UserSearchService
-import com.waz.utils.events.{EventContext, Signal}
+import com.waz.utils.events.EventContext
 import com.waz.utils.returning
 import com.waz.zclient._
 import com.waz.zclient.common.controllers.ThemeController.Theme
 import com.waz.zclient.common.controllers.{IntegrationsController, UserAccountsController}
 import com.waz.zclient.common.views.{SingleUserRowView, TopUserChathead}
 import com.waz.zclient.paintcode.{CreateGroupIcon, GuestIcon, ManageServicesIcon}
+import com.waz.zclient.search.SearchController
+import com.waz.zclient.search.SearchController.{SearchUserListState, Tab}
 import com.waz.zclient.ui.text.TypefaceTextView
 import com.waz.zclient.usersearch.SearchUIAdapter.TopUsersViewHolder.TopUserAdapter
 import com.waz.zclient.usersearch.views.SearchResultConversationRowView
 import com.waz.zclient.utils.ContextUtils._
-import com.waz.zclient.utils.{RichView, ViewUtils}
-
-import scala.concurrent.duration._
+import com.waz.zclient.utils.{ResColor, RichView, ViewUtils}
 
 class SearchUIAdapter(adapterCallback: SearchUIAdapter.Callback, integrationsController: IntegrationsController)
                      (implicit injector: Injector, eventContext: EventContext) extends RecyclerView.Adapter[RecyclerView.ViewHolder] with Injectable {
@@ -50,68 +48,63 @@ class SearchUIAdapter(adapterCallback: SearchUIAdapter.Callback, integrationsCon
   setHasStableIds(true)
 
   private val userAccountsController = inject[UserAccountsController]
+  private val searchController       = new SearchController()
 
   private var mergedResult = Seq[SearchResult]()
   private var collapsedContacts = true
   private var collapsedGroups = true
 
-  private var team = Option.empty[TeamData]
-  private var topUsers = IndexedSeq.empty[UserData]
-  private var localResults = IndexedSeq.empty[UserData]
-  private var conversations = IndexedSeq.empty[ConversationData]
-  private var directoryResults = IndexedSeq.empty[UserData]
-  private var integrations = IndexedSeq.empty[IntegrationData]
-  private var currentUser = Option.empty[UserData]
+  private var team               = Option.empty[TeamData]
+  private var topUsers           = Seq.empty[UserData]
+  private var localResults       = Seq.empty[UserData]
+  private var conversations      = Seq.empty[ConversationData]
+  private var directoryResults   = Seq.empty[UserData]
+  private var integrations       = Seq.empty[IntegrationData]
+  private var currentUser        = Option.empty[UserData]
   private var currentUserIsAdmin = false
+  private var noServices         = false
 
-  val filter = Signal("")
-  val tab = Signal[Tab](Tab.People)
+  val filter = searchController.filter
+  val tab    = searchController.tab
+  val searchResults = searchController.searchUserOrServices
 
   (for {
-    team       <- userAccountsController.teamData
-    search     <- inject[Signal[UserSearchService]]
-    filter     <- filter.throttle(500.millis)
-    Tab.People <- tab
-    res        <- search.search(filter)
-  } yield (team, res)).onUi {
-    case (team, res) =>
+    curUser <- userAccountsController.currentUser
+    team    <- userAccountsController.teamData
+    isAdmin <- userAccountsController.isAdmin
+    res     <- searchResults
+  } yield (curUser, team, isAdmin, res)).onUi {
+    case (curUser, team, isAdmin, res) =>
+
       verbose(res.toString)
-      this.team        = team
-      topUsers         = res.top
-      localResults     = res.local
-      conversations    = res.convs
-      directoryResults = res.dir
+      this.team = team
+      currentUserIsAdmin = isAdmin
+      currentUser = curUser
+
+      res match {
+        case (SearchUserListState.Users(search)) =>
+          topUsers         = search.top
+          localResults     = search.local
+          conversations    = search.convs
+          directoryResults = search.dir
+        case _ =>
+          topUsers         = Seq.empty
+          localResults     = Seq.empty
+          conversations    = Seq.empty
+          directoryResults = Seq.empty
+      }
+
+      noServices = res match {
+        case SearchUserListState.NoServices => true
+        case _ => false
+      }
+
+      integrations = res match {
+        case SearchUserListState.Services(svs) => svs.toIndexedSeq.sortBy(_.name)
+        case _ => IndexedSeq.empty
+      }
+
       updateMergedResults()
-  }
-
-  userAccountsController.isAdmin.onUi { isAdmin =>
-    currentUserIsAdmin = isAdmin
-    updateMergedResults()
-  }
-
-  userAccountsController.currentUser.onUi { user =>
-    currentUser = user
-    updateMergedResults()
-  }
-
-  val services: Signal[LoadServicesResult] =
-    (for {
-      startsWith   <- filter.map(Option(_).filterNot(_.isEmpty)).throttle(500.millis)
-      Tab.Services <- tab
-      services <-
-        Signal
-          .future(integrationsController.searchIntegrations(startsWith))
-          .map(_.fold[LoadServicesResult](LoadServicesResult.Error, LoadServicesResult.ServicesLoaded(_, startsWith)))
-          .orElse(Signal.const(LoadServicesResult.LoadingServices))
-    } yield services)
-      .orElse(Signal.const(LoadServicesResult.NoAction))
-
-  services.onUi { res =>
-    integrations = res match {
-      case LoadServicesResult.ServicesLoaded(svs, _) => svs.toIndexedSeq.sortBy(_.name)
-      case _ => IndexedSeq.empty
-    }
-    updateMergedResults()
   }
 
   private def updateMergedResults(): Unit = {
@@ -189,7 +182,7 @@ class SearchUIAdapter(adapterCallback: SearchUIAdapter.Callback, integrationsCon
 
     if (team.isDefined) {
       if (tab.currentValue.contains(Tab.Services)) {
-        if (currentUserIsAdmin) addManageServicesButton()
+        if (currentUserIsAdmin && !noServices) addManageServicesButton()
         addIntegrations()
       } else {
         if (filter.currentValue.forall(_.isEmpty)){
@@ -301,22 +294,6 @@ class SearchUIAdapter(adapterCallback: SearchUIAdapter.Callback, integrationsCon
 
 object SearchUIAdapter {
 
-  sealed trait LoadServicesResult
-
-  object LoadServicesResult {
-    case object NoAction                                                          extends LoadServicesResult
-    case object LoadingServices                                                   extends LoadServicesResult
-    case class  ServicesLoaded(svs: Seq[IntegrationData], filter: Option[String]) extends LoadServicesResult
-    case class  Error(err: ErrorResponse)                                         extends LoadServicesResult
-  }
-
-  sealed trait Tab
-
-  object Tab {
-    case object People extends Tab
-    case object Services extends Tab
-  }
-
   //Item Types
   val TopUsers: Int = 0
   val ConnectedUser: Int = 1
@@ -378,7 +355,7 @@ object SearchUIAdapter {
   class ManageServicesViewHolder(view: View, callback: SearchUIAdapter.Callback) extends RecyclerView.ViewHolder(view) {
     private implicit val ctx = view.getContext
     private val iconView  = view.findViewById[View](R.id.icon)
-    iconView.setBackground(returning(ManageServicesIcon(R.color.white)) {
+    iconView.setBackground(returning(ManageServicesIcon(ResColor.fromId(R.color.white))) {
       _.setPadding(new Rect(iconView.getPaddingLeft, iconView.getPaddingTop, iconView.getPaddingRight, iconView.getPaddingBottom))
     })
     view.findViewById[TypefaceTextView](R.id.title).setText(R.string.manage_services)

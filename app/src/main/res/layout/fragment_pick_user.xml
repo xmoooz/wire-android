@@ -183,9 +183,9 @@
                 app:w_font="@string/wire__typeface__medium"
                 android:text="@string/add_services_button_text"
                 android:textColor="@color/white"
-                android:textSize="@dimen/wire__text_size__regular"
+                android:textSize="@dimen/wire__text_size__regular_small"
                 android:gravity="center"
-                android:background="@drawable/rounded_graphite_rectangle"
+                android:background="@drawable/invite_button_background"
                 android:visibility="gone"
                 />
         </LinearLayout>

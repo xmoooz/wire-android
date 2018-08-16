@@ -19,24 +19,26 @@ package com.waz.zclient.utils
 
 import com.waz.zclient.R
 import android.content.Context
+import com.waz.zclient.utils.ContextUtils.{getColor, getQuantityString, getString}
+
+case class ResId(id: Int) extends AnyVal
 
 trait ResValue[A] {
-  def resId: Int
   def resolve(implicit ctx: Context): A
 }
 
-case class ResString(override val resId: Int, quantity: Int, args: ResString.Args) extends ResValue[String] {
+case class ResString(resId: Int, quantity: Int, args: ResString.Args) extends ResValue[String] {
   import ResString._
 
   // in a rare case arguments to a ResString might be ResStrings themselves
   // it shouldn't go deeper than one level, so we shouldn't have to worry about stack overflow
   def resolve(implicit ctx: Context): String = (args, quantity) match {
     case (StringArgs(a), 0) if resId == 0 && a.nonEmpty => a.head
-    case (StringArgs(a), 0)                             => ContextUtils.getString(resId, a: _*)
-    case (StringArgs(a), q) if q > 0                    => ContextUtils.getQuantityString(resId, q, a: _*)
-    case (ResStringArgs(a), 0)                          => ContextUtils.getString(resId, a.map(_.resolve): _*)
-    case (ResStringArgs(a), q) if q > 0                 => ContextUtils.getQuantityString(resId, q, a.map(_.resolve): _*)
-    case (AnyRefArgs(a), q)    if q > 0                 => ContextUtils.getQuantityString(resId, q, a: _*)
+    case (StringArgs(a), 0)                             => getString(resId, a: _*)
+    case (StringArgs(a), q) if q > 0                    => getQuantityString(resId, q, a: _*)
+    case (ResStringArgs(a), 0)                          => getString(resId, a.map(_.resolve): _*)
+    case (ResStringArgs(a), q) if q > 0                 => getQuantityString(resId, q, a.map(_.resolve): _*)
+    case (AnyRefArgs(a), q)    if q > 0                 => getQuantityString(resId, q, a: _*)
     case _ => ""
   }
 
@@ -61,4 +63,21 @@ object ResString {
 
   // during the compilation both String* and ResString* undergo type erasure to Seq, so both apply(...) would have the same signature if ResString* was used
   def apply(resId: Int, args: List[ResString]): ResString = ResString(resId, 0, ResStringArgs(args))
+}
+
+case class ResColor(input: Either[ResId, ResColor.Color]) extends ResValue[Int] {
+  import ResColor._
+
+  override def resolve(implicit ctx: Context): Int = input match {
+    case Left(ResId(id)) => getColor(id)
+    case Right(Color(v)) => v
+  }
+}
+
+object ResColor {
+  case class Color(v: Int) extends AnyVal
+
+  def fromId(resId: Int): ResColor = apply(Left(ResId(resId)))
+  def fromColor(color: Int): ResColor = apply(Right(Color(color)))
+
 }

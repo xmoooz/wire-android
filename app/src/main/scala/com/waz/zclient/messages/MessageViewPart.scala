@@ -166,7 +166,7 @@ class UserPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
 
   private val chathead: ChatheadView = findById(R.id.chathead)
   private val tvName: TypefaceTextView = findById(R.id.tvName)
-  private val isBot: View = returning(findById[View](R.id.is_bot))(_.setBackground(ManageServicesIcon(R.color.light_graphite)))
+  private val isBot: View = returning(findById[View](R.id.is_bot))(_.setBackground(ManageServicesIcon(ResColor.fromId(R.color.light_graphite))))
   private val tvStateGlyph: GlyphTextView = findById(R.id.gtvStateGlyph)
 
   private val zms = inject[Signal[ZMessaging]]
