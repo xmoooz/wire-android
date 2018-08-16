@@ -41,7 +41,7 @@ import com.waz.zclient.pages.main.profile.camera.{CameraContext, CameraFocusView
 import com.waz.zclient.pages.main.{ImagePreviewCallback, ImagePreviewLayout}
 import com.waz.zclient.ui.animation.interpolators.penner.Expo
 import com.waz.zclient.utils.ContextUtils._
-import com.waz.zclient.utils.RichView
+import com.waz.zclient.utils.{RichView, SquareOrientation}
 import com.waz.zclient.views.ProgressView
 import com.waz.zclient.{FragmentHelper, R}
 
@@ -128,8 +128,8 @@ class CameraFragment extends FragmentHelper
   override def onViewCreated(view: View, savedInstanceState: Bundle): Unit = {
     super.onViewCreated(view, savedInstanceState)
 
-    cameraTopControl
-    cameraBottomControl
+    cameraTopControl.foreach(_.setConfigOrientation(SquareOrientation.PORTRAIT_STRAIGHT))
+    cameraBottomControl.foreach(_.setConfigOrientation(SquareOrientation.PORTRAIT_STRAIGHT))
 
     imagePreviewContainer
     previewProgressBar
