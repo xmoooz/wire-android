@@ -17,10 +17,10 @@
   */
 package com.waz.zclient.notifications.controllers
 
-import android.app.{NotificationManager, PendingIntent, Service}
+import android.app.{NotificationManager, PendingIntent}
 import android.content
 import android.graphics.{Bitmap, Color}
-import android.os.{Build, IBinder}
+import android.os.Build
 import android.support.v4.app.NotificationCompat
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
@@ -31,9 +31,10 @@ import com.waz.service.assets.AssetService.BitmapResult.BitmapLoaded
 import com.waz.service.call.CallInfo
 import com.waz.service.call.CallInfo.CallState._
 import com.waz.service.{AccountManager, AccountsService, GlobalModule, ZMessaging}
+import com.waz.services.calling.CallingNotificationsService
 import com.waz.threading.Threading.Implicits.Background
 import com.waz.ui.MemoryImageCache.BitmapRequest.Regular
-import com.waz.utils.events.{EventContext, Signal, Subscription}
+import com.waz.utils.events.{EventContext, Signal}
 import com.waz.utils.wrappers.{Context, Intent}
 import com.waz.utils.{LoggedTry, _}
 import com.waz.zclient.Intents.{CallIntent, OpenCallingScreen}
@@ -41,36 +42,11 @@ import com.waz.zclient._
 import com.waz.zclient.calling.controllers.CallController
 import com.waz.zclient.common.views.ImageController
 import com.waz.zclient.utils.ContextUtils.{getString, _}
-import com.waz.zclient.utils.{DeprecationUtils, RingtoneUtils}
+import com.waz.zclient.utils.RingtoneUtils
 import com.waz.zms.CallWakeService
-import CallingNotificationsController._
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
-
-class CallingNotificationsService extends ServiceHelper {
-  private lazy val callNCtrl = inject[CallingNotificationsController]
-  private var sub = Option.empty[Subscription]
-
-  override def onBind(intent: content.Intent): IBinder = null
-
-  override def onStartCommand(intent: content.Intent, flags: Int, startId: Int): Int = {
-    implicit val cxt: content.Context = getApplicationContext
-
-    super.onStartCommand(intent, flags, startId)
-    if (sub.isEmpty) {
-      sub = Some(callNCtrl.notifications.map(_.find(_.isMainCall)).onUi {
-        case Some(not) =>
-          val builder = androidNotificationBuilder(not)
-          startForeground(not.convId.str.hashCode, builder.build())
-        case _ =>
-          stopForeground(true)
-          stopSelf()
-      })
-    }
-    Service.START_STICKY
-  }
-}
 
 class CallingNotificationsController(implicit cxt: WireContext, eventContext: EventContext, inj: Injector) extends Injectable {
 
@@ -237,7 +213,7 @@ object CallingNotificationsController {
       case (false, false) => getString(R.string.system_notification__calling_one)
     }
 
-    val builder = DeprecationUtils.getBuilder(cxt)
+    val builder = new NotificationCompat.Builder(cxt, NotificationManagerWrapper.ChannelId)
       .setSmallIcon(R.drawable.call_notification_icon)
       .setLargeIcon(not.bitmap.orNull)
       .setContentTitle(title)
