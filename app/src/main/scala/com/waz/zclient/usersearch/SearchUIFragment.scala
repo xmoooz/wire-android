@@ -352,7 +352,7 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
   }
 
   override def onManageServicesClicked(): Unit =
-    browser.openUrl(getString(R.string.url_manage_teams))
+    browser.openManageTeamsPage()
 
   override def onCreateConvClicked(): Unit = {
     keyboard.hideKeyboardIfVisible()
@@ -450,7 +450,6 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
 
 object SearchUIFragment {
   val TAG: String = classOf[SearchUIFragment].getName
-  private val DEFAULT_SELECTED_INVITE_METHOD: Int = 0
   private val SHOW_KEYBOARD_THRESHOLD: Int = 10
 
   val internalVersion = BuildConfig.APPLICATION_ID match {
