@@ -74,7 +74,7 @@ class RemoveDeviceDialog extends DialogFragment with FragmentHelper {
   private lazy val textInputLayout = findById[TextInputLayout](root, R.id.til__remove_otr_device)
 
   private lazy val forgotPasswordButton = returning(findById[TextView](root, R.id.device_forgot_password)) {
-    _.onClick(inject[BrowserController].openUrl(getString(R.string.url_password_reset)))
+    _.onClick(inject[BrowserController].openForgotPasswordPage())
   }
 
   override def onCreateDialog(savedInstanceState: Bundle): Dialog = {

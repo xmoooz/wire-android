@@ -22,10 +22,9 @@ import com.waz.ZLog.verbose
 import com.waz.content.GlobalPreferences
 import com.waz.content.GlobalPreferences.ShouldCreateFullConversation
 import com.waz.model.{ConvId, IntegrationId, ProviderId, UserId}
-import com.waz.service.ZMessaging
 import com.waz.service.tracking._
+import com.waz.service.{IntegrationsService, ZMessaging}
 import com.waz.utils.events.{EventContext, EventStream, Signal}
-import com.waz.zclient.common.controllers.IntegrationsController
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.utils.UiStorage
 import com.waz.zclient.{Injectable, Injector}
@@ -38,7 +37,7 @@ class CreateConversationController(implicit inj: Injector, ev: EventContext) ext
   lazy val onShowCreateConversation = EventStream[Boolean]()
 
   private lazy val conversationController = inject[ConversationController]
-  private lazy val integrationsController = inject[IntegrationsController]
+  private lazy val integrationsService    = inject[Signal[IntegrationsService]]
   private lazy val zms = inject[Signal[ZMessaging]]
 
   private implicit lazy val uiStorage = inject[UiStorage]
@@ -96,7 +95,7 @@ class CreateConversationController(implicit inj: Injector, ev: EventContext) ext
       _ = verbose(s"creating conv with ${userIds.size} users and ${integrationIds.size} bots")
       teamOnly            <- teamOnly.head
       conv                <- conversationController.createGroupConversation(Some(name.trim), userIds, teamOnly)
-      _                   <- Future.sequence(integrationIds.map { case (pId, iId) => integrationsController.addBot(conv.id, pId, iId) })
+      _                   <- Future.sequence(integrationIds.map { case (pId, iId) => integrationsService.head.flatMap(_.addBotToConversation(conv.id, pId, iId)) })
       from                <- fromScreen.head
       (guests, nonGuests) <- z.usersStorage.getAll(userIds).map(_.flatten.partition(_.isGuest(z.teamId)))
     } yield {
@@ -114,7 +113,7 @@ class CreateConversationController(implicit inj: Injector, ev: EventContext) ext
       integrationIds      <- integrations.head
       from                <- fromScreen.head
       _                   <- if (userIds.nonEmpty) conversationController.addMembers(convId, userIds) else Future.successful({})
-      _                   <- Future.sequence(integrationIds.map { case (pId, iId) => integrationsController.addBot(conv.id, pId, iId) })
+      _                   <- Future.sequence(integrationIds.map { case (pId, iId) => integrationsService.head.flatMap(_.addBotToConversation(conv.id, pId, iId)) })
       (guests, nonGuests) <- z.usersStorage.getAll(userIds).map(_.flatten.partition(_.isGuest(z.teamId)))
     } yield {
       tracking.track(AddParticipantsEvent(!conv.isTeamOnly, nonGuests.size, guests.size, from))

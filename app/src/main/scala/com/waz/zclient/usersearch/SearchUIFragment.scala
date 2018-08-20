@@ -93,7 +93,7 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
   private lazy val shareContactsPref      = zms.map(_.userPrefs.preference(UserPreferences.ShareContacts))
   private lazy val showShareContactsPref  = zms.map(_.userPrefs.preference(UserPreferences.ShowShareContacts))
 
-  private lazy val adapter = new SearchUIAdapter(this, inject[IntegrationsController])
+  private lazy val adapter = new SearchUIAdapter(this)
 
   private lazy val searchResultRecyclerView = view[RecyclerView](R.id.rv__pickuser__header_list_view)
   private lazy val startUiToolbar           = view[Toolbar](R.id.pickuser_toolbar)
@@ -352,7 +352,7 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
   }
 
   override def onManageServicesClicked(): Unit =
-    browser.openUrl(getString(R.string.url_manage_teams))
+    browser.openManageTeamsPage()
 
   override def onCreateConvClicked(): Unit = {
     keyboard.hideKeyboardIfVisible()
@@ -450,7 +450,6 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
 
 object SearchUIFragment {
   val TAG: String = classOf[SearchUIFragment].getName
-  private val DEFAULT_SELECTED_INVITE_METHOD: Int = 0
   private val SHOW_KEYBOARD_THRESHOLD: Int = 10
 
   val internalVersion = BuildConfig.APPLICATION_ID match {

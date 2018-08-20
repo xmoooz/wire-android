@@ -29,12 +29,16 @@ import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
+import com.waz.zclient.utils.{ConversationSignal, UiStorage}
 import com.waz.zclient.{Injectable, Injector}
+
+import scala.concurrent.Future
 
 class UserAccountsController(implicit injector: Injector, context: Context, ec: EventContext) extends Injectable {
   import Threading.Implicits.Ui
   import UserAccountsController._
 
+  private implicit val uiStorage = inject[UiStorage]
   val zms             = inject[Signal[ZMessaging]]
   val accountsService = inject[AccountsService]
   val prefs           = inject[Signal[UserPreferences]]
@@ -111,6 +115,22 @@ class UserAccountsController(implicit injector: Injector, context: Context, ec: 
 
   def getOrCreateAndOpenConvFor(user: UserId) =
     getConversationId(user).flatMap(convCtrl.selectConv(_, ConversationChangeRequester.START_CONVERSATION))
+
+  def hasPermissionToRemoveService(cId: ConvId): Future[Boolean] = {
+    for {
+      tId <- teamId.head
+      ps  <- selfPermissions.head
+      conv <- ConversationSignal(cId).head
+    } yield tId == conv.team && ps.contains(AccountDataOld.Permission.RemoveConversationMember)
+  }
+
+  def hasPermissionToAddService: Future[Boolean] = {
+    for {
+      tId <- teamId.head
+      ps  <- selfPermissions.head
+    } yield tId.isDefined && ps.contains(AccountDataOld.Permission.AddConversationMember)
+  }
+
 
 }
 

@@ -29,7 +29,7 @@ import com.waz.utils.events.EventContext
 import com.waz.utils.returning
 import com.waz.zclient._
 import com.waz.zclient.common.controllers.ThemeController.Theme
-import com.waz.zclient.common.controllers.{IntegrationsController, UserAccountsController}
+import com.waz.zclient.common.controllers.UserAccountsController
 import com.waz.zclient.common.views.{SingleUserRowView, TopUserChathead}
 import com.waz.zclient.paintcode.{CreateGroupIcon, GuestIcon, ManageServicesIcon}
 import com.waz.zclient.search.SearchController
@@ -40,7 +40,7 @@ import com.waz.zclient.usersearch.views.SearchResultConversationRowView
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.{ResColor, RichView, ViewUtils}
 
-class SearchUIAdapter(adapterCallback: SearchUIAdapter.Callback, integrationsController: IntegrationsController)
+class SearchUIAdapter(adapterCallback: SearchUIAdapter.Callback)
                      (implicit injector: Injector, eventContext: EventContext) extends RecyclerView.Adapter[RecyclerView.ViewHolder] with Injectable {
 
   import SearchUIAdapter._

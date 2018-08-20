@@ -374,7 +374,7 @@ class SignInFragment extends SSOFragment
         }
 
       case R.id.ttv_signin_forgot_password =>
-        browserController.openUrl(getString(R.string.url_password_reset))
+        browserController.openForgotPasswordPage()
       case R.id.close_button =>
         activity.abortAddAccount()
       case _ =>

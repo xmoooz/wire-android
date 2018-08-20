@@ -151,8 +151,8 @@ class MainActivity extends BaseActivity
     val loadingIndicator = findViewById[LoadingIndicatorView](R.id.progress_spinner)
 
     spinnerController.spinnerShowing.onUi {
-      case Show(animation, forcedTheme)=>
-        themeController.darkThemeSet.head.foreach(theme => loadingIndicator.show(animation, forcedTheme.getOrElse(theme), 300))(Threading.Ui)
+      case Show(animation, forcedIsDarkTheme)=>
+        themeController.darkThemeSet.head.foreach(theme => loadingIndicator.show(animation, forcedIsDarkTheme.getOrElse(theme), 300))(Threading.Ui)
       case Hide(Some(message))=> loadingIndicator.hideWithMessage(message, 750)
       case Hide(_) => loadingIndicator.hide()
     }

@@ -110,6 +110,7 @@ object WireApplication {
     //SE Services
     bind [GlobalModule]                   to ZMessaging.currentGlobal
     bind [AccountsService]                to ZMessaging.currentAccounts
+    bind [BackendConfig]                  to inject[GlobalModule].backend
     bind [AccountStorage]                 to inject[GlobalModule].accountsStorage
     bind [TeamsStorage]                   to inject[GlobalModule].teamsStorage
     bind [SSOService]                     to inject[GlobalModule].ssoService
@@ -197,7 +198,6 @@ object WireApplication {
 
     bind [NavigationController]            to new NavigationController()
     bind [InvitationsController]           to new InvitationsController()
-    bind [IntegrationsController]          to new IntegrationsController()
     bind [ClientsController]               to new ClientsController()
     bind [CreateTeamController]            to new CreateTeamController()
     bind [CreateConversationController]    to new CreateConversationController()

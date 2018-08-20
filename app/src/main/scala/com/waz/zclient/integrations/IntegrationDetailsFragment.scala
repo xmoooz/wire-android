@@ -24,12 +24,15 @@ import android.support.annotation.Nullable
 import android.support.v4.app.FragmentManager
 import android.view._
 import android.widget.ImageView
+import com.waz.ZLog.ImplicitTag._
+import com.waz.api.impl.ErrorResponse
 import com.waz.model
 import com.waz.model._
+import com.waz.service.IntegrationsService
 import com.waz.service.tracking.{IntegrationAdded, TrackingService}
 import com.waz.utils.events.Signal
 import com.waz.utils.returning
-import com.waz.zclient.common.controllers.{IntegrationsController, ThemeController}
+import com.waz.zclient.common.controllers.{ThemeController, UserAccountsController}
 import com.waz.zclient.common.views.ImageAssetDrawable.{RequestBuilder, ScaleType}
 import com.waz.zclient.common.views.ImageController.{NoImage, WireImage}
 import com.waz.zclient.common.views.IntegrationAssetDrawable
@@ -43,7 +46,7 @@ import com.waz.zclient.ui.text.{GlyphTextView, TypefaceTextView}
 import com.waz.zclient.usersearch.SearchUIFragment
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.RichView
-import com.waz.zclient.{FragmentHelper, R}
+import com.waz.zclient.{FragmentHelper, R, SpinnerController}
 
 import scala.concurrent.Future
 
@@ -53,10 +56,12 @@ class IntegrationDetailsFragment extends FragmentHelper {
   import com.waz.threading.Threading.Implicits.Ui
   implicit def ctx: Context = getActivity
 
-  private lazy val integrationsController = inject[IntegrationsController]
+  private lazy val integrationsService    = inject[Signal[IntegrationsService]]
+  private lazy val userAccountsController = inject[UserAccountsController]
   private lazy val themeController        = inject[ThemeController]
   private lazy val tracking               = inject[TrackingService]
   private lazy val convController         = inject[ConversationController]
+  private lazy val spinner                = inject[SpinnerController]
 
   private lazy val serviceId   = getStringArg(ServiceId).map(IntegrationId)
   private lazy val providerId  = getStringArg(ProviderId).map(model.ProviderId) //only defined when adding to a conversation
@@ -78,6 +83,9 @@ class IntegrationDetailsFragment extends FragmentHelper {
     background   = Some(ServicePlaceholderDrawable(getDimenPx(R.dimen.wire__padding__regular))),
     animate      = true
   )
+
+  private lazy val addRemoveButton = view[View](R.id.add_remove_service_button)
+  private lazy val addRemoveButtonText = view[TypefaceTextView](R.id.button_text)
 
   override def onCreateView(inflater: LayoutInflater, viewContainer: ViewGroup, savedInstanceState: Bundle): View = {
     val localInflater =
@@ -103,30 +111,48 @@ class IntegrationDetailsFragment extends FragmentHelper {
     returning(findById[ImageView](R.id.integration_picture))(_.setImageDrawable(drawable))
     returning(findById[TypefaceTextView](R.id.integration_summary))(v => summary.foreach(v.setText(_)))
     returning(findById[TypefaceTextView](R.id.integration_description))(v => description.foreach(v.setText(_)))
-    returning(findById[TypefaceTextView](R.id.button_text))(_.setText(if (isRemovingFromConv) R.string.remove_service_button_text else R.string.create_service_conversation_button_text))
 
-    returning(findById[View](R.id.add_remove_service_button)) { v =>
-      v.setBackground(getDrawable(if (isRemovingFromConv) R.drawable.red_button else R.drawable.blue_button))
-      v.onClick {
-        fromConv.fold {
-          for { sId <- serviceId; pId <- providerId } {
-            integrationsController.createConvWithBot(pId, sId).flatMap { convId =>
-              close()
-              tracking.integrationAdded(sId, convId, IntegrationAdded.StartUi)
-              convController.selectConv(convId, ConversationChangeRequester.CONVERSATION_LIST)
-            }
-          }
-        } { convId =>
-          for { uId <- serviceUser; sId <- serviceId } {
-            integrationsController.removeBot(convId, uId).flatMap {
-              case Right(_) =>
-                getParentFragment.getFragmentManager.popBackStack()
-                tracking.integrationRemoved(sId)
-              case Left(e) => Future.successful(showToast(integrationsController.errorMessage(e)))
+    fromConv.fold(userAccountsController.hasPermissionToAddService)(userAccountsController.hasPermissionToRemoveService).foreach {
+      case true =>
+        addRemoveButtonText.foreach { v =>
+          v.setText(if (isRemovingFromConv) R.string.remove_service_button_text else R.string.open_service_conversation_button_text)
+        }
+        addRemoveButton.foreach { v =>
+          v.setBackground(getDrawable(if (isRemovingFromConv) R.drawable.red_button else R.drawable.blue_button))
+          v.onClick {
+            setLoading(true)
+            fromConv.fold {
+              for { sId <- serviceId; pId <- providerId } {
+                integrationsService.head.flatMap(_.getOrCreateConvWithService(pId, sId)).foreach { res =>
+                  setLoading(false)
+                  res match {
+                    case Left(err) => showToast(errorMessage(err))
+                    case Right(convId) =>
+                      close()
+                      tracking.integrationAdded(sId, convId, IntegrationAdded.StartUi)
+                      convController.selectConv(convId, ConversationChangeRequester.CONVERSATION_LIST)
+                  }
+                }
+              }
+            } { convId =>
+              for { uId <- serviceUser; sId <- serviceId } {
+                integrationsService.head.flatMap(_.removeBotFromConversation(convId, uId)).foreach { res =>
+                  setLoading(false)
+                  res match {
+                    case Right(_) =>
+                      getParentFragment.getFragmentManager.popBackStack()
+                      tracking.integrationRemoved(sId)
+                    case Left(e) => Future.successful(showToast(errorMessage(e)))
+                  }
+                }
+              }
             }
           }
         }
-      }
+
+      case false =>
+        addRemoveButton.foreach(_.setVisibility(View.GONE))
+        addRemoveButtonText.foreach(_.setVisibility(View.GONE))
     }
 
     // TODO: AN-5980
@@ -136,6 +162,20 @@ class IntegrationDetailsFragment extends FragmentHelper {
         else Color.WHITE
       )
   }
+
+  private def setLoading(loading: Boolean): Unit = {
+    addRemoveButton.foreach { v =>
+      v.setEnabled(!loading)
+      if (loading) spinner.showSpinner(forcedIsDarkTheme = Option(true)) else spinner.hideSpinner()
+    }
+  }
+
+  private def errorMessage(e: ErrorResponse): String =
+    getString((e.code, e.label) match {
+      case (403, "too-many-members") => R.string.conversation_errors_full
+      //      case (419, "too-many-bots")    => R.string.integrations_errors_add_service //TODO ???
+      case (_, _)                    => R.string.integrations_errors_service_unavailable
+    })
 
   override def onBackPressed(): Boolean = {
     super.onBackPressed()
@@ -153,9 +193,11 @@ class IntegrationDetailsFragment extends FragmentHelper {
     inject[ParticipantsController].onHideParticipants ! true
     true
   } else {
-    getFragmentManager.popBackStack(SearchUIFragment.TAG, FragmentManager.POP_BACK_STACK_INCLUSIVE)
-    inject[IPickUserController].hidePickUser()
-    inject[INavigationController].setLeftPage(Page.CONVERSATION_LIST, IntegrationDetailsFragment.Tag)
+    Option(getFragmentManager).foreach { fm =>
+      fm.popBackStack(SearchUIFragment.TAG, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+      inject[IPickUserController].hidePickUser()
+      inject[INavigationController].setLeftPage(Page.CONVERSATION_LIST, IntegrationDetailsFragment.Tag)
+    }
     true
   }
 
