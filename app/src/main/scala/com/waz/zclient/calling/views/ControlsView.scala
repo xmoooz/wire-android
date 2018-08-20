@@ -38,6 +38,7 @@ import com.waz.zclient.utils.RichView
 import com.waz.zclient.{R, ViewHelper}
 
 import scala.async.Async._
+import scala.collection.immutable.ListSet
 import scala.concurrent.Future
 
 class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAttr: Int) extends GridLayout(context, attrs, defStyleAttr) with ViewHelper {
@@ -122,7 +123,7 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
   private def accept(): Future[Unit] = async {
     onButtonClick ! {}
     val sendingVideo  = await(controller.videoSendState.head) == Started
-    val perms         = await(permissions.requestPermissions(if (sendingVideo) Set(CAMERA, RECORD_AUDIO) else Set(RECORD_AUDIO)))
+    val perms         = await(permissions.requestPermissions(if (sendingVideo) ListSet(CAMERA, RECORD_AUDIO) else ListSet(RECORD_AUDIO)))
     val cameraGranted = perms.exists(p => p.key.equals(CAMERA) && p.granted)
     val audioGranted  = perms.exists(p => p.key.equals(RECORD_AUDIO) && p.granted)
     val callingConvId = await(controller.callConvId.head)
@@ -154,7 +155,7 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
 
   private def video(): Future[Unit] = async {
     onButtonClick ! {}
-    val hasCameraPermissions = await(permissions.requestAllPermissions(Set(CAMERA)))
+    val hasCameraPermissions = await(permissions.requestAllPermissions(ListSet(CAMERA)))
 
     if (!hasCameraPermissions)
       showPermissionsErrorDialog(

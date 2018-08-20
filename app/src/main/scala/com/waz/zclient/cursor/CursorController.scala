@@ -47,6 +47,7 @@ import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.views.DraftMap
 import com.waz.zclient.{Injectable, Injector, R}
 
+import scala.collection.immutable.ListSet
 import scala.concurrent.duration._
 
 class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) extends Injectable {
@@ -313,11 +314,11 @@ object CursorController {
   }
 
   val KeyboardPermissions = Map(
-    ExtendedCursorContainer.Type.IMAGES -> Seq(CAMERA, READ_EXTERNAL_STORAGE),
-    ExtendedCursorContainer.Type.VOICE_FILTER_RECORDING -> Seq(RECORD_AUDIO)
+    ExtendedCursorContainer.Type.IMAGES -> ListSet(CAMERA, READ_EXTERNAL_STORAGE),
+    ExtendedCursorContainer.Type.VOICE_FILTER_RECORDING -> ListSet(RECORD_AUDIO)
   )
 
-  def keyboardPermissions(tpe: ExtendedCursorContainer.Type): Set[PermissionsService.PermissionKey] = KeyboardPermissions.getOrElse(tpe, Seq.empty).toSet
+  def keyboardPermissions(tpe: ExtendedCursorContainer.Type): ListSet[PermissionsService.PermissionKey] = KeyboardPermissions.getOrElse(tpe, ListSet.empty)
 }
 
 // temporary for compatibility with ConversationFragment

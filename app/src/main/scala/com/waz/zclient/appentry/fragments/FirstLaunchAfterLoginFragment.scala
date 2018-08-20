@@ -42,9 +42,10 @@ import com.waz.zclient.ui.text.TypefaceTextView
 import com.waz.zclient.ui.views.ZetaButton
 import com.waz.zclient.utils.ViewUtils
 import com.waz.zclient.{FragmentHelper, R, SpinnerController}
-import scala.concurrent.duration._
 
+import scala.concurrent.duration._
 import scala.async.Async.{async, await}
+import scala.collection.immutable.ListSet
 import scala.concurrent.Future
 
 object FirstLaunchAfterLoginFragment {
@@ -123,7 +124,7 @@ class FirstLaunchAfterLoginFragment extends FragmentHelper with View.OnClickList
 
   private def importBackup(): Unit = {
     def openBackupChooser() = {
-      permissions.requestAllPermissions(Set(READ_EXTERNAL_STORAGE)).foreach { granted =>
+      permissions.requestAllPermissions(ListSet(READ_EXTERNAL_STORAGE)).foreach { granted =>
         if (granted) assetIntentsManager.foreach(_.openBackupImport())
         else {
           //todo show something???

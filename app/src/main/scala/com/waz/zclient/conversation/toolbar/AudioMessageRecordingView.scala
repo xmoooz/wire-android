@@ -50,6 +50,7 @@ import org.threeten.bp.Duration.between
 import org.threeten.bp.Instant.now
 import org.threeten.bp.{Duration, Instant}
 
+import scala.collection.immutable.ListSet
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
@@ -215,14 +216,14 @@ class AudioMessageRecordingView (val context: Context, val attrs: AttributeSet, 
   }
 
   def show() = {
-    permissions.permissions(Set(RECORD_AUDIO)).map(_.headOption.exists(_.granted)).head.map {
+    permissions.permissions(ListSet(RECORD_AUDIO)).map(_.headOption.exists(_.granted)).head.map {
       case true =>
         setVisibility(VISIBLE)
         slideControlState ! Recording
         inject[SoundController].shortVibrate()
         record()
       case false =>
-        permissions.requestAllPermissions(Set(RECORD_AUDIO)).map {
+        permissions.requestAllPermissions(ListSet(RECORD_AUDIO)).map {
           case false =>
             showToast(R.string.audio_message_error__missing_audio_permissions)
           case _ =>

@@ -37,6 +37,7 @@ import com.waz.zclient.{R, ViewHelper}
 import timber.log.Timber
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable.ListSet
 import scala.util.{Failure, Success}
 
 class CameraPreviewTextureView(val cxt: Context, val attrs: AttributeSet, val defStyleAttr: Int) extends TextureView(cxt, attrs, defStyleAttr) with ViewHelper with TextureView.SurfaceTextureListener {
@@ -106,7 +107,7 @@ class CameraPreviewTextureView(val cxt: Context, val attrs: AttributeSet, val de
   }
 
   override def onSurfaceTextureAvailable(texture: SurfaceTexture, width: Int, height: Int) = {
-    permissions.requestAllPermissions(Set(CAMERA)).map {
+    permissions.requestAllPermissions(ListSet(CAMERA)).map {
       case true =>
         currentTexture = Some((texture, width, height))
         startLoading(texture, width, height)

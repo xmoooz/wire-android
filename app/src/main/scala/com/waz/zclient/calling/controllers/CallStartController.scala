@@ -33,6 +33,7 @@ import com.waz.zclient.utils.ContextUtils.{getString, showConfirmationDialog, sh
 import com.waz.zclient.utils.PhoneUtils
 import com.waz.zclient.utils.PhoneUtils.PhoneState
 
+import scala.collection.immutable.ListSet
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
@@ -81,7 +82,7 @@ class CallStartController(implicit inj: Injector, cxt: WireContext, ec: EventCon
         Some(newCallConv) <- newCallZms.convsStorage.get(conv)
         ongoingCalls      <- newCallZms.calling.availableCalls.head
         acceptingCall     =  curCall.exists(c => c.convId == conv && c.account == account) //the call we're trying to start is the same as the current one
-        isJoiningCall     =  ongoingCalls.contains(conv)  //the call we're trying to start is ongoing in the background (note, this will also contain the incoming call)
+        isJoiningCall     =  ongoingCalls.contains(conv) //the call we're trying to start is ongoing in the background (note, this will also contain the incoming call)
         _                 =  verbose(s"accepting? $acceptingCall, isJoiningCall?: $isJoiningCall, curCall: $curCall")
         (true, canceled)  <- (curCallZms, curCall) match { //End any active call if it is not the one we're trying to join, confirm with the user before ending. Only proceed on confirmed
           case (Some(z), Some(c)) if !acceptingCall =>
@@ -114,7 +115,7 @@ class CallStartController(implicit inj: Injector, cxt: WireContext, ec: EventCon
               positiveRes = R.string.group_calling_confirm)
           else
             Future.successful(true)
-        hasPerms          <- inject[PermissionsService].requestAllPermissions(if (curWithVideo) Set(CAMERA, RECORD_AUDIO) else Set(RECORD_AUDIO)) //check or request permissions
+        hasPerms          <- inject[PermissionsService].requestAllPermissions(if (curWithVideo) ListSet(CAMERA, RECORD_AUDIO) else ListSet(RECORD_AUDIO)) //check or request permissions
         _                 <-
           if (hasPerms) newCallZms.calling.startCall(newCallConv.id, curWithVideo, forceOption)
           else showPermissionsErrorDialog(

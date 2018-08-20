@@ -79,6 +79,7 @@ import com.waz.zclient.utils.{RichView, ViewUtils}
 import com.waz.zclient.views.e2ee.ShieldView
 import com.waz.zclient.{ErrorsController, FragmentHelper, R}
 
+import scala.collection.immutable.ListSet
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -444,7 +445,7 @@ class ConversationFragment extends FragmentHelper {
   private val assetIntentsManagerCallback = new AssetIntentsManager.Callback {
     override def onDataReceived(intentType: AssetIntentsManager.IntentType, uri: URI): Unit = intentType match {
       case AssetIntentsManager.IntentType.FILE_SHARING =>
-        permissions.requestAllPermissions(Set(READ_EXTERNAL_STORAGE)).map {
+        permissions.requestAllPermissions(ListSet(READ_EXTERNAL_STORAGE)).map {
           case true =>
             convController.sendMessage(uri, getActivity)
           case _ =>
@@ -564,7 +565,7 @@ class ConversationFragment extends FragmentHelper {
 
   private def captureVideoAskPermissions() = for {
     _ <- inject[GlobalCameraController].releaseCamera() //release camera so the camera app can use it
-    _ <- permissions.requestAllPermissions(Set(CAMERA, WRITE_EXTERNAL_STORAGE)).map {
+    _ <- permissions.requestAllPermissions(ListSet(CAMERA, WRITE_EXTERNAL_STORAGE)).map {
       case true => assetIntentsManager.foreach(_.captureVideo(getContext.getApplicationContext))
       case false => //
     }(Threading.Ui)
