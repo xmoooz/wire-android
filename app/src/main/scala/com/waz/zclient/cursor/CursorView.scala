@@ -102,7 +102,7 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
     case false => getStyledColor(R.attr.wireBackgroundColor)
   }
 
-  val lineCount = Signal(0)
+  val lineCount = Signal(1)
   val topBarVisible = for {
     multiline <- lineCount.map(_ > 2)
     typing <- controller.typingIndicatorVisible
@@ -143,7 +143,7 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
     override def onTextChanged(charSequence: CharSequence, start: Int, before: Int, count: Int): Unit = {
       val text = charSequence.toString
       controller.enteredText ! (text, EnteredTextSource.FromView)
-      if (text.trim.nonEmpty) lineCount ! cursorEditText.getLineCount
+      if (text.trim.nonEmpty) lineCount ! Math.max(cursorEditText.getLineCount, 1)
     }
 
     override def afterTextChanged(editable: Editable): Unit = ()
