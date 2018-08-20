@@ -252,12 +252,12 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     CallingActivity.start(cxt)
   }(EventContext.Global)
 
-  isCallEstablished.onChanged.filter(_ == true) { _ =>
-    account.foreach(soundController.playCallEstablishedSound)
+  (account zip isCallEstablished).onChanged.filter(_._2 == true) { case (userId, _) =>
+    soundController.playCallEstablishedSound(userId)
   }
 
-  isCallActive.onChanged.filter(_ == false) { _ =>
-    account.foreach(soundController.playCallEndedSound)
+  (account zip isCallActive).onChanged.filter(_._2 == false) { case (userId, _) =>
+    soundController.playCallEndedSound(userId)
   }
 
   isCallActive.onChanged.filter(_ == false).on(Threading.Ui) { _ =>

@@ -102,7 +102,6 @@ class SoundControllerImpl(implicit inj: Injector, cxt: Context) extends SoundCon
 
   tonePrefs {
     case (ring, text, ping) => setCustomSoundUrisFromPreferences(ring, text, ping)
-    case _ =>
   }
 
   private val currentZmsVibrationEnabled =
@@ -115,14 +114,15 @@ class SoundControllerImpl(implicit inj: Injector, cxt: Context) extends SoundCon
     (for {
       zms <- Signal.future(accountsService.getZms(userId)).collect { case Some(v) => v }
       isEnabled <- zms.userPrefs.preference(UserPreferences.VibrateEnabled).signal
-      _ = verbose(s"Vibration enabled for $userId $isEnabled")
-    } yield isEnabled).headSync().getOrElse({verbose("IsVibrationEnabled is empty"); false})
+    } yield isEnabled).headSync().getOrElse(false)
   }
 
-  override def soundIntensityNone = soundIntensity.currentValue.contains(IntensityLevel.NONE)
-  override def soundIntensityFull = soundIntensity.currentValue.isEmpty || soundIntensity.currentValue.contains(IntensityLevel.FULL)
+  override def soundIntensityNone: Boolean =
+    soundIntensity.currentValue.contains(IntensityLevel.NONE)
+  override def soundIntensityFull: Boolean =
+    soundIntensity.currentValue.isEmpty || soundIntensity.currentValue.contains(IntensityLevel.FULL)
 
-  override def setIncomingRingTonePlaying(userId: UserId, play: Boolean) = {
+  override def setIncomingRingTonePlaying(userId: UserId, play: Boolean): Unit = {
     if (!soundIntensityNone) setMediaPlaying(R.raw.ringing_from_them, play)
     setVibrating(R.array.ringing_from_them, play, loop = true, Some(userId))
   }
@@ -131,7 +131,7 @@ class SoundControllerImpl(implicit inj: Injector, cxt: Context) extends SoundCon
   //TODO - there seems to be a race condition somewhere, where this method is called while isVideo is incorrect
   //This leads to the case where one of the media files starts playing, and we never receive the stop for it. Always ensuring
   //that both files stops is a fix for the symptom, but not the root cause - which could be affecting other things...
-  override def setOutgoingRingTonePlaying(play: Boolean, isVideo: Boolean = false) =
+  override def setOutgoingRingTonePlaying(play: Boolean, isVideo: Boolean = false): Unit =
     if (play) {
       if (soundIntensityFull) setMediaPlaying(if (isVideo) R.raw.ringing_from_me_video else R.raw.ringing_from_me, play = true)
     } else {
@@ -139,55 +139,51 @@ class SoundControllerImpl(implicit inj: Injector, cxt: Context) extends SoundCon
       setMediaPlaying(R.raw.ringing_from_me, play = false)
     }
 
-  override def playCallEstablishedSound(userId: UserId) = {
+  override def playCallEstablishedSound(userId: UserId): Unit = {
     if (soundIntensityFull) setMediaPlaying(R.raw.ready_to_talk)
-    verbose("Call setVibration from playCallEstablishedSound")
     setVibrating(R.array.ready_to_talk, userId = Some(userId))
   }
 
-  override def playCallEndedSound(userId: UserId) = {
+  override def playCallEndedSound(userId: UserId): Unit = {
     if (soundIntensityFull) setMediaPlaying(R.raw.talk_later)
-    verbose("Call setVibration from playCallEndedSound")
     setVibrating(R.array.talk_later, userId = Some(userId))
   }
 
-  override def playCallDroppedSound() = {
+  override def playCallDroppedSound(): Unit = {
     if (soundIntensityFull) setMediaPlaying(R.raw.call_drop)
-    verbose("Call setVibration from playCallDroppedSound")
     setVibrating(R.array.call_dropped)
   }
 
-  override def playAlert() = {
+  override def playAlert(): Unit = {
     if (soundIntensityFull) setMediaPlaying(R.raw.alert)
-    verbose("Call setVibration from playAlert")
     setVibrating(R.array.alert)
   }
 
-  def shortVibrate() =
+  def shortVibrate(): Unit =
     setVibrating(R.array.alert)
 
-  def playMessageIncomingSound(firstMessage: Boolean) = {
+  def playMessageIncomingSound(firstMessage: Boolean): Unit = {
     if (firstMessage && !soundIntensityNone) setMediaPlaying(R.raw.first_message)
     else if (soundIntensityFull) setMediaPlaying(R.raw.new_message)
-    verbose("Call setVibration from playMessageIncomingSound")
     setVibrating(R.array.new_message)
   }
 
-  def playPingFromThem() = {
+  def playPingFromThem(): Unit = {
     if (!soundIntensityNone) setMediaPlaying(R.raw.ping_from_them)
     setVibrating(R.array.ping_from_them)
   }
 
   //no vibration needed
-  def playPingFromMe() =
+  def playPingFromMe(): Unit =
     if (!soundIntensityNone) setMediaPlaying(R.raw.ping_from_me)
 
-  def playCameraShutterSound() = {
+  def playCameraShutterSound(): Unit = {
     if (soundIntensityFull) setMediaPlaying(R.raw.camera)
     setVibrating(R.array.camera)
   }
 
-  def playRingFromThemInCall(play: Boolean) = setMediaPlaying(R.raw.ringing_from_them_incall, play)
+  def playRingFromThemInCall(play: Boolean): Unit =
+    setMediaPlaying(R.raw.ringing_from_them_incall, play)
 
   /**
     * @param play For looping patterns, this parameter will tell to stop vibrating if they have previously been started
@@ -198,7 +194,6 @@ class SoundControllerImpl(implicit inj: Injector, cxt: Context) extends SoundCon
                                     am.getRingerMode != AudioManager.RINGER_MODE_SILENT &&
                                     userId.fold(isVibrationEnabledInCurrentZms)(isVibrationEnabled) =>
         vib.cancel() // cancel any current vibrations
-        verbose(s"Vibration started. Pattern id: $patternId Loop: $loop")
         DeprecationUtils.vibrate(vib, getIntArray(patternId).map(_.toLong), if (loop) 0 else -1)
       case (_, Some(vib)) => vib.cancel()
       case _ =>
