@@ -56,8 +56,9 @@ trait AssetPart extends View with ClickableViewPart with ViewHelper with Ephemer
   val deliveryState = DeliveryState(message, asset)
   val completed = deliveryState.map(_ == DeliveryState.Complete)
   val accentColorController = inject[AccentColorController]
+  protected val showDots: Signal[Boolean] = deliveryState.map(state => state == OtherUploading)
 
-  val assetBackground = new AssetBackground(deliveryState.map(state => state == OtherUploading || state == Downloading), expired, accentColorController.accentColor)
+  lazy val assetBackground = new AssetBackground(showDots, expired, accentColorController.accentColor)
 
   //toggle content visibility to show only progress dot background if other side is uploading asset
   val hideContent = for {
@@ -110,6 +111,7 @@ trait ImageLayoutAssetPart extends AssetPart with EphemeralIndicatorPartView {
   protected val imageDim = message.map(_.imageDimensions).collect { case Some(d) => d}
   protected val maxWidth = Signal[Int]()
   protected val maxHeight = Signal[Int]()
+  override protected val showDots = deliveryState.map(state => state == OtherUploading || state == Downloading)
 
   val forceDownload = this match {
     case _: ImagePartView => false
