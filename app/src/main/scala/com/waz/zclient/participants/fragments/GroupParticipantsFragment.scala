@@ -64,7 +64,7 @@ class GroupParticipantsFragment extends FragmentHelper {
 
   private lazy val footerMenu = returning(view[FooterMenu](R.id.fm__participants__footer)) { fm =>
     showAddParticipants.map {
-      case true  => R.string.glyph__add_people
+      case true  => R.string.glyph__plus
       case false => R.string.empty_string
     }.map(getString)
      .onUi(t => fm.foreach(_.setLeftActionText(t)))
