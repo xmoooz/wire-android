@@ -34,7 +34,6 @@ import com.waz.zclient.common.controllers.ScreenController
 import com.waz.zclient.common.controllers.global.AccentColorController
 import com.waz.zclient.controllers.camera.ICameraController
 import com.waz.zclient.controllers.drawing.IDrawingController
-import com.waz.zclient.controllers.orientation.OrientationControllerObserver
 import com.waz.zclient.drawing.DrawingFragment.Sketch
 import com.waz.zclient.pages.main.conversation.AssetIntentsManager
 import com.waz.zclient.pages.main.profile.camera.controls.{CameraBottomControl, CameraTopControl}
@@ -50,7 +49,6 @@ import scala.concurrent.duration._
 
 class CameraFragment extends FragmentHelper
   with CameraPreviewObserver
-  with OrientationControllerObserver
   with ImagePreviewCallback
   with CameraTopControl.CameraTopControlCallback
   with CameraBottomControl.CameraBottomControlCallback {
@@ -130,8 +128,8 @@ class CameraFragment extends FragmentHelper
   override def onViewCreated(view: View, savedInstanceState: Bundle): Unit = {
     super.onViewCreated(view, savedInstanceState)
 
-    cameraTopControl
-    cameraBottomControl
+    cameraTopControl.foreach(_.setConfigOrientation(SquareOrientation.PORTRAIT_STRAIGHT))
+    cameraBottomControl.foreach(_.setConfigOrientation(SquareOrientation.PORTRAIT_STRAIGHT))
 
     imagePreviewContainer
     previewProgressBar
@@ -282,11 +280,6 @@ class CameraFragment extends FragmentHelper
   private def hideCameraFeed(): Unit = {
     cameraTopControl.foreach(_.fadeOut(cameraControlAnimationDuration))
     cameraPreview.foreach(_.setVisibility(View.GONE))
-  }
-
-  override def onOrientationHasChanged(squareOrientation: SquareOrientation): Unit = {
-    cameraTopControl.foreach(_.setConfigOrientation(squareOrientation))
-    cameraBottomControl.foreach(_.setConfigOrientation(squareOrientation))
   }
 
   override def onActivityResult(requestCode: Int, resultCode: Int, data: Intent): Unit = {
