@@ -92,7 +92,6 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   val isCallIncoming    = callStateOpt.map(_.contains(OtherCalling))
 
   val callConvId            = currentCall.map(_.convId)
-  val account               = currentCall.map(_.account)
   val isMuted               = currentCall.map(_.muted)
   val callerId              = currentCall.map(_.caller)
   val startedAsVideo        = currentCall.map(_.startedAsVideoCall)
@@ -104,6 +103,9 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   val cbrEnabled            = currentCall.map(_.isCbrEnabled)
   val duration              = currentCall.flatMap(_.durationFormatted)
   val others                = currentCall.map(_.others)
+
+  val lastCallAccountId: SourceSignal[UserId] = Signal()
+  currentCall.map(_.account) { account => lastCallAccountId ! account }
 
   val theme: Signal[Theme] = isVideoCall.flatMap {
     case true  => Signal.const(Theme.Dark)
@@ -252,12 +254,12 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     CallingActivity.start(cxt)
   }(EventContext.Global)
 
-  isCallEstablished.onChanged.filter(_ == true) { _ =>
-    account.foreach(soundController.playCallEstablishedSound)
+  (lastCallAccountId zip isCallEstablished).onChanged.filter(_._2 == true) { case (userId, _) =>
+    soundController.playCallEstablishedSound(userId)
   }
 
-  isCallActive.onChanged.filter(_ == false) { _ =>
-    account.foreach(soundController.playCallEndedSound)
+  (lastCallAccountId zip isCallActive).onChanged.filter(_._2 == false) { case (userId, _) =>
+    soundController.playCallEndedSound(userId)
   }
 
   isCallActive.onChanged.filter(_ == false).on(Threading.Ui) { _ =>
@@ -281,8 +283,9 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   (for {
     m <- isMuted.orElse(Signal.const(false))
     i <- isCallIncoming
-    uid <- account
+    uid <- lastCallAccountId
   } yield (m, i, uid)) { case (m, i, uid) =>
+    //TODO Why we call this method when isCallIncoming is false?
     soundController.setIncomingRingTonePlaying(uid, !m && i)
   }
 
