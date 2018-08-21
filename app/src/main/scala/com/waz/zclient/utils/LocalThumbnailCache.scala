@@ -51,15 +51,20 @@ object LocalThumbnailCache {
   //TODO Maybe this is not good place for this logic? Find a better place while assets refactoring
   def rotateIfNeeded(bitmap: Bitmap, path: String): Try[AndroidBitmap] = Try {
     val exif = new ExifInterface(path)
-    val matrix = new Matrix()
-    exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL) match {
-      case ExifInterface.ORIENTATION_ROTATE_90  => matrix.postRotate(90)
-      case ExifInterface.ORIENTATION_ROTATE_180 => matrix.postRotate(180)
-      case ExifInterface.ORIENTATION_ROTATE_270 => matrix.postRotate(270)
-      case _ => //do not rotate
-    }
+    val currentRotation =
+      exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL) match {
+        case ExifInterface.ORIENTATION_ROTATE_90  => 90
+        case ExifInterface.ORIENTATION_ROTATE_180 => 180
+        case ExifInterface.ORIENTATION_ROTATE_270 => 270
+        case _                                    => 0
+      }
 
-    AndroidBitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth, bitmap.getHeight, matrix, true)
+    if (currentRotation == 0) bitmap
+    else {
+      val matrix = new Matrix()
+      matrix.postRotate(currentRotation)
+      AndroidBitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth, bitmap.getHeight, matrix, true)
+    }
   }
 
   case class Thumbnail(path: String, width: Int, height: Int)
