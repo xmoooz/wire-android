@@ -35,6 +35,10 @@ import com.waz.zclient.controllers.IControllerFactory
 import com.waz.zclient.tracking.GlobalTrackingController
 import com.waz.zclient.utils.ViewUtils
 
+import scala.collection.immutable.ListSet
+import scala.collection.breakOut
+
+
 class BaseActivity extends AppCompatActivity
   with ServiceContainer
   with ActivityHelper
@@ -106,12 +110,12 @@ class BaseActivity extends AppCompatActivity
 
   def getControllerFactory: IControllerFactory = ZApplication.from(this).getControllerFactory
 
-  override def requestPermissions(ps: Set[Permission]) = {
+  override def requestPermissions(ps: ListSet[Permission]) = {
     verbose(s"requestPermissions: $ps")
     ActivityCompat.requestPermissions(this, ps.map(_.key).toArray, PermissionsRequestId)
   }
 
-  override def hasPermissions(ps: Set[Permission]) = ps.map { p =>
+  override def hasPermissions(ps: ListSet[Permission]) = ps.map { p =>
     returning(p.copy(granted = ContextCompat.checkSelfPermission(this, p.key) == PackageManager.PERMISSION_GRANTED)) { p =>
       verbose(s"hasPermission: $p")
     }
@@ -120,7 +124,7 @@ class BaseActivity extends AppCompatActivity
   override def onRequestPermissionsResult(requestCode: Int, keys: Array[String], grantResults: Array[Int]): Unit = {
     verbose(s"onRequestPermissionsResult: $requestCode, ${keys.toSet}, ${grantResults.toSet.map((r: Int) => r == PackageManager.PERMISSION_GRANTED)}")
     if (requestCode == PermissionsRequestId) {
-      val ps = hasPermissions(keys.map(Permission(_)).toSet)
+      val ps = hasPermissions(keys.map(Permission(_))(breakOut))
       //if we somehow call requestPermissions twice, ps will be empty - so don't send results back to PermissionsService, as it will probably be for the wrong request.
       if (ps.nonEmpty) permissions.onPermissionsResult(ps)
     }

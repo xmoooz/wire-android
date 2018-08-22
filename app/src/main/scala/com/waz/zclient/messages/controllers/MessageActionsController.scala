@@ -42,6 +42,7 @@ import com.waz.zclient.notifications.controllers.ImageNotificationsController
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.{ClipboardUtils, Injectable, Injector, R}
 
+import scala.collection.immutable.ListSet
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Success
@@ -197,7 +198,7 @@ class MessageActionsController(implicit injector: Injector, ctx: Context, ec: Ev
   }
 
   private def saveMessage(message: MessageData) =
-    permissions.requestAllPermissions(Set(WRITE_EXTERNAL_STORAGE)).map {  // TODO: provide explanation dialog - use requiring with message str
+    permissions.requestAllPermissions(ListSet(WRITE_EXTERNAL_STORAGE)).map {  // TODO: provide explanation dialog - use requiring with message str
       case true =>
         if (message.msgType == Message.Type.ASSET) { // TODO: simplify once SE asset v3 is merged, we should be able to handle that without special conditions
 

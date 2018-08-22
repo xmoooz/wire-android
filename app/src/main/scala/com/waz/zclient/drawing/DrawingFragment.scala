@@ -54,6 +54,7 @@ import com.waz.zclient.utils.RichView
 import com.waz.zclient.utils.debug.ShakeEventListener
 import com.waz.zclient.{FragmentHelper, R}
 
+import scala.collection.immutable.ListSet
 import scala.concurrent.Future
 
 object DrawingFragment {
@@ -154,7 +155,7 @@ class DrawingFragment extends FragmentHelper
 
   private lazy val galleryButton = returning(view[View](R.id.gtv__drawing__gallery_button)) { vh =>
     vh.onClick { _ =>
-      inject[PermissionsService].requestAllPermissions(Set(READ_EXTERNAL_STORAGE)).foreach {
+      inject[PermissionsService].requestAllPermissions(ListSet(READ_EXTERNAL_STORAGE)).foreach {
         case true =>
           sketchEditTextView.foreach(_.destroyDrawingCache())
           assetIntentsManager.openGalleryForSketch()

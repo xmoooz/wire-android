@@ -63,6 +63,7 @@ import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.{IntentUtils, ResColor, RichView, StringUtils, UiStorage, UserSignal}
 import com.waz.zclient.views._
 
+import scala.collection.immutable.ListSet
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -415,7 +416,7 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
         .setPositiveButton(R.string.people_picker__share_contacts__yay,
           new DialogInterface.OnClickListener() {
             def onClick(dialog: DialogInterface, which: Int): Unit =
-              inject[PermissionsService].requestAllPermissions(Set(READ_CONTACTS)).map { granted =>
+              inject[PermissionsService].requestAllPermissions(ListSet(READ_CONTACTS)).map { granted =>
                 shareContactsPref.head.flatMap(_ := granted)
                 if (!granted && !shouldShowRequestPermissionRationale(READ_CONTACTS)) showShareContactsPref.head.flatMap(_ := false)
               }
