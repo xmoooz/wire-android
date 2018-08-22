@@ -126,9 +126,7 @@ class CollectionFragment extends BaseFragment[CollectionFragment.Container] with
       case _ => closeSingleImage()
     }
 
-    accentColorController.accentColor.on(Threading.Ui){ color =>
-      searchBoxView.setAccentColor(color.getColor())
-    }
+    accentColorController.accentColor.map(_.color).onUi(searchBoxView.setAccentColor)
 
     collectionAdapter = new CollectionAdapter(collectionRecyclerView.viewDim)
     collectionRecyclerView.init(collectionAdapter)

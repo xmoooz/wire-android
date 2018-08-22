@@ -45,7 +45,7 @@ import com.waz.zclient.common.controllers.{AssetsController, SharingController}
 import com.waz.zclient.common.views.ImageAssetDrawable.{RequestBuilder, ScaleType}
 import com.waz.zclient.common.views.ImageController.DataImage
 import com.waz.zclient.common.views._
-import com.waz.zclient.cursor.EphemeralLayout
+import com.waz.zclient.cursor.{EphemeralTimerButton, EphemeralLayout}
 import com.waz.zclient.messages.{MessagesController, UsersController}
 import com.waz.zclient.ui.text.TypefaceTextView
 import com.waz.zclient.ui.utils.{ColorUtils, KeyboardUtils}
@@ -68,7 +68,7 @@ class ShareToMultipleFragment extends FragmentHelper with OnBackPressedListener 
   lazy val messagesController = inject[MessagesController]
   lazy val sharingController = inject[SharingController]
   lazy val usersController = inject[UsersController]
-  lazy val accentColor = inject[AccentColorController].accentColor.map(_.getColor)
+  lazy val accentColor = inject[AccentColorController].accentColor.map(_.color)
 
   lazy val filterText = Signal[String]("")
 
@@ -87,7 +87,7 @@ class ShareToMultipleFragment extends FragmentHelper with OnBackPressedListener 
   lazy val convList = view[RecyclerView](R.id.lv__conversation_list)
   lazy val accountTabs = view[AccountTabsView](R.id.account_tabs)
   lazy val bottomContainer = view[AnimatedBottomContainer](R.id.ephemeral_container)
-  lazy val ephemeralIcon = view[EphemeralCursorButton](R.id.ephemeral_toggle)
+  lazy val ephemeralIcon = view[EphemeralTimerButton](R.id.ephemeral_toggle)
 
   lazy val sendButton = returning(view[CursorIconButton](R.id.cib__send_button)) { vh =>
     (for {
@@ -196,7 +196,7 @@ class ShareToMultipleFragment extends FragmentHelper with OnBackPressedListener 
             returning(getLayoutInflater.inflate(R.layout.ephemeral_keyboard_layout, null, false).asInstanceOf[EphemeralLayout]) { l =>
               sharingController.ephemeralExpiration.foreach(l.setSelectedExpiration)
               l.expirationSelected.onUi { case (exp, close) =>
-                icon.ephemeralExpiration ! exp
+                icon.ephemeralExpiration ! exp.map(MessageExpiry)
                 sharingController.ephemeralExpiration ! exp
                 if (close) bc.closedAnimated()
               }
@@ -275,16 +275,14 @@ class ShareToMultipleAdapter(context: Context, filter: Signal[String])(implicit 
     _ => notifyDataSetChanged()
   }
 
-  val selectedConversations: SourceSignal[Set[ConvId]] = Signal(Set())
+  val selectedConversations: SourceSignal[Seq[ConvId]] = Signal(Seq.empty)
 
   val conversationSelectEvent = EventStream[(ConvId, Boolean)]()
-  conversationSelectEvent.on(Threading.Ui){ event =>
-    if (event._2) {
-      selectedConversations.mutate( _ + event._1)
-    } else {
-      selectedConversations.mutate( _ - event._1)
-    }
-    notifyDataSetChanged()
+
+  conversationSelectEvent.onUi {
+    case (conv, add) =>
+      selectedConversations.mutate(convs => if (add) convs :+ conv else convs.filterNot(_ == conv))
+      notifyDataSetChanged()
   }
 
   private val checkBoxListener = new CompoundButton.OnCheckedChangeListener {

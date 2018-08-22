@@ -19,10 +19,11 @@ package com.waz.zclient
 
 import java.io.File
 import java.util.Calendar
-import javax.net.ssl.SSLContext
 
+import javax.net.ssl.SSLContext
 import android.app.{Activity, ActivityManager, NotificationManager}
 import android.content.{Context, ContextWrapper}
+import android.hardware.SensorManager
 import android.media.AudioManager
 import android.os.{Build, PowerManager, Vibrator}
 import android.renderscript.RenderScript
@@ -31,27 +32,29 @@ import android.support.v4.app.{FragmentActivity, FragmentManager}
 import com.google.android.gms.security.ProviderInstaller
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.verbose
-import com.waz.api._
-import com.waz.content.{AccountStorage, GlobalPreferences, TeamsStorage}
+import com.waz.api.NetworkMode
+import com.waz.model.{AccentColor, ConversationData, TeamId, UserId}
+import com.waz.content._
 import com.waz.log.InternalLog
-import com.waz.model.ConversationData
 import com.waz.permissions.PermissionsService
 import com.waz.service._
+import com.waz.service.conversation.{ConversationsListStateService, ConversationsService, ConversationsUiService}
+import com.waz.service.images.ImageLoader
+import com.waz.service.messages.MessagesService
+import com.waz.service.push.GlobalNotificationsService
 import com.waz.service.tracking.TrackingService
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.zclient.appentry.controllers.{CreateTeamController, InvitationsController}
 import com.waz.zclient.calling.controllers.{CallController, CallStartController}
 import com.waz.zclient.camera.controllers.{AndroidCameraFactory, GlobalCameraController}
 import com.waz.zclient.collection.controllers.CollectionController
+import com.waz.zclient.common.controllers._
 import com.waz.zclient.common.controllers.global.{AccentColorController, ClientsController, KeyboardController, PasswordController}
-import com.waz.zclient.common.controllers.{SoundController, _}
 import com.waz.zclient.common.views.ImageController
 import com.waz.zclient.controllers._
 import com.waz.zclient.controllers.camera.ICameraController
 import com.waz.zclient.controllers.confirmation.IConfirmationController
 import com.waz.zclient.controllers.deviceuser.IDeviceUserController
-import com.waz.zclient.controllers.drawing.IDrawingController
-import com.waz.zclient.controllers.giphy.IGiphyController
 import com.waz.zclient.controllers.globallayout.IGlobalLayoutController
 import com.waz.zclient.controllers.location.ILocationController
 import com.waz.zclient.controllers.navigation.INavigationController
@@ -61,10 +64,10 @@ import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.creation.CreateConversationController
 import com.waz.zclient.conversationlist.ConversationListController
 import com.waz.zclient.cursor.CursorController
-import com.waz.zclient.integrations.IntegrationDetailsController
 import com.waz.zclient.messages.controllers.{MessageActionsController, NavigationController}
 import com.waz.zclient.messages.{LikesController, MessageViewFactory, MessagesController, UsersController}
-import com.waz.zclient.notifications.controllers.{CallingNotificationsController, ImageNotificationsController, MessageNotificationsController}
+import com.waz.zclient.notifications.controllers.NotificationManagerWrapper.AndroidNotificationsManager
+import com.waz.zclient.notifications.controllers.{CallingNotificationsController, ImageNotificationsController, MessageNotificationsController, NotificationManagerWrapper}
 import com.waz.zclient.pages.main.conversation.controller.IConversationScreenController
 import com.waz.zclient.pages.main.conversationpager.controller.ISlidingPaneController
 import com.waz.zclient.pages.main.pickuser.controller.IPickUserController
@@ -75,10 +78,14 @@ import com.waz.zclient.utils.{BackStackNavigator, BackendPicker, Callback, Local
 import com.waz.zclient.views.DraftMap
 import net.hockeyapp.android.Constants
 
+import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 object WireApplication {
   var APP_INSTANCE: WireApplication = _
+
+  type AccountToImageLoader = (UserId) => Future[Option[ImageLoader]]
+  type AccountToAssetsStorage = (UserId) => Future[Option[AssetsStorage]]
 
   lazy val Global = new Module {
 
@@ -91,17 +98,22 @@ object WireApplication {
     bind [PowerManager]         to ctx.getSystemService(Context.POWER_SERVICE).asInstanceOf[PowerManager]
     bind [Vibrator]             to ctx.getSystemService(Context.VIBRATOR_SERVICE).asInstanceOf[Vibrator]
     bind [AudioManager]         to ctx.getSystemService(Context.AUDIO_SERVICE).asInstanceOf[AudioManager]
+    bind [SensorManager]        to ctx.getSystemService(Context.SENSOR_SERVICE).asInstanceOf[SensorManager]
     bind [NotificationManager]  to ctx.getSystemService(Context.NOTIFICATION_SERVICE).asInstanceOf[NotificationManager]
     bind [RenderScript]         to RenderScript.create(ctx)
 
     def controllerFactory = APP_INSTANCE.asInstanceOf[ZApplication].getControllerFactory
 
+    bind [NotificationManagerWrapper] to new AndroidNotificationsManager(APP_INSTANCE.getSystemService(Context.NOTIFICATION_SERVICE).asInstanceOf[NotificationManager])
+
     //SE Services
     bind [GlobalModule]                   to ZMessaging.currentGlobal
     bind [AccountsService]                to ZMessaging.currentAccounts
+    bind [BackendConfig]                  to inject[GlobalModule].backend
     bind [AccountStorage]                 to inject[GlobalModule].accountsStorage
     bind [TeamsStorage]                   to inject[GlobalModule].teamsStorage
     bind [SSOService]                     to inject[GlobalModule].ssoService
+    bind [GlobalNotificationsService]     to inject[GlobalModule].notifications
 
     bind [Signal[Option[AccountManager]]] to ZMessaging.currentAccounts.activeAccountManager
     bind [Signal[AccountManager]]         to inject[Signal[Option[AccountManager]]].collect { case Some(am) => am }
@@ -113,6 +125,33 @@ object WireApplication {
     bind [TrackingService]                to inject[GlobalModule].trackingService
     bind [PermissionsService]             to inject[GlobalModule].permissions
 
+    import com.waz.threading.Threading.Implicits.Background
+    bind [AccountToImageLoader]   to (userId => inject[AccountsService].getZms(userId).map(_.map(_.imageLoader)))
+    bind [AccountToAssetsStorage] to (userId => inject[AccountsService].getZms(userId).map(_.map(_.assetsStorage)))
+
+    // the current user's id
+    bind [Signal[Option[UserId]]] to ZMessaging.currentUi.currentZms.map(_.map(_.selfUserId))
+    bind [Signal[UserId]]         to inject[Signal[ZMessaging]].map(_.selfUserId)
+    bind [Signal[Option[TeamId]]] to inject[Signal[ZMessaging]].map(_.teamId)
+
+
+    // services  and storages of the current zms
+    bind [Signal[ConversationsService]]          to inject[Signal[ZMessaging]].map(_.conversations)
+    bind [Signal[ConversationsListStateService]] to inject[Signal[ZMessaging]].map(_.convsStats)
+    bind [Signal[ConversationsUiService]]        to inject[Signal[ZMessaging]].map(_.convsUi)
+    bind [Signal[UserService]]                   to inject[Signal[ZMessaging]].map(_.users)
+    bind [Signal[UserSearchService]]             to inject[Signal[ZMessaging]].map(_.userSearch)
+    bind [Signal[ConversationStorage]]           to inject[Signal[ZMessaging]].map(_.convsStorage)
+    bind [Signal[NotificationStorage]]           to inject[Signal[ZMessaging]].map(_.notifStorage)
+    bind [Signal[UsersStorage]]                  to inject[Signal[ZMessaging]].map(_.usersStorage)
+    bind [Signal[MembersStorage]]                to inject[Signal[ZMessaging]].map(_.membersStorage)
+    bind [Signal[OtrClientsStorage]]             to inject[Signal[ZMessaging]].map(_.otrClientsStorage)
+    bind [Signal[AssetsStorage]]                 to inject[Signal[ZMessaging]].map(_.assetsStorage)
+    bind [Signal[ImageLoader]]                   to inject[Signal[ZMessaging]].map(_.imageLoader)
+    bind [Signal[MessagesService]]               to inject[Signal[ZMessaging]].map(_.messages)
+    bind [Signal[IntegrationsService]]           to inject[Signal[ZMessaging]].map(_.integrations)
+    bind [Signal[UserPreferences]]               to inject[Signal[ZMessaging]].map(_.userPrefs)
+
     // old controllers
     // TODO: remove controller factory, reimplement those controllers
     bind [IControllerFactory]            toProvider controllerFactory
@@ -122,11 +161,9 @@ object WireApplication {
     bind [IUserPreferencesController]    toProvider controllerFactory.getUserPreferencesController
     bind [ISingleImageController]        toProvider controllerFactory.getSingleImageController
     bind [ISlidingPaneController]        toProvider controllerFactory.getSlidingPaneController
-    bind [IDrawingController]            toProvider controllerFactory.getDrawingController
     bind [IDeviceUserController]         toProvider controllerFactory.getDeviceUserController
     bind [IGlobalLayoutController]       toProvider controllerFactory.getGlobalLayoutController
     bind [ILocationController]           toProvider controllerFactory.getLocationController
-    bind [IGiphyController]              toProvider controllerFactory.getGiphyController
     bind [ICameraController]             toProvider controllerFactory.getCameraController
     bind [IConfirmationController]       toProvider controllerFactory.getConfirmationController
 
@@ -134,9 +171,9 @@ object WireApplication {
     bind [CrashController]         to new CrashController
     bind [AccentColorController]   to new AccentColorController()
     bind [PasswordController]      to new PasswordController()
-    bind [CallController] to new CallController()
+    bind [CallController]          to new CallController()
     bind [GlobalCameraController]  to new GlobalCameraController(new AndroidCameraFactory)
-    bind [SoundController]         to new SoundController
+    bind [SoundController]         to new SoundControllerImpl()
     bind [ThemeController]         to new ThemeController
     bind [SpinnerController]       to new SpinnerController()
 
@@ -159,10 +196,9 @@ object WireApplication {
 
     bind [NavigationController]            to new NavigationController()
     bind [InvitationsController]           to new InvitationsController()
-    bind [IntegrationDetailsController]    to new IntegrationDetailsController()
-    bind [IntegrationsController]          to new IntegrationsController()
     bind [ClientsController]               to new ClientsController()
     bind [CreateTeamController]            to new CreateTeamController()
+    bind [CreateConversationController]    to new CreateConversationController()
 
     // current conversation data
     bind [Signal[ConversationData]] to inject[ConversationController].currentConv
@@ -205,8 +241,6 @@ object WireApplication {
 
     bind [CursorController]             to new CursorController()
     bind [ConversationListController]   to new ConversationListController()
-    bind [IntegrationDetailsController] to new IntegrationDetailsController()
-    bind [CreateConversationController] to new CreateConversationController()
     bind [ParticipantsController]       to new ParticipantsController()
     bind [UsersController]              to new UsersController()
 
@@ -282,7 +316,7 @@ class WireApplication extends MultiDexApplication with WireContext with Injectab
   def ensureInitialized() = {
     ZMessaging.onCreate(this)
 
-    inject[MessageNotificationsController]
+    inject[NotificationManagerWrapper]
     inject[ImageNotificationsController]
     inject[CallingNotificationsController]
 

@@ -86,15 +86,6 @@
             android:background="@color/drawing__border_line__color"
             />
 
-        <!--
-        // TODO Fix layout issue AN-4649
-        <com.waz.zclient.ui.colorpicker.ColorPickerScrollView
-            android:id="@+id/cpsb__color_picker_scrollbar"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/drawing__border_scroll_bar__height"
-            />
-            -->
-
     </FrameLayout>
 
     <FrameLayout
@@ -118,6 +109,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@color/drawing__tip__background_color"
+                android:visibility="invisible"
                 />
 
 
@@ -224,6 +216,7 @@
         </LinearLayout>
         <com.waz.zclient.ui.views.CursorIconButton
             android:id="@+id/tv__send_button"
+            android:clickable="false"
             android:layout_width="@dimen/cursor__menu_button__diameter"
             android:layout_height="@dimen/cursor__menu_button__diameter"
             android:layout_gravity="center_vertical|end"

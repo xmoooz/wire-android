@@ -413,8 +413,8 @@
     <dimen name="system_margin_end">32dp</dimen>
     <dimen name="system_margin_start">24dp</dimen>
     <dimen name="error__image__margin">32dp</dimen>
-    <dimen name="profile__image__width_regular">260dp</dimen>
-    <dimen name="profile__image__height_regular">260dp</dimen>
+    <dimen name="profile__image__width_regular">192dp</dimen>
+    <dimen name="profile__image__height_regular">192dp</dimen>
     <dimen name="profile__image__width_small">96dp</dimen>
     <dimen name="profile__image__height_small">96dp</dimen>
     <dimen name="profile__image__width">@dimen/profile__image__width_small</dimen>
@@ -962,5 +962,9 @@
     <dimen name="call_control_icon_size">16dp</dimen>
     <dimen name="hangup_call_icon_size">20dp</dimen>
     <dimen name="calling_profile_margin_side">32dp</dimen>
+    <dimen name="services_warning_icon_width">48dp</dimen>
+    <dimen name="services_warning_icon_height">48dp</dimen>
+    <dimen name="services_warning_text_width">204dp</dimen>
+    <dimen name="user_part_view_bot_size">12dp</dimen>
 
 </resources>

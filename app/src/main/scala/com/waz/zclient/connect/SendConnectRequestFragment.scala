@@ -79,7 +79,7 @@ class SendConnectRequestFragment extends BaseFragment[SendConnectRequestFragment
   } yield permission && userRequester == UserRequester.PARTICIPANTS
 
   private lazy val connectButton = returning(view[ZetaButton](R.id.zb__send_connect_request__connect_button)) { vh =>
-    accentColorController.accentColor.onUi { color => vh.foreach(_.setAccentColor(color.getColor)) }
+    accentColorController.accentColor.map(_.color).onUi { color => vh.foreach(_.setAccentColor(color)) }
     vh.onClick { _ =>
       usersController.connectToUser(userToConnectId).foreach(_.foreach { _ =>
         keyboardController.hideKeyboardIfVisible()

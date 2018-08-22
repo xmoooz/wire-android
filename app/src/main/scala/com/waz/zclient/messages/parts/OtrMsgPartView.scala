@@ -104,7 +104,7 @@ class OtrMsgPartView(context: Context, attrs: AttributeSet, style: Int) extends 
   }
 
   Signal(message, msgString, accentColor.accentColor, memberIsJustSelf).onUi {
-    case (msg, text, color, isMe) => setTextWithLink(text, color.getColor) {
+    case (msg, text, color, isMe) => setTextWithLink(text, color.color) {
       (msg.msgType, isMe) match {
         case (OTR_UNVERIFIED | OTR_DEVICE_ADDED | OTR_MEMBER_ADDED, true)  => screenController.openOtrDevicePreferences()
         case (OTR_UNVERIFIED | OTR_DEVICE_ADDED | OTR_MEMBER_ADDED, false) => participantsController.onShowParticipants ! Some(SingleParticipantFragment.TagDevices)

@@ -38,8 +38,9 @@ import android.os.Bundle
 import android.support.v4.app.{Fragment, FragmentManager}
 import android.view.{LayoutInflater, View, ViewGroup}
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api._
+import com.waz.api.MessageContent
 import com.waz.model.{MessageContent => _, _}
+import com.waz.service.assets.AssetService.RawAssetInput
 import com.waz.service.tracking.GroupConversationEvent
 import com.waz.threading.Threading
 import com.waz.zclient.camera.CameraFragment
@@ -49,16 +50,17 @@ import com.waz.zclient.common.controllers.ScreenController
 import com.waz.zclient.common.controllers.global.KeyboardController
 import com.waz.zclient.controllers.camera.{CameraActionObserver, ICameraController}
 import com.waz.zclient.controllers.collections.CollectionsObserver
-import com.waz.zclient.controllers.drawing.IDrawingController.DrawingDestination
-import com.waz.zclient.controllers.drawing.{DrawingObserver, IDrawingController}
+import com.waz.zclient.controllers.drawing.IDrawingController
+import com.waz.zclient.controllers.drawing.IDrawingController.DrawingDestination.CAMERA_PREVIEW_VIEW
 import com.waz.zclient.controllers.location.{ILocationController, LocationObserver}
 import com.waz.zclient.controllers.navigation.{INavigationController, Page}
 import com.waz.zclient.conversation.creation.{CreateConversationController, CreateConversationManagerFragment}
 import com.waz.zclient.conversation.{ConversationController, LikesListFragment}
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
+import com.waz.zclient.drawing.DrawingFragment
+import com.waz.zclient.giphy.GiphySharingPreviewFragment
 import com.waz.zclient.pages.main.connect.UserProfileContainer
 import com.waz.zclient.pages.main.conversation.controller.{ConversationScreenControllerObserver, IConversationScreenController}
-import com.waz.zclient.pages.main.drawing.DrawingFragment
 import com.waz.zclient.pages.main.profile.camera.CameraContext
 import com.waz.zclient.participants.ParticipantsController
 import com.waz.zclient.participants.fragments.ParticipantFragment
@@ -67,8 +69,6 @@ import com.waz.zclient.{FragmentHelper, R}
 
 class ConversationManagerFragment extends FragmentHelper
   with ConversationScreenControllerObserver
-  with DrawingObserver
-  with DrawingFragment.Container
   with LocationObserver
   with CollectionsObserver
   with UserProfileContainer
@@ -161,12 +161,26 @@ class ConversationManagerFragment extends FragmentHelper
         navigationController.setRightPage(Page.MESSAGE_STREAM, Tag)
         getChildFragmentManager.popBackStack()
     }
+
+    subs += screenController.showGiphy.onUi { searchTerm =>
+      import GiphySharingPreviewFragment._
+      showFragment(newInstance(searchTerm), Tag, Page.GIPHY)
+    }
+    subs += screenController.hideGiphy.onUi(_ => hideFragment(GiphySharingPreviewFragment.Tag))
+
+    subs += screenController.showSketch.onUi { sketch =>
+        import DrawingFragment._
+        showFragment(newInstance(sketch), Tag, Page.DRAWING)
+    }
+    subs += screenController.hideSketch.onUi { dest =>
+      hideFragment(DrawingFragment.Tag)
+      if (dest == CAMERA_PREVIEW_VIEW) cameraController.closeCamera(CameraContext.MESSAGE)
+    }
   }
 
   override def onStart(): Unit = {
     super.onStart()
     convScreenController.addConversationControllerObservers(this)
-    drawingController.addDrawingObserver(this)
     cameraController.addCameraActionObserver(this)
     locationController.addObserver(this)
     collectionController.addObserver(this)
@@ -175,7 +189,6 @@ class ConversationManagerFragment extends FragmentHelper
   override def onStop(): Unit = {
     locationController.removeObserver(this)
     cameraController.removeCameraActionObserver(this)
-    drawingController.removeDrawingObserver(this)
     convScreenController.removeConversationControllerObservers(this)
     collectionController.removeObserver(this)
     super.onStop()
@@ -201,25 +214,8 @@ class ConversationManagerFragment extends FragmentHelper
     }
   }
 
-  override def onShowDrawing(image: ImageAsset, drawingDestination: IDrawingController.DrawingDestination, method: IDrawingController.DrawingMethod): Unit = {
-    navigationController.setRightPage(Page.DRAWING, ConversationManagerFragment.Tag)
-    showFragment(DrawingFragment.newInstance(image, drawingDestination, method), DrawingFragment.TAG)
-  }
-
-  override def onHideDrawing(drawingDestination: IDrawingController.DrawingDestination, imageSent: Boolean): Unit = drawingDestination match {
-    case DrawingDestination.CAMERA_PREVIEW_VIEW =>
-      getChildFragmentManager.popBackStack(DrawingFragment.TAG, FragmentManager.POP_BACK_STACK_INCLUSIVE)
-      cameraController.closeCamera(CameraContext.MESSAGE)
-      navigationController.setRightPage(Page.MESSAGE_STREAM, ConversationManagerFragment.Tag)
-    case _ =>
-      getChildFragmentManager.popBackStack(DrawingFragment.TAG, FragmentManager.POP_BACK_STACK_INCLUSIVE)
-      navigationController.setRightPage(Page.MESSAGE_STREAM, ConversationManagerFragment.Tag)
-  }
-
-  override def openCollection(): Unit = {
-    navigationController.setRightPage(Page.COLLECTION, ConversationManagerFragment.Tag)
-    showFragment(CollectionFragment.newInstance(), CollectionFragment.TAG)
-  }
+  override def openCollection(): Unit =
+    showFragment(CollectionFragment.newInstance(), CollectionFragment.TAG, Page.COLLECTION)
 
   override def closeCollection(): Unit = {
     getChildFragmentManager.popBackStack(CollectionFragment.TAG, FragmentManager.POP_BACK_STACK_INCLUSIVE)
@@ -233,38 +229,35 @@ class ConversationManagerFragment extends FragmentHelper
     navigationController.setRightPage(Page.MESSAGE_STREAM, ConversationManagerFragment.Tag)
   }
 
-  override def onBitmapSelected(imageAsset: ImageAsset, cameraContext: CameraContext): Unit =
+  override def onBitmapSelected(input: RawAssetInput, cameraContext: CameraContext): Unit =
     if (cameraContext == CameraContext.MESSAGE) {
-      inject[ConversationController].sendMessage(imageAsset)
+      inject[ConversationController].sendMessage(input)
       cameraController.closeCamera(CameraContext.MESSAGE)
   }
 
   override def onOpenCamera(cameraContext: CameraContext): Unit =
-    if (cameraContext == CameraContext.MESSAGE) {
-      navigationController.setRightPage(Page.CAMERA, ConversationManagerFragment.Tag)
-      showFragment(CameraFragment.newInstance(CameraContext.MESSAGE), CameraFragment.Tag)
-    }
+    if (cameraContext == CameraContext.MESSAGE)
+      showFragment(CameraFragment.newInstance(CameraContext.MESSAGE), CameraFragment.Tag, Page.CAMERA)
 
-  override def onCloseCamera(cameraContext: CameraContext): Unit = {
-    if (cameraContext == CameraContext.MESSAGE) {
-      getChildFragmentManager.popBackStackImmediate
-      navigationController.setRightPage(Page.MESSAGE_STREAM, ConversationManagerFragment.Tag)
-    }
-  }
+  override def onCloseCamera(cameraContext: CameraContext): Unit =
+    if (cameraContext == CameraContext.MESSAGE) hideFragment(CameraFragment.Tag)
 
-  override def onShowShareLocation(): Unit = {
-    showFragment(LocationFragment.newInstance, LocationFragment.TAG)
-    navigationController.setRightPage(Page.SHARE_LOCATION, ConversationManagerFragment.Tag)
-  }
+  override def onShowShareLocation(): Unit =
+    showFragment(LocationFragment.newInstance, LocationFragment.TAG, Page.SHARE_LOCATION)
 
   override def onHideShareLocation(location: MessageContent.Location): Unit = {
-    if (location != null)
-      convController.sendMessage(location)
-    navigationController.setRightPage(Page.MESSAGE_STREAM, ConversationManagerFragment.Tag)
-    getChildFragmentManager.popBackStack(LocationFragment.TAG, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+    if (location != null) convController.sendMessage(location)
+    hideFragment(LocationFragment.TAG)
   }
 
-  private def showFragment(fragment: Fragment, tag: String): Unit = {
+  private def showFragment(fragment: Fragment, tag: String): Unit =
+    showFragment(fragment, tag, None)
+
+  private def showFragment(fragment: Fragment, tag: String, page: Page): Unit =
+    showFragment(fragment, tag, Some(page))
+
+  private def showFragment(fragment: Fragment, tag: String, page: Option[Page]): Unit = {
+    page.foreach(navigationController.setRightPage(_, ConversationManagerFragment.Tag))
     getChildFragmentManager.beginTransaction
       .setCustomAnimations(
         R.anim.slide_in_from_bottom_pick_user,
@@ -274,6 +267,11 @@ class ConversationManagerFragment extends FragmentHelper
       .replace(R.id.fl__conversation_manager__message_list_container, fragment, tag)
       .addToBackStack(tag)
       .commit
+  }
+
+  private def hideFragment(tag: String): Unit = {
+    navigationController.setRightPage(Page.MESSAGE_STREAM, ConversationManagerFragment.Tag)
+    getChildFragmentManager.popBackStack(tag, FragmentManager.POP_BACK_STACK_INCLUSIVE)
   }
 
   override def onHideUser(): Unit = {}

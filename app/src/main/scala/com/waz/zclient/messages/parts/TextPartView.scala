@@ -24,6 +24,7 @@ import android.graphics.Color
 import android.util.{AttributeSet, TypedValue}
 import android.view.View
 import android.widget.LinearLayout
+import com.waz.ZLog.ImplicitTag._
 import com.waz.api.{ContentSearchQuery, Message}
 import com.waz.model.{MessageContent, MessageData}
 import com.waz.service.messages.MessageAndLikes
@@ -37,9 +38,7 @@ import com.waz.zclient.messages.{ClickableViewPart, MsgPart}
 import com.waz.zclient.ui.text.LinkTextView
 import com.waz.zclient.ui.utils.ColorUtils
 import com.waz.zclient.ui.views.OnDoubleClickListener
-import com.waz.zclient.{BuildConfig, R, ViewHelper}
-import com.waz.ZLog.verbose
-import com.waz.ZLog.ImplicitTag._
+import com.waz.zclient.{R, ViewHelper}
 
 class TextPartView(context: Context, attrs: AttributeSet, style: Int) extends LinearLayout(context, attrs, style) with ViewHelper with ClickableViewPart with EphemeralPartView with EphemeralIndicatorPartView {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
@@ -85,7 +84,7 @@ class TextPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
     alpha <- animAlpha
   } yield
     if (alpha <= 0) Color.TRANSPARENT
-    else ColorUtils.injectAlpha(alpha, accent.getColor())
+    else ColorUtils.injectAlpha(alpha, accent.color)
 
   val isHighlighted = for {
     msg <- message
@@ -100,7 +99,7 @@ class TextPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
     part <- messagePart
     content = part.fold(msg.contentString)(_.content)
   } yield
-    CollectionUtils.getHighlightedSpannableString(content, ContentSearchQuery.transliterated(content), query.elements, ColorUtils.injectAlpha(0.5f, color.getColor()))._1
+    CollectionUtils.getHighlightedSpannableString(content, ContentSearchQuery.transliterated(content), query.elements, ColorUtils.injectAlpha(0.5f, color.color))._1
 
   searchResultText.on(Threading.Ui) { textView.setText }
 
@@ -114,19 +113,9 @@ class TextPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
   override def set(msg: MessageAndLikes, part: Option[MessageContent], opts: Option[MsgBindOptions]): Unit = {
     animator.end()
     super.set(msg, part, opts)
+
     textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, if (isEmojiOnly(msg.message, part)) textSizeEmoji else textSizeRegular)
-    try {
-      textView.setTextLink(part.fold(msg.message.contentString)(_.content))
-    } catch {
-      case ex: ArrayIndexOutOfBoundsException =>
-        val errorMsg = s"Error while setting text link. Content length = ${msg.message.contentString.length}"
-        if (BuildConfig.FLAVOR == "prod" && !BuildConfig.DEBUG) {
-          trackingService.exception(ex, errorMsg)
-        } else {
-          verbose(errorMsg)
-          throw ex
-        }
-    }
+    textView.setTextLink(part.fold(msg.message.contentString)(_.content))
 
     messagePart ! part
   }

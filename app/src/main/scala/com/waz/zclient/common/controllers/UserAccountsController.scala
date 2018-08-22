@@ -19,21 +19,29 @@ package com.waz.zclient.common.controllers
 
 import android.content.Context
 import com.waz.ZLog.ImplicitTag._
+import com.waz.content.UserPreferences
 import com.waz.content.UserPreferences.SelfPermissions
+import com.waz.model.AccountDataOld.Permission
 import com.waz.model.AccountDataOld.Permission._
-import com.waz.model._
+import com.waz.model.{AccountDataOld, _}
 import com.waz.service.{AccountsService, ZMessaging}
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
+import com.waz.zclient.utils.{ConversationSignal, UiStorage}
 import com.waz.zclient.{Injectable, Injector}
+
+import scala.concurrent.Future
 
 class UserAccountsController(implicit injector: Injector, context: Context, ec: EventContext) extends Injectable {
   import Threading.Implicits.Ui
+  import UserAccountsController._
 
+  private implicit val uiStorage = inject[UiStorage]
   val zms             = inject[Signal[ZMessaging]]
   val accountsService = inject[AccountsService]
+  val prefs           = inject[Signal[UserPreferences]]
 
   val accounts = accountsService.accountManagers.map(_.toSeq.sortBy(acc => (acc.teamId.isDefined, acc.userId.str)))
   val convCtrl = inject[ConversationController]
@@ -53,10 +61,13 @@ class UserAccountsController(implicit injector: Injector, context: Context, ec: 
     teamData <- zms.teams.selfTeam
   } yield teamData
 
-  lazy val selfPermissions = for {
-    zms <- zms
-    prefs <- zms.userPrefs(SelfPermissions).signal
-  } yield AccountDataOld.decodeBitmask(prefs)
+  lazy val selfPermissions =
+    prefs
+      .flatMap(_.apply(SelfPermissions).signal)
+      .map(AccountDataOld.decodeBitmask)
+
+  lazy val isAdmin: Signal[Boolean] =
+    selfPermissions.map(ps => AdminPermissions.subsetOf(ps))
 
   lazy val hasCreateConvPermission: Signal[Boolean] = teamId.flatMap {
     case Some(_) => selfPermissions.map(_.contains(CreateConversation))
@@ -105,4 +116,25 @@ class UserAccountsController(implicit injector: Injector, context: Context, ec: 
   def getOrCreateAndOpenConvFor(user: UserId) =
     getConversationId(user).flatMap(convCtrl.selectConv(_, ConversationChangeRequester.START_CONVERSATION))
 
+  def hasPermissionToRemoveService(cId: ConvId): Future[Boolean] = {
+    for {
+      tId <- teamId.head
+      ps  <- selfPermissions.head
+      conv <- ConversationSignal(cId).head
+    } yield tId == conv.team && ps.contains(AccountDataOld.Permission.RemoveConversationMember)
+  }
+
+  def hasPermissionToAddService: Future[Boolean] = {
+    for {
+      tId <- teamId.head
+      ps  <- selfPermissions.head
+    } yield tId.isDefined && ps.contains(AccountDataOld.Permission.AddConversationMember)
+  }
+
+
+}
+
+object UserAccountsController {
+  import AccountDataOld.Permission._
+  val AdminPermissions: Set[Permission] = Permission.values -- Set(GetBilling, SetBilling, DeleteTeam)
 }

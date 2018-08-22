@@ -27,68 +27,77 @@ import android.view.{LayoutInflater, View, ViewGroup}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api.NetworkMode
 import com.waz.model.{UserData, UserId}
-import com.waz.service.NetworkModeService
+import com.waz.service.{IntegrationsService, NetworkModeService}
 import com.waz.threading.Threading
 import com.waz.utils._
 import com.waz.utils.events._
 import com.waz.zclient.common.controllers.UserAccountsController
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.creation.{AddParticipantsFragment, CreateConversationController}
-import com.waz.zclient.integrations.IntegrationDetailsController
 import com.waz.zclient.pages.main.conversation.controller.IConversationScreenController
 import com.waz.zclient.participants.{ParticipantsAdapter, ParticipantsController}
+import com.waz.zclient.utils.ContextUtils.showToast
 import com.waz.zclient.utils.ViewUtils
 import com.waz.zclient.views.menus.{FooterMenu, FooterMenuCallback}
-import com.waz.zclient.{FragmentHelper, R}
+import com.waz.zclient.{FragmentHelper, R, SpinnerController}
 
 class GroupParticipantsFragment extends FragmentHelper {
 
   implicit def ctx: Context = getActivity
   import Threading.Implicits.Ui
 
-  private lazy val participantsController       = inject[ParticipantsController]
-  private lazy val convScreenController         = inject[IConversationScreenController]
-  private lazy val userAccountsController       = inject[UserAccountsController]
-  private lazy val integrationDetailsController = inject[IntegrationDetailsController]
+  private lazy val participantsController = inject[ParticipantsController]
+  private lazy val convScreenController   = inject[IConversationScreenController]
+  private lazy val userAccountsController = inject[UserAccountsController]
+  private lazy val integrationsService    = inject[Signal[IntegrationsService]]
+  private lazy val spinnerController      = inject[SpinnerController]
 
   private lazy val participantsView = view[RecyclerView](R.id.pgv__participants)
 
-  lazy val showAddPeople = for {
-    conv    <- participantsController.conv
-    isGroup <- participantsController.isGroup
-    hasPerm <- userAccountsController.hasAddConversationMemberPermission(conv.id)
-  } yield conv.isActive && isGroup && hasPerm
+  lazy val showAddParticipants = for {
+    conv         <- participantsController.conv
+    isGroupOrBot <- participantsController.isGroupOrBot
+    hasPerm      <- userAccountsController.hasAddConversationMemberPermission(conv.id)
+  } yield conv.isActive && isGroupOrBot && hasPerm
 
-  lazy val shouldEnableAddPeople = participantsController.otherParticipants.map(_.size + 1 < ConversationController.MaxParticipants)
+  lazy val shouldEnableAddParticipants = participantsController.otherParticipants.map(_.size + 1 < ConversationController.MaxParticipants)
 
   private lazy val footerMenu = returning(view[FooterMenu](R.id.fm__participants__footer)) { fm =>
-    showAddPeople.map {
-      case true  => R.string.glyph__add_people
+    showAddParticipants.map {
+      case true  => R.string.glyph__plus
       case false => R.string.empty_string
     }.map(getString)
      .onUi(t => fm.foreach(_.setLeftActionText(t)))
 
-    showAddPeople.map {
-      case true  => R.string.conversation__action__add_people
+    showAddParticipants.map {
+      case true  => R.string.conversation__action__add_participants
       case false => R.string.empty_string
     }.map(getString)
      .onUi(t => fm.foreach(_.setLeftActionLabelText(t)))
 
-    shouldEnableAddPeople.onUi(e => fm.foreach(_.setLeftActionEnabled(e)))
+    shouldEnableAddParticipants.onUi(e => fm.foreach(_.setLeftActionEnabled(e)))
   }
 
   private lazy val participantsAdapter = returning(new ParticipantsAdapter(Some(7))) { adapter =>
     new FutureEventStream[UserId, Option[UserData]](adapter.onClick, participantsController.getUser).onUi {
       case Some(user) => (user.providerId, user.integrationId) match {
         case (Some(pId), Some(iId)) =>
-          participantsController.conv.head.map { conv =>
-            Option(getParentFragment) match {
-              case Some(f: ParticipantFragment) =>
-                integrationDetailsController.setRemoving(conv.id, user.id)
-                f.showIntegrationDetails(pId, iId)
-              case _ =>
+          for {
+            conv <- participantsController.conv.head
+            _ = spinnerController.showSpinner()
+            resp <- integrationsService.head.flatMap(_.getIntegration(pId, iId))
+          } {
+            spinnerController.hideSpinner()
+            resp match {
+              case Right(service) =>
+                Option(getParentFragment) match {
+                  case Some(f: ParticipantFragment) =>
+                    f.showIntegrationDetails(service, conv.id, user.id)
+                  case _ =>
+                }
+              case Left(err) =>
+                showToast(R.string.generic_error_header)
             }
-
           }
         case _ => participantsController.onShowUser ! Some(user.id)
       }
@@ -138,7 +147,7 @@ class GroupParticipantsFragment extends FragmentHelper {
     super.onResume()
     footerMenu.foreach(_.setCallback(new FooterMenuCallback() {
       override def onLeftActionClicked(): Unit = {
-        showAddPeople.head.map {
+        showAddParticipants.head.map {
           case true =>
             participantsController.conv.head.foreach { conv =>
               inject[CreateConversationController].setAddToConversation(conv.id)

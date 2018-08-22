@@ -25,7 +25,7 @@ import android.view.{MotionEvent, View}
 import android.widget.Toast
 import com.google.android.gms.common.{ConnectionResult, GoogleApiAvailability}
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api._
+import com.waz.api.NetworkMode
 import com.waz.content.{GlobalPreferences, UserPreferences}
 import com.waz.model.{ConvExpiry, MessageData}
 import com.waz.permissions.PermissionsService
@@ -34,18 +34,17 @@ import com.waz.threading.{CancellableFuture, Threading}
 import com.waz.utils.events.{EventContext, EventStream, Signal}
 import com.waz.zclient.calling.controllers.CallController
 import com.waz.zclient.common.controllers._
-import com.waz.zclient.controllers.camera.ICameraController
-import com.waz.zclient.controllers.drawing.IDrawingController
-import com.waz.zclient.controllers.giphy.IGiphyController
 import com.waz.zclient.controllers.location.ILocationController
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversationlist.ConversationListController
+import com.waz.zclient.drawing.DrawingFragment
 import com.waz.zclient.messages.MessageBottomSheetDialog.MessageAction
 import com.waz.zclient.messages.controllers.MessageActionsController
 import com.waz.zclient.pages.extendedcursor.ExtendedCursorContainer
 import com.waz.zclient.ui.cursor.{CursorMenuItem => JCursorMenuItem}
 import com.waz.zclient.ui.utils.KeyboardUtils
 import com.waz.zclient.utils.ContextUtils._
+import com.waz.zclient.views.DraftMap
 import com.waz.zclient.{Injectable, Injector, R}
 
 import scala.concurrent.duration._
@@ -65,7 +64,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
   val editingMsg = Signal(Option.empty[MessageData])
 
   val secondaryToolbarVisible = Signal(false)
-  val enteredText = Signal("")
+  val enteredText = Signal[(String, EnteredTextSource)](("", EnteredTextSource.FromController))
   val cursorWidth = Signal[Int]()
   val editHasFocus = Signal(false)
   var cursorCallback = Option.empty[CursorCallback]
@@ -101,7 +100,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
 
   val sendButtonEnabled: Signal[Boolean] = zms.map(_.userPrefs).flatMap(_.preference(UserPreferences.SendButtonEnabled).signal)
 
-  val enteredTextEmpty = enteredText.map(_.trim.isEmpty).orElse(Signal const true)
+  val enteredTextEmpty = enteredText.map(_._1.trim.isEmpty).orElse(Signal const true)
   val sendButtonVisible = Signal(emojiKeyboardVisible, enteredTextEmpty, sendButtonEnabled, isEditingMessage) map {
     case (emoji, empty, enabled, editing) => enabled && (emoji || !empty) && !editing
   }
@@ -129,7 +128,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
   // notify SE about typing state
   private var prevEnteredText = ""
   enteredText {
-    case text if text != prevEnteredText =>
+    case (text, EnteredTextSource.FromView) if text != prevEnteredText =>
       for {
         typing <- zms.map(_.typing).head
         convId <- conversationController.currentConvId.head
@@ -180,6 +179,15 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
       } (Threading.Ui)
   }
 
+  screenController.hideGiphy.onUi {
+    case true =>
+      // giphy worked, so no need for the draft text to reappear
+      inject[DraftMap].resetCurrent().map { _ =>
+        enteredText ! ("", EnteredTextSource.FromController)
+      }
+    case false =>
+  }
+
   editHasFocus {
     case true => // TODO - reimplement for tablets
     case false => // ignore
@@ -192,12 +200,8 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
     }
     else if (TextUtils.isEmpty(msg.trim)) false
     else {
-      for {
-        cId <- conversationController.currentConvId.head
-        cs <- zms.head.map(_.convsUi)
-        m <- cs.sendMessage(cId, new MessageContent.Text(msg))
-      } {
-        m foreach { msg =>
+      conversationController.sendMessage(msg).foreach { m =>
+        m.foreach { msg =>
           onMessageSent ! msg
           cursorCallback.foreach(_.onMessageSent(msg))
         }
@@ -212,13 +216,13 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
       cs <- zms.head.map(_.convsUi)
       m <- editingMsg.head if m.isDefined
       msg = m.get
-      text <- enteredText.head
+      (text, _) <- enteredText.head
     } {
       if (text.trim().isEmpty) {
         cs.recallMessage(cId, msg.id)
         Toast.makeText(ctx, R.string.conversation__message_action__delete__confirmation, Toast.LENGTH_SHORT).show()
       } else {
-        cs.updateMessage(cId, msg.id, new MessageContent.Text(text))
+        cs.updateMessage(cId, msg.id, text)
       }
       editingMsg ! None
       keyboard ! KeyboardState.Hidden
@@ -244,13 +248,11 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
       }
     }
 
-  lazy val drawingController = inject[IDrawingController]
-  lazy val giphyController = inject[IGiphyController]
-  lazy val cameraController = inject[ICameraController]
-  lazy val locationController = inject[ILocationController]
-  lazy val soundController = inject[SoundController]
-  lazy val permissions = inject[PermissionsService]
-  lazy val activity = inject[Activity]
+  private lazy val locationController = inject[ILocationController]
+  private lazy val soundController    = inject[SoundController]
+  private lazy val permissions        = inject[PermissionsService]
+  private lazy val activity           = inject[Activity]
+  private lazy val screenController   = inject[ScreenController]
 
   import CursorMenuItem._
 
@@ -269,7 +271,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
         _    <- z.convsUi.knock(cId)
       } soundController.playPingFromMe()
     case Sketch =>
-      drawingController.showDrawing(null, IDrawingController.DrawingDestination.SKETCH_BUTTON)
+      screenController.showSketch ! DrawingFragment.Sketch.BlankSketch
     case File =>
       cursorCallback.foreach(_.openFileSharing())
     case VideoMessage =>
@@ -282,9 +284,9 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
       }
       else showToast(R.string.location_sharing__missing_play_services)
     case Gif =>
-      enteredText.head foreach { giphyController.handleInput }
+      enteredText.head.foreach { case (text, _) => screenController.showGiphy ! Some(text) }
     case Send =>
-      enteredText.head foreach { submit }
+      enteredText.head.foreach { case (text, _) => submit(text) }
     case _ =>
       // ignore
   }
@@ -297,6 +299,11 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
 }
 
 object CursorController {
+  sealed trait EnteredTextSource
+  object EnteredTextSource {
+    case object FromView extends EnteredTextSource
+    case object FromController extends EnteredTextSource
+  }
 
   sealed trait KeyboardState
   object KeyboardState {

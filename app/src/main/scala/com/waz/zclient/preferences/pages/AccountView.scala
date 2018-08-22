@@ -28,8 +28,7 @@ import android.util.AttributeSet
 import android.view.View
 import android.widget.LinearLayout
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api.impl.AccentColor
-import com.waz.model.{EmailAddress, PhoneNumber}
+import com.waz.model.{AccentColor, EmailAddress, PhoneNumber}
 import com.waz.service.{AccountsService, ZMessaging}
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, EventStream, Signal}
@@ -171,7 +170,7 @@ class AccountViewController(view: AccountView)(implicit inj: Injector, ec: Event
       val paint = new Paint()
 
       override def draw(canvas: Canvas) = {
-        paint.setColor(AccentColor(self.accent).getColor)
+        paint.setColor(AccentColor(self.accent).color)
         canvas.drawCircle(getBounds.centerX(), getBounds.centerY(), getBounds.width() / 2, paint)
       }
 

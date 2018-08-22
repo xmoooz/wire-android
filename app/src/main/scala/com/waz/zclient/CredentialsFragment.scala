@@ -116,7 +116,7 @@ class AddEmailFragment extends CredentialsFragment {
 
   lazy val confirmationButton = returning(view[PhoneConfirmationButton](R.id.confirmation_button)) { vh =>
     vh.onClick { _ =>
-      spinner.showSpinner(LoadingIndicatorView.Spinner, forcedTheme = Some(true))
+      spinner.showSpinner(LoadingIndicatorView.Spinner, forcedIsDarkTheme = Some(true))
       for {
         am      <- am.head
         pending <- am.storage.userPrefs(PendingEmail).apply()
@@ -268,7 +268,7 @@ class SetOrRequestPasswordFragment extends CredentialsFragment {
 
   lazy val confirmationButton = returning(view[PhoneConfirmationButton](R.id.confirmation_button)) { vh =>
     vh.onClick { _ =>
-      spinner.showSpinner(LoadingIndicatorView.Spinner, forcedTheme = Some(true))
+      spinner.showSpinner(LoadingIndicatorView.Spinner, forcedIsDarkTheme = Some(true))
       for {
         am       <- am.head
         Some(pw) <- password.head //pw should be defined
@@ -335,7 +335,7 @@ class SetOrRequestPasswordFragment extends CredentialsFragment {
     confirmationButton.foreach(_.setAccentColor(Color.WHITE))
 
     Option(findById[View](R.id.ttv_signin_forgot_password)).foreach { forgotPw =>
-      forgotPw.onClick(inject[BrowserController].openUrl(getString(R.string.url_password_reset)))
+      forgotPw.onClick(inject[BrowserController].openForgotPasswordPage())
       forgotPw.setVisibility(if (hasPw) View.VISIBLE else View.INVISIBLE)
     }
   }

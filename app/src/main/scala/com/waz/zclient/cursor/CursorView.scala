@@ -18,7 +18,6 @@
 package com.waz.zclient.cursor
 
 import android.content.Context
-import android.graphics._
 import android.graphics.drawable.ColorDrawable
 import android.text.{Editable, TextUtils, TextWatcher}
 import android.util.AttributeSet
@@ -28,17 +27,18 @@ import android.view.inputmethod.EditorInfo
 import android.widget.TextView.OnEditorActionListener
 import android.widget.{LinearLayout, TextView}
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api._
-import com.waz.model.{Availability, MessageExpiry}
+import com.waz.model.{AccentColor, Availability, MessageExpiry}
 import com.waz.threading.Threading
 import com.waz.utils.events.Signal
 import com.waz.utils.returning
+import com.waz.zclient.common.controllers.ThemeController
 import com.waz.zclient.controllers.globallayout.IGlobalLayoutController
-import com.waz.zclient.cursor.CursorController.KeyboardState
+import com.waz.zclient.cursor.CursorController.{EnteredTextSource, KeyboardState}
 import com.waz.zclient.messages.MessagesController
 import com.waz.zclient.pages.extendedcursor.ExtendedCursorContainer
 import com.waz.zclient.ui.cursor._
 import com.waz.zclient.ui.text.TextTransform
+import com.waz.zclient.ui.views.OnDoubleClickListener
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils._
 import com.waz.zclient.views.AvailabilityView
@@ -52,10 +52,10 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
   import CursorView._
   import Threading.Implicits.Ui
 
-  val controller = inject[CursorController]
-  val accentColor = inject[Signal[AccentColor]]
+  val controller       = inject[CursorController]
+  val accentColor      = inject[Signal[AccentColor]]
   val layoutController = inject[IGlobalLayoutController]
-  val messages = inject[MessagesController]
+  val messages         = inject[MessagesController]
 
   setOrientation(LinearLayout.VERTICAL)
   inflate(R.layout.cursor_view_content)
@@ -65,16 +65,30 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
     f.setPadding(left, 0, left, 0)
   }
 
-  val cursorEditText   = findById[CursorEditText]     (R.id.cet__cursor)
-  val mainToolbar      = findById[CursorToolbar]      (R.id.c__cursor__main)
-  val secondaryToolbar = findById[CursorToolbar]      (R.id.c__cursor__secondary)
-  val topBorder        = findById[View]               (R.id.v__top_bar__cursor)
-  val hintView         = findById[TextView]           (R.id.ttv__cursor_hint)
-  val dividerView      = findById[View]               (R.id.v__cursor__divider)
-  val emojiButton      = findById[CursorIconButton]   (R.id.cib__emoji)
-  val keyboardButton   = findById[CursorIconButton]   (R.id.cib__keyboard)
-  val sendButton       = findById[CursorIconButton]   (R.id.cib__send)
-  val ephemeralButton  = findById[EphemeralIconButton](R.id.cib__ephemeral)
+  val cursorEditText   = findById[CursorEditText]       (R.id.cet__cursor)
+  val mainToolbar      = findById[CursorToolbar]        (R.id.c__cursor__main)
+  val secondaryToolbar = findById[CursorToolbar]        (R.id.c__cursor__secondary)
+  val topBorder        = findById[View]                 (R.id.v__top_bar__cursor)
+  val hintView         = findById[TextView]             (R.id.ttv__cursor_hint)
+  val dividerView      = findById[View]                 (R.id.v__cursor__divider)
+  val emojiButton      = findById[CursorIconButton]     (R.id.cib__emoji)
+  val keyboardButton   = findById[CursorIconButton]     (R.id.cib__keyboard)
+  val sendButton       = findById[CursorIconButton]     (R.id.cib__send)
+
+  val ephemeralButton = returning(findById[EphemeralTimerButton](R.id.cib__ephemeral)) { v =>
+    controller.ephemeralBtnVisible.onUi(v.setVisible)
+
+    controller.ephemeralExp.pipeTo(v.ephemeralExpiration)
+    inject[ThemeController].darkThemeSet.pipeTo(v.darkTheme)
+
+    v.setOnClickListener(new OnDoubleClickListener() {
+      override def onDoubleClick(): Unit =
+        controller.toggleEphemeralMode()
+
+      override def onSingleClick(): Unit =
+        controller.keyboard ! KeyboardState.ExtendedCursor(ExtendedCursorContainer.Type.EPHEMERAL)
+    })
+  }
 
   val defaultHintTextColor = hintView.getTextColors.getDefaultColor
 
@@ -85,10 +99,10 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
 
   val bgColor = controller.isEditingMessage map {
     case true => getStyledColor(R.attr.cursorEditBackground)
-    case false => Color.TRANSPARENT
+    case false => getStyledColor(R.attr.wireBackgroundColor)
   }
 
-  val lineCount = Signal(0)
+  val lineCount = Signal(1)
   val topBarVisible = for {
     multiline <- lineCount.map(_ > 2)
     typing <- controller.typingIndicatorVisible
@@ -123,19 +137,16 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
   secondaryToolbar.cursorItems ! SecondaryCursorItems
 
   cursorEditText.addTextChangedListener(new TextWatcher() {
-    private var text = ""
-
-    override def onTextChanged(charSequence: CharSequence, start: Int, before: Int, count: Int): Unit = {
-      text = charSequence.toString
-    }
-
-    override def afterTextChanged(editable: Editable): Unit = {
-      controller.enteredText ! text
-      if (text.trim.nonEmpty) lineCount ! cursorEditText.getLineCount
-      text = ""
-    }
 
     override def beforeTextChanged(charSequence: CharSequence, start: Int, count: Int, after: Int): Unit = ()
+
+    override def onTextChanged(charSequence: CharSequence, start: Int, before: Int, count: Int): Unit = {
+      val text = charSequence.toString
+      controller.enteredText ! (text, EnteredTextSource.FromView)
+      if (text.trim.nonEmpty) lineCount ! Math.max(cursorEditText.getLineCount, 1)
+    }
+
+    override def afterTextChanged(editable: Editable): Unit = ()
   })
 
   cursorEditText.setOnClickListener(new OnClickListener {
@@ -154,16 +165,18 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
         false
     }
   })
+
   cursorEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
     override def onFocusChange(view: View, hasFocus: Boolean): Unit = controller.editHasFocus ! hasFocus
   })
+
   cursorEditText.setFocusableInTouchMode(true)
 
   controller.sendButtonEnabled.onUi { enabled =>
     cursorEditText.setImeOptions(if (enabled) EditorInfo.IME_ACTION_NONE else EditorInfo.IME_ACTION_SEND)
   }
 
-  accentColor.map(_.getColor).onUi(cursorEditText.setAccentColor)
+  accentColor.map(_.color).onUi(cursorEditText.setAccentColor)
 
   private lazy val transformer = TextTransform.get(ContextUtils.getString(R.string.single_image_message__name__font_transform))
 
@@ -188,12 +201,19 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
     Some(MessageExpiry(_)) <- controller.ephemeralExp
     Availability.None      <- controller.convAvailability
     ac                     <- accentColor
-  } yield ac.getColor)
+  } yield ac.color)
     .orElse(Signal.const(defaultHintTextColor))
     .onUi(hintView.setTextColor)
 
+  // allows the controller to "empty" the text field if necessary by resetting the signal.
+  // specifying the source guards us from an infinite loop of the view and controller updating each other
+  controller.enteredText {
+    case (text, EnteredTextSource.FromController) if text != cursorEditText.getText.toString => cursorEditText.setText(text)
+    case _ =>
+  }
+
   (controller.isEditingMessage.zip(controller.enteredText) map {
-    case (editing, text) => !editing && text.isEmpty
+    case (editing, (text, _)) => !editing && text.isEmpty
   }).onUi { hintView.setVisible }
 
   controller.convIsActive.onUi(this.setVisible)
@@ -227,9 +247,8 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
     cursorEditText.setSelection(text.length)
   }
 
-  def insertText(text: String): Unit = {
+  def insertText(text: String): Unit =
     cursorEditText.getText.insert(cursorEditText.getSelectionStart, text)
-  }
 
   def hasText: Boolean = !TextUtils.isEmpty(cursorEditText.getText.toString)
 

@@ -26,7 +26,6 @@ import android.os.{Build, Bundle}
 import android.support.v4.app.{Fragment, FragmentTransaction}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.{error, info, verbose, warn}
-import com.waz.content.Preferences.Preference.PrefCodec
 import com.waz.content.UserPreferences._
 import com.waz.model.{ConvId, UserId}
 import com.waz.service.AccountManager.ClientRegistrationState.{LimitReached, PasswordMissing, Registered, Unregistered}
@@ -36,7 +35,6 @@ import com.waz.threading.{CancellableFuture, Threading}
 import com.waz.utils.events.Signal
 import com.waz.utils.{RichInstant, returning}
 import com.waz.zclient.Intents._
-import com.waz.zclient.MainActivity._
 import com.waz.zclient.SpinnerController.{Hide, Show}
 import com.waz.zclient.appentry.AppEntryActivity
 import com.waz.zclient.calling.controllers.CallStartController
@@ -72,7 +70,7 @@ class MainActivity extends BaseActivity
 
   implicit val cxt = this
 
-  import Threading.Implicits.Background
+  import Threading.Implicits.Ui
 
   lazy val zms                      = inject[Signal[ZMessaging]]
   lazy val account                  = inject[Signal[Option[AccountManager]]]
@@ -115,10 +113,9 @@ class MainActivity extends BaseActivity
         CrashController.checkForUpdates(this)
     }
 
-    accentColorController.accentColor.map(_.getColor) { color =>
-      getControllerFactory.getUserPreferencesController.setLastAccentColor(color)
-      getControllerFactory.getAccentColorController.setColor(color)
-    }
+    accentColorController.accentColor.map(_.color).onUi(
+      getControllerFactory.getUserPreferencesController.setLastAccentColor
+    )
 
     handleIntent(getIntent)
 
@@ -154,8 +151,8 @@ class MainActivity extends BaseActivity
     val loadingIndicator = findViewById[LoadingIndicatorView](R.id.progress_spinner)
 
     spinnerController.spinnerShowing.onUi {
-      case Show(animation, forcedTheme)=>
-        themeController.darkThemeSet.head.foreach(theme => loadingIndicator.show(animation, forcedTheme.getOrElse(theme), 300))(Threading.Ui)
+      case Show(animation, forcedIsDarkTheme)=>
+        themeController.darkThemeSet.head.foreach(theme => loadingIndicator.show(animation, forcedIsDarkTheme.getOrElse(theme), 300))(Threading.Ui)
       case Hide(Some(message))=> loadingIndicator.hideWithMessage(message, 750)
       case Hide(_) => loadingIndicator.hide()
     }
@@ -201,12 +198,7 @@ class MainActivity extends BaseActivity
 
     account.head.flatMap {
       case Some(am) =>
-        (Option(getIntent).flatMap(i => Option(i.getStringExtra(ClientRegStateArg))) match {
-          case Some(clientRegState) =>
-            getIntent.removeExtra(ClientRegStateArg)
-            Future.successful(Right(PrefCodec.SelfClientIdCodec.decode(clientRegState)))
-          case _ => am.getOrRegisterClient()
-        }).map {
+        am.getOrRegisterClient().map {
           case Right(Registered(_))   =>
             for {
               z            <- zms.head
@@ -254,7 +246,7 @@ class MainActivity extends BaseActivity
             }
           case Right(Unregistered) => warn("This shouldn't happen, going back to sign in..."); Future.successful(openSignUpPage())
           case Left(_) => showGenericErrorDialog()
-        } (Threading.Ui)
+        }
       case _ =>
         warn("No logged in account, sending to Sign in")
         Future.successful(openSignUpPage())
@@ -351,8 +343,6 @@ class MainActivity extends BaseActivity
     //Ensure tracking is started
     inject[UiTrackingController]
     inject[KeyboardController]
-    // Make sure we have a running OrientationController instance
-    getControllerFactory.getOrientationController
     // Here comes code for adding other dependencies to controllers...
     getControllerFactory.getNavigationController.setIsLandscape(isInLandscape(this))
   }
@@ -366,11 +356,10 @@ class MainActivity extends BaseActivity
   def handleIntent(intent: Intent) = {
     verbose(s"handleIntent: ${intent.log}")
 
-    def switchConversation(convId: ConvId, call: Boolean = false, exp: Option[Option[FiniteDuration]] = None) =
+    def switchConversation(convId: ConvId, call: Boolean = false) =
       CancellableFuture.delay(750.millis).map { _ =>
         verbose(s"setting conversation: $convId")
-        conversationController.selectConv(convId, ConversationChangeRequester.INTENT).map { _ =>
-          exp.foreach(conversationController.setEphemeralExpiration)
+        conversationController.selectConv(convId, ConversationChangeRequester.INTENT).foreach { _ =>
           if (call)
             for {
               Some(acc) <- account.map(_.map(_.userId)).head
@@ -413,7 +402,7 @@ class MainActivity extends BaseActivity
           convs <- sharingController.targetConvs.head
           exp   <- sharingController.ephemeralExpiration.head
           _     <- sharingController.sendContent(this)
-          _     <- if (convs.size == 1) switchConversation(convs.head, exp = Some(exp)) else Future.successful({})
+          _     <- if (convs.size == 1) switchConversation(convs.head) else Future.successful({})
         } yield clearIntent()
 
       case OpenPageIntent(page) => page match {

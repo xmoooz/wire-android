@@ -24,6 +24,7 @@ import com.waz.model.EphemeralDuration.TimeUnit
 import com.waz.utils.returning
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.paintcode.WireStyleKit._
+import com.waz.zclient.utils.ResColor
 
 trait WireDrawable extends Drawable {
 
@@ -107,6 +108,11 @@ object ServicePlaceholderDrawable {
 case class CreateGroupIcon(colorRes: Int)(implicit context: Context) extends WireDrawable {
   setColor(getColor(colorRes))
   override def draw(canvas: Canvas) = drawGroupIcon(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
+}
+
+case class ManageServicesIcon(color: ResColor)(implicit context: Context) extends WireDrawable {
+  setColor(color.resolve)
+  override def draw(canvas: Canvas) = drawServiceIcon(canvas, getDrawingRect, ResizingBehavior.AspectFit, paint.getColor)
 }
 
 case class GuestIcon(colorRes: Int)(implicit context: Context) extends WireDrawable {

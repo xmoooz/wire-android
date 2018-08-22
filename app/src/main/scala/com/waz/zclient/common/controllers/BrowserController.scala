@@ -22,14 +22,19 @@ import android.net.Uri
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api.MessageContent.Location
 import com.waz.model.MessageId
+import com.waz.service.BackendConfig
 import com.waz.utils.LoggedTry
 import com.waz.utils.events.EventStream
 import com.waz.utils.wrappers.{AndroidURIUtil, URI}
+import com.waz.zclient.{Injectable, Injector, R}
 import com.waz.zclient.utils.IntentUtils
+import com.waz.zclient.utils.ContextUtils._
 
 import scala.util.Try
 
-class BrowserController(implicit context: Context) {
+class BrowserController(implicit context: Context, injector: Injector) extends Injectable {
+
+  private val beConfig = inject[BackendConfig]
 
   val onYoutubeLinkOpened = EventStream[MessageId]()
 
@@ -45,6 +50,13 @@ class BrowserController(implicit context: Context) {
     context.startActivity(intent)
   }
 
-  def openLocation(location: Location) =
+  def openLocation(location: Location): Unit =
     Option(IntentUtils.getGoogleMapsIntent(context, location.getLatitude, location.getLongitude, location.getZoom, location.getName)) foreach { context.startActivity }
+
+  def openForgotPasswordPage(): Try[Unit] =
+    openUrl(getString(if (beConfig == BackendConfig.StagingBackend) R.string.url_password_reset_staging else R.string.url_password_reset))
+
+  def openManageTeamsPage(): Try[Unit] =
+    openUrl(getString(if (beConfig == BackendConfig.StagingBackend) R.string.url_manage_services_staging else R.string.url_manage_services))
+
 }

@@ -25,15 +25,16 @@ import android.view.View
 import android.widget.{LinearLayout, RelativeLayout}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api.Message
-import com.waz.api.impl.AccentColor
 import com.waz.model._
 import com.waz.service.ZMessaging
 import com.waz.service.messages.MessageAndLikes
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventStream, Signal}
-import com.waz.zclient.common.views.ChatheadView
+import com.waz.utils.returning
 import com.waz.zclient.common.controllers.global.AccentColorController
+import com.waz.zclient.common.views.ChatheadView
 import com.waz.zclient.messages.MessageView.MsgBindOptions
+import com.waz.zclient.paintcode.ManageServicesIcon
 import com.waz.zclient.ui.text.{GlyphTextView, TypefaceTextView}
 import com.waz.zclient.ui.theme.ThemeUtils
 import com.waz.zclient.ui.utils.ColorUtils
@@ -145,7 +146,7 @@ class UnreadDot(context: Context, attrs: AttributeSet, style: Int) extends View(
   val dotPaint = new Paint(Paint.ANTI_ALIAS_FLAG)
 
   accent { color =>
-    dotPaint.setColor(color.getColor())
+    dotPaint.setColor(color.color)
     postInvalidate()
   }
 
@@ -165,7 +166,7 @@ class UserPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
 
   private val chathead: ChatheadView = findById(R.id.chathead)
   private val tvName: TypefaceTextView = findById(R.id.tvName)
-  private val isBot: TypefaceTextView = findById(R.id.is_bot)
+  private val isBot: View = returning(findById[View](R.id.is_bot))(_.setBackground(ManageServicesIcon(ResColor.fromId(R.color.light_graphite))))
   private val tvStateGlyph: GlyphTextView = findById(R.id.gtvStateGlyph)
 
   private val zms = inject[Signal[ZMessaging]]
@@ -183,7 +184,7 @@ class UserPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
 
   userId(chathead.setUserId)
 
-  user.map(_.getDisplayName).on(Threading.Ui)(tvName.setTransformedText)
+  user.map(u => if (u.isWireBot) u.name else u.getDisplayName).onUi(tvName.setTransformedText)
   user.map(_.isWireBot).on(Threading.Ui) { isBot.setVisible }
 
   user.map(_.accent).on(Threading.Ui) { a =>
@@ -217,7 +218,7 @@ class UserPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
       case 7 => 0.64f
       case _ => 1f
     }
-    ColorUtils.injectAlpha(alpha, AccentColor(accent).getColor())
+    ColorUtils.injectAlpha(alpha, AccentColor(accent).color)
   }
 }
 

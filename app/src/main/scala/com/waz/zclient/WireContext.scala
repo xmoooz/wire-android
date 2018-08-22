@@ -386,6 +386,7 @@ trait CallingBannerActivity extends ActivityHelper {
   }
 }
 
+//TODO add a withFilter method for for comprehensions
 class ViewHolder[T <: View](id: Int, finder: ViewFinder) {
   private var view = Option.empty[T]
   private var onClickListener = Option.empty[OnClickListener]
@@ -407,6 +408,8 @@ class ViewHolder[T <: View](id: Int, finder: ViewFinder) {
   def flatMap[A](f: T => Option[A]): Option[A] = opt.flatMap(f)
 
   def filter(p: T => Boolean): Option[T] = opt.filter(p)
+
+  def exists(p: T => Boolean): Boolean = opt.exists(p(_))
 
   def onResume() = onClickListener.foreach(l => foreach(_.setOnClickListener(l)))
 

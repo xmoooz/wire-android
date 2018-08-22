@@ -19,14 +19,18 @@
 
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             xmlns:tools="http://schemas.android.com/tools"
-             android:layout_width="match_parent"
-             android:layout_height="wrap_content"
-             android:paddingBottom="@dimen/wire__padding__big"
-    >
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <include layout="@layout/asp_preference"
-             tools:ignore="PrivateResource"
+    <com.waz.zclient.ui.text.TypefaceTextView
+        android:id="@android:id/text1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/wire__text_size__small"
+        app:w_font="@string/wire__typeface__regular"
+        android:layout_gravity="center"
+        android:textColor="?wirePrimaryTextColor"
         />
 
 </FrameLayout>
