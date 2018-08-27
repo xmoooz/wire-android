@@ -72,7 +72,6 @@ class BaseActivity extends AppCompatActivity
   }
 
   def onBaseActivityStart() = {
-    getApplication.asInstanceOf[ZApplication].ensureInitialized()
     getControllerFactory.setActivity(this)
     if (!started) {
       started = true
