@@ -1481,10 +1481,7 @@
 
     <string name="max_participants_alert_title">The group is full</string>
     <string name="max_participants_create_alert_message">Up to 300 people can join a conversation.</string>
-    <plurals name="max_participants_add_alert_message">
-        <item quantity="one">Up to 300 people can join a conversation. Currently there is only room for %1$s more.</item>
-        <item quantity="other">Up to 300 people can join a conversation. Currently there is only room for %1$s more.</item>
-    </plurals>
+    <string name="max_participants_add_alert_message">Up to 300 people can join a conversation. Currently there is only room for %1$s more.</string>
     <string name="sso_signin_button">Company log in</string>
 
     <string name="sso_signin_error_title">Something went wrong</string>

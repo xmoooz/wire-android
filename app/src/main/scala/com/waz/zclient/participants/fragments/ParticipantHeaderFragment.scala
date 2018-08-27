@@ -22,6 +22,7 @@ import android.os.Bundle
 import android.support.v7.widget.Toolbar
 import android.view._
 import android.widget.TextView
+import com.waz.ZLog.ImplicitTag._
 import com.waz.utils.events.Signal
 import com.waz.utils.returning
 import com.waz.zclient.ManagerFragment.Page
@@ -31,10 +32,8 @@ import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.creation.{AddParticipantsFragment, CreateConversationController}
 import com.waz.zclient.participants.ParticipantsController
 import com.waz.zclient.utils.ContextUtils.getColor
-import com.waz.zclient.utils.{RichView, ViewUtils}
+import com.waz.zclient.utils.{ContextUtils, RichView, ViewUtils}
 import com.waz.zclient.{FragmentHelper, ManagerFragment, R}
-import com.waz.ZLog.ImplicitTag._
-import com.waz.zclient.utils.ContextUtils._
 
 class ParticipantHeaderFragment extends FragmentHelper {
   implicit def cxt: Context = getActivity
@@ -132,7 +131,7 @@ class ParticipantHeaderFragment extends FragmentHelper {
           val remaining = ConversationController.MaxParticipants - others - 1
           ViewUtils.showAlertDialog(getContext,
             getString(R.string.max_participants_alert_title),
-            getQuantityString(R.plurals.max_participants_add_alert_message, remaining, remaining.toString),
+            ContextUtils.getString(R.plurals.max_participants_add_alert_message, remaining.toString),
             getString(android.R.string.ok), null, true)
         }
       case _ =>
