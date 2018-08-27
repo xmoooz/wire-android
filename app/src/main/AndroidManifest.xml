@@ -282,6 +282,7 @@
             </intent-filter>
         </receiver>
 
+        <service android:name="com.waz.services.calling.CallingNotificationsService" />
     </application>
 
 </manifest>
