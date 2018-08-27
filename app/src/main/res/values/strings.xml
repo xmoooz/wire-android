@@ -1483,12 +1483,9 @@
     <string name="markdown_link_dialog_confirmation">OK</string>
     <string name="markdown_link_dialog_cancel">CANCEL</string>
 
-    <string name="max_participants_alert_title">Full house</string>
+    <string name="max_participants_alert_title">The group is full</string>
     <string name="max_participants_create_alert_message">Up to 300 people can join a conversation.</string>
-    <plurals name="max_participants_add_alert_message">
-        <item quantity="one">Up to 300 people can join a conversation. Currently there is only room for %1$s more person.</item>
-        <item quantity="other">Up to 300 people can join a conversation. Currently there is only room for %1$s more people.</item>
-    </plurals>
+    <string name="max_participants_add_alert_message">Up to 300 people can join a conversation. Currently there is only room for %1$s more.</string>
     <string name="sso_signin_button">Company log in</string>
 
     <string name="sso_signin_error_title">Something went wrong</string>
