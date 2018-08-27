@@ -144,6 +144,8 @@
     <string translatable="false" name="pref_dev_version_info_id_title">Versions</string>
     <string translatable="false" name="pref_dev_register_new_client_title">Register Another Client</string>
     <string translatable="false" name="pref_dev_register_new_client_summary">Useful for testing too many devices. This button will grey itself out when you reach the limit</string>
+    <string translatable="false" name="pref_dev_missed_events_warning_title">Missed Events Warning</string>
+    <string translatable="false" name="pref_dev_missed_events_warning_summary">Sends a fake \'missed events\' event</string>
 
     <string translatable="false" name="pref_dev_provide_password">Provide account password</string>
 

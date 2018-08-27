@@ -18,7 +18,8 @@
 package com.waz.zclient.preferences.pages
 
 import android.app.Activity
-import android.content.Context
+import android.content.{Context, Intent}
+import android.net.Uri
 import android.os.Bundle
 import android.util.AttributeSet
 import android.view.View
@@ -41,7 +42,6 @@ class AdvancedViewImpl(context: Context, attrs: AttributeSet, style: Int) extend
   def this(context: Context) = this(context, null, 0)
 
   inflate(R.layout.preferences_advanced_layout)
-
 
   val submitReport = returning(findById[TextButton](R.id.preferences_debug_report)) { v =>
     v.onClickEvent { _ =>
@@ -66,6 +66,12 @@ class AdvancedViewImpl(context: Context, attrs: AttributeSet, style: Int) extend
   val webSocketForegroundServiceSwitch = returning(findById[SwitchPreference](R.id.preferences_websocket_service)) { v =>
     inject[GoogleApi].isGooglePlayServicesAvailable.map(if (_) View.GONE else View.VISIBLE).onUi(v.setVisibility)
     v.setPreference(WsForegroundKey, global = true)
+  }
+
+  val notificationsWebpage = returning(findById[TextButton](R.id.preferences_notifications_webpage)) { button =>
+    button.onClickEvent { _ =>
+      context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(context.getString(R.string.pref_advanced_notifications_webpage_url))))
+    }
   }
 }
 

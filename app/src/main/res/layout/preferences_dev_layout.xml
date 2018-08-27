@@ -115,6 +115,14 @@
                 app:key="@string/pref_dev_full_conv_key"
                 />
 
+            <com.waz.zclient.preferences.views.TextButton
+                android:id="@+id/missed_events_warning"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/wire__padding__20"
+                app:title="@string/pref_dev_missed_events_warning_title"
+                app:subtitle="@string/pref_dev_missed_events_warning_summary"
+                />
         </LinearLayout>
 
     </ScrollView>

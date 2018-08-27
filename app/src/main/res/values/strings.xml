@@ -629,6 +629,9 @@
     <string name="pref_advanced_reset_push_title">Reset push notifications token</string>
     <string name="pref_advanced_reset_push_summary">If you experience problems with push notifications, Wire Support may ask you to reset this token.</string>
     <string name="pref_advanced_reset_push_completed">Push token has been reset</string>
+    <string name="pref_advanced_notifications_webpage_title">Open Notifications Problems Help Page</string>
+    <string name="pref_advanced_notifications_webpage_summary">Clicking here will take you to a webpage explaining what can you do to improve notifications on your device.</string>
+    <string name="pref_advanced_notifications_webpage_url">https://support.wire.com/hc/en-us/articles/203624294-What-can-I-do-if-I-m-not-getting-any-notifications-on-Android-</string>
     <string name="debug_report__title">Wire debug report - %1$s</string>
     <string name="debug_report__body">Please describe the steps required to reproduce the issue, provide screenshots if possible and send this email.\n\n</string>
     <string name="pref_advanced_ws_foreground_title">Maintain connection to server</string>
@@ -693,6 +696,12 @@
     <!-- No Internet connection -->
     <string name="system_status__no_internet">NO INTERNET</string>
     <string name="system_status__no_server_connection">CONNECTING&#8230;</string>
+
+    <!-- Notifications fix webpage -->
+    <string name="notifications_webpage_popup_title">Some notifications might be missing</string>
+    <string name="notifications_webpage_popup_description">It seems that your phone prevented Wire from receiving some notifications. You can go to Wire Support to learn how to fix that.</string>
+    <string name="notifications_webpage_popup_dismiss">Don\'t show again</string>
+    <string name="notifications_webpage_popup_ok">Go to the webpage</string>
 
     <!-- SHARING -->
     <string name="system_status__sharing">CHOOSE A CONVERSATION</string>

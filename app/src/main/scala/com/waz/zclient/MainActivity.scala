@@ -22,17 +22,19 @@ import android.content.Intent._
 import android.content.res.Configuration
 import android.graphics.drawable.ColorDrawable
 import android.graphics.{Color, Paint, PixelFormat}
+import android.net.Uri
 import android.os.{Build, Bundle}
 import android.support.v4.app.{Fragment, FragmentTransaction}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.{error, info, verbose, warn}
+import com.waz.content.GlobalPreferences
 import com.waz.content.UserPreferences._
 import com.waz.model.{ConvId, UserId}
 import com.waz.service.AccountManager.ClientRegistrationState.{LimitReached, PasswordMissing, Registered, Unregistered}
 import com.waz.service.ZMessaging.clock
-import com.waz.service.{AccountManager, AccountsService, ZMessaging}
+import com.waz.service.{AccountManager, AccountsService, GlobalModule, ZMessaging}
 import com.waz.threading.{CancellableFuture, Threading}
-import com.waz.utils.events.Signal
+import com.waz.utils.events.{EventContext, Signal}
 import com.waz.utils.{RichInstant, returning}
 import com.waz.zclient.Intents._
 import com.waz.zclient.SpinnerController.{Hide, Show}
@@ -52,7 +54,7 @@ import com.waz.zclient.preferences.{PreferencesActivity, PreferencesController}
 import com.waz.zclient.tracking.{CrashController, UiTrackingController}
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.StringUtils.TextDrawing
-import com.waz.zclient.utils.{BuildConfigUtils, Emojis, IntentUtils, ViewUtils}
+import com.waz.zclient.utils.{BuildConfigUtils, ContextUtils, Emojis, IntentUtils, ViewUtils}
 import com.waz.zclient.views.LoadingIndicatorView
 import net.hockeyapp.android.NativeCrashManager
 
@@ -147,6 +149,24 @@ class MainActivity extends BaseActivity
         finish()
       case _ => //
     } (Threading.Ui)
+
+
+    ZMessaging.currentGlobal.notifications.notificationEventsMissed.onUi { _ =>
+      inject[GlobalModule].prefs(GlobalPreferences.MissedEventsWarningDialog).apply().flatMap {
+        case true =>
+          ContextUtils.showConfirmationDialogWithNeutralButton(
+            title = R.string.notifications_webpage_popup_title,
+            msg = R.string.notifications_webpage_popup_description,
+            neutralRes = R.string.notifications_webpage_popup_dismiss,
+            positiveRes = R.string.notifications_webpage_popup_ok
+          ).map {
+            case Some(true) => startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.pref_advanced_notifications_webpage_url))))
+            case Some(false) =>
+            case None => inject[GlobalModule].prefs(GlobalPreferences.MissedEventsWarningDialog).mutate(_ => false)
+          }
+        case false => Future.successful({})
+      }
+    }(EventContext.Global)
 
     val loadingIndicator = findViewById[LoadingIndicatorView](R.id.progress_spinner)
 

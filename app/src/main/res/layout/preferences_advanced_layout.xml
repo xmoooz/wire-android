@@ -61,6 +61,14 @@
                 app:subtitle="@string/pref_advanced_ws_foreground_summary"
             />
 
+            <com.waz.zclient.preferences.views.TextButton
+                android:id="@+id/preferences_notifications_webpage"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/preference_button_height"
+                app:subtitle="@string/pref_advanced_notifications_webpage_summary"
+                app:title="@string/pref_advanced_notifications_webpage_title"
+                />
+
         </LinearLayout>
 
     </ScrollView>
