@@ -28,17 +28,18 @@ import com.waz.content.UserPreferences
 import com.waz.media.manager.MediaManager
 import com.waz.media.manager.context.IntensityLevel
 import com.waz.model.UserId
-import com.waz.service.{AccountsService, ZMessaging}
+import com.waz.service.{AccountsService, MediaManagerService, ZMessaging}
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, Signal}
+import com.waz.zclient.common.controllers.SoundController2.Sound
 import com.waz.zclient.utils.ContextUtils._
-import com.waz.zclient.utils.{DeprecationUtils, RingtoneUtils}
 import com.waz.zclient.utils.RingtoneUtils.{getUriForRawId, isDefaultValue}
+import com.waz.zclient.utils.{DeprecationUtils, RingtoneUtils}
 import com.waz.zclient.{R, _}
 
+import scala.collection.generic.CanBuildFrom
 import scala.concurrent.Await
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.duration._
+import scala.concurrent.duration.{FiniteDuration, _}
 import scala.util.Try
 
 
@@ -64,7 +65,6 @@ trait SoundController {
   def playCameraShutterSound(): Unit
   def playRingFromThemInCall(play: Boolean): Unit
 }
-
 
 
 //TODO Dean - would be nice to change these unit methods to listeners on signals from the classes that could trigger sounds.
@@ -243,4 +243,199 @@ class SoundControllerImpl(implicit inj: Injector, cxt: Context) extends SoundCon
       case e: Exception => error(s"Could not set custom uri: $uri", e)
     }
   }
+}
+
+trait SoundController2 {
+  def play(userId: UserId, sound: Sound): Unit
+  def stop(userId: UserId, sound: Sound): Unit
+}
+
+object SoundController2 {
+
+  sealed trait Sound
+  object Sound {
+    case object IncomingCallRingtone extends Sound
+    case object OutgoingCallRingtone extends Sound
+    case object IncomingCallRingtoneInCall extends Sound
+
+    case object PingFromMe extends Sound
+    case object PingFromThem extends Sound
+
+    case object FirstIncomingMessage extends Sound
+    case object IncomingMessage extends Sound
+
+    case object CallEstablished extends Sound
+    case object CallEnded extends Sound
+    case object CallDropped extends Sound
+    case object Alert extends Sound
+    case object CameraShutter extends Sound
+  }
+
+  case class SoundSettings(ringTone: Option[Uri], textTone: Option[Uri], pingTone: Option[Uri])
+}
+
+class SoundConroller2Impl(implicit inj: Injector, cxt: Context) extends SoundController2 with Injectable {
+  import SignalUtils._
+  import SoundConroller2Impl._
+  import SoundController2.Sound._
+  import SoundController2._
+
+  private val accountsService = inject[AccountsService]
+
+  private def registerCustomUri(mm: MediaManager, uri: Option[Uri], sounds: Seq[Sound]): Unit = {
+    sounds.map(createSoundMediaManagerKey).foreach { sKey =>
+      uri.fold(mm.unregisterMedia(sKey)(mm.registerMediaFileUrl(sKey, _)))
+    }
+  }
+
+  private def mediaManagerWithSettings(zms: ZMessaging): Signal[(MediaManagerService, SoundSettings)] =
+    for {
+      ringTone <- zms.userPrefs.preference(UserPreferences.RingTone).signal.optional
+      textTone <- zms.userPrefs.preference(UserPreferences.TextTone).signal.optional
+      pingTone <- zms.userPrefs.preference(UserPreferences.PingTone).signal.optional
+    } yield
+      zms.mediamanager ->
+      SoundSettings(ringTone.map(Uri.parse), textTone.map(Uri.parse), pingTone.map(Uri.parse))
+
+  (for {
+    zmss <- accountsService.zmsInstances
+    managersWithSettings <- SignalUtils.traverse(zmss)(mediaManagerWithSettings)
+  } yield managersWithSettings) { managersWithSettings =>
+    managersWithSettings foreach { case (manager, settings) =>
+      manager.mediaManager.foreach { mm =>
+        registerCustomUri(mm, settings.ringTone, Seq(IncomingCallRingtone, OutgoingCallRingtone, IncomingCallRingtoneInCall))
+        registerCustomUri(mm, settings.pingTone, Seq(PingFromMe, PingFromThem))
+        registerCustomUri(mm, settings.textTone, Seq(IncomingMessage, FirstIncomingMessage))
+      }
+    }
+  }
+
+  private val mediaManagersByUserId =
+    for {
+      zmss <- accountsService.zmsInstances
+      userIdsWithZms <- SignalUtils.traverse(zmss)(zms => Signal.future(zms.mediamanager.mediaManager.map(zms.selfUserId -> _)))
+    } yield userIdsWithZms.toMap
+
+  private def withMediaManager(userId: UserId)(action: MediaManager => Unit): Unit = {
+    mediaManagersByUserId.currentValue.flatMap(_.get(userId)) match {
+      case Some(mm) => action(mm)
+      case None =>
+        //TODO We should do something with this case
+        verbose(s"Can not find media manager for the user: $userId")
+    }
+  }
+
+  def play(userId: UserId, sound: Sound): Unit =
+    withMediaManager(userId)(_.playMedia(createSoundMediaManagerKey(sound)))
+
+  def stop(userId: UserId, sound: Sound): Unit =
+    withMediaManager(userId)(_.stopMedia(createSoundMediaManagerKey(sound)))
+
+}
+
+object SoundConroller2Impl {
+  import SoundController2.Sound
+  import SoundController2.Sound._
+
+  def createSoundMediaManagerKey(sound: Sound)(implicit ctx: Context): String =
+    getResEntryName(getSoundDefaultRawId(sound))
+
+  def getSoundDefaultRawId(sound: Sound): Int = sound match {
+    case IncomingCallRingtone => R.raw.ringing_from_them
+    case OutgoingCallRingtone => R.raw.ringing_from_me
+    case IncomingCallRingtoneInCall => R.raw.ringing_from_them_incall
+    case PingFromMe => R.raw.ping_from_me
+    case PingFromThem => R.raw.ping_from_them
+    case FirstIncomingMessage => R.raw.first_message
+    case IncomingMessage => R.raw.new_message
+    case Alert => R.raw.alert
+    case CameraShutter => R.raw.camera
+    case CallEnded => R.raw.talk_later
+    case CallDropped => R.raw.call_drop
+  }
+
+}
+
+trait VibrationController {
+  def incomingRingToneVibration(userId: UserId): Unit
+  def callEstablishedVibration(userId: UserId): Unit
+  def callEndedVibration(userId: UserId): Unit
+  def callDroppedVibration(userId: UserId): Unit
+  def alertVibration(userId: UserId): Unit
+  def shortVibration(userId: UserId): Unit
+  def messageIncomingVibration(userId: UserId): Unit
+  def pingFromThemVibration(userId: UserId): Unit
+  def cameraShutterVibration(userId: UserId): Unit
+  def cancelCurrentVibration(): Unit
+}
+
+class VibrationControllerImpl(implicit inj: Injector, cxt: Context) extends VibrationController with Injectable {
+
+  private val vibrator = inject[Vibrator]
+  private val accountsService = inject[AccountsService]
+
+  private def userIdWithVibrationEnabled(zms: ZMessaging): Signal[(UserId, Boolean)] =
+    zms.userPrefs.preference(UserPreferences.VibrateEnabled).signal.map(zms.selfUserId -> _)
+
+  private val isVibrationEnabled =
+    for {
+      zmss <- accountsService.zmsInstances
+      userIdsWithVibrationEnabled <- SignalUtils.traverse(zmss)(userIdWithVibrationEnabled)
+    } yield userIdsWithVibrationEnabled.toMap
+
+  private def vibrate(userId: UserId, patternId: Int, loop: Boolean = false): Unit = {
+    cancelCurrentVibration()
+    if (isVibrationEnabled.currentValue.flatMap(_.get(userId)).getOrElse(true)) {
+      DeprecationUtils.vibrate(vibrator, getIntArray(patternId).map(_.toLong), if (loop) 0 else -1)
+    }
+  }
+
+  override def incomingRingToneVibration(userId: UserId): Unit =
+    vibrate(userId, R.array.ringing_from_them, loop = true)
+
+  override def callEstablishedVibration(userId: UserId): Unit =
+    vibrate(userId, R.array.ready_to_talk)
+
+  override def callEndedVibration(userId: UserId): Unit =
+    vibrate(userId, R.array.talk_later)
+
+  override def callDroppedVibration(userId: UserId): Unit =
+    vibrate(userId, R.array.call_dropped)
+
+  override def alertVibration(userId: UserId): Unit =
+    vibrate(userId, R.array.alert)
+
+  override def shortVibration(userId: UserId): Unit =
+    vibrate(userId, R.array.alert)
+
+  override def messageIncomingVibration(userId: UserId): Unit =
+    vibrate(userId, R.array.new_message)
+
+  override def pingFromThemVibration(userId: UserId): Unit =
+    vibrate(userId, R.array.ping_from_them)
+
+  override def cameraShutterVibration(userId: UserId): Unit =
+    vibrate(userId, R.array.camera)
+
+  override def cancelCurrentVibration(): Unit =
+    vibrator.cancel()
+
+}
+
+//TODO move this methods into Signal
+object SignalUtils {
+
+  implicit class SignalOpt[T](val value: Signal[T]) {
+    def optional: Signal[Option[T]] = value.map(Option(_)).orElse(Signal.const(None))
+    def headSync(timeout: FiniteDuration = 3.seconds)(implicit logTag: LogTag): Option[T] =
+      Try(Await.result(value.head(logTag), timeout)).toOption
+  }
+
+  def traverse[A, B, M[X] <: TraversableOnce[X]](in: M[A])
+                                                (fn: A => Signal[B])
+                                                (implicit cbf: CanBuildFrom[M[A], B, M[B]]): Signal[M[B]] =
+    in.foldLeft(Signal.const(cbf(in))) { (fr, a) =>
+      val fb = fn(a)
+      for (r <- fr; b <- fb) yield r += b
+    }.map(_.result())
 }
