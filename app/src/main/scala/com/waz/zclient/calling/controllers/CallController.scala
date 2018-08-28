@@ -18,6 +18,7 @@
 package com.waz.zclient.calling.controllers
 
 import android.os.PowerManager
+import android.telephony.{PhoneStateListener, TelephonyManager}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
 import com.waz.api.Verification
@@ -25,7 +26,7 @@ import com.waz.avs.VideoPreview
 import com.waz.model.{AssetId, LocalInstant, UserData, UserId}
 import com.waz.service.ZMessaging.clock
 import com.waz.service.call.Avs.VideoState
-import com.waz.service.call.{CallInfo, CallingService}
+import com.waz.service.call.{CallInfo, CallingService, GlobalCallingService}
 import com.waz.service.call.CallInfo.CallState.{SelfJoining, _}
 import com.waz.service.{AccountsService, GlobalModule, NetworkModeService, ZMessaging}
 import com.waz.threading.{CancellableFuture, Threading}
@@ -68,6 +69,9 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     case Some(z) => z.calling.currentCall
     case _       => Signal.const(None)
   }
+
+  private val gcmManager = new GCMManager(currentCallOpt.map(_.isDefined))
+
   val currentCall   = currentCallOpt.collect { case Some(c) => c }
   val callConvIdOpt = currentCallOpt.map(_.map(_.convId))
 
@@ -418,6 +422,50 @@ private class ScreenManager(implicit injector: Injector) extends Injectable {
     }
     wakeLock = None
   }
+}
+
+private class GCMManager(callActive: Signal[Boolean])(implicit inject: Injector, ec: EventContext) extends Injectable {
+  private lazy val telephonyManager = inject[TelephonyManager]
+
+  private var listening = false
+  private lazy val listener = new PhoneStateListener {
+    override def onCallStateChanged(state: Int, incomingNumber: String): Unit = {
+
+      import TelephonyManager._
+      val stateStr = state match {
+        case CALL_STATE_IDLE => "idle"
+        case CALL_STATE_RINGING => "ringing"
+        case CALL_STATE_OFFHOOK => "offhook"
+      }
+
+      info(s"GSM call state changed: $stateStr")
+      if (state == CALL_STATE_OFFHOOK) dropWireCalls()
+    }
+  }
+
+  callActive.onUi {
+    case false => stopListening()
+    case true =>
+      if (telephonyManager.getCallState == TelephonyManager.CALL_STATE_OFFHOOK) {
+        info(s"GSM call in progress, leaving voice channels or v3 call")
+        dropWireCalls()
+      }
+      else startListening()
+  }
+
+  private def startListening() = if (!listening) {
+    info("startListening")
+    telephonyManager.listen(listener, PhoneStateListener.LISTEN_CALL_STATE)
+    listening = true
+  }
+
+  private def stopListening() = if (listening) {
+    info("stopListening")
+    telephonyManager.listen(listener, PhoneStateListener.LISTEN_NONE)
+    listening = false
+  }
+
+  private def dropWireCalls() = inject[GlobalCallingService].dropActiveCalls()
 }
 
 object CallController {
