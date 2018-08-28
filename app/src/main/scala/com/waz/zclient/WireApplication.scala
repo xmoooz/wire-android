@@ -29,6 +29,7 @@ import android.os.{Build, PowerManager, Vibrator}
 import android.renderscript.RenderScript
 import android.support.multidex.MultiDexApplication
 import android.support.v4.app.{FragmentActivity, FragmentManager}
+import android.telephony.TelephonyManager
 import com.google.android.gms.security.ProviderInstaller
 import com.evernote.android.job.{JobCreator, JobManager}
 import com.waz.ZLog.ImplicitTag._
@@ -103,6 +104,7 @@ object WireApplication {
     bind [AudioManager]         to ctx.getSystemService(Context.AUDIO_SERVICE).asInstanceOf[AudioManager]
     bind [SensorManager]        to ctx.getSystemService(Context.SENSOR_SERVICE).asInstanceOf[SensorManager]
     bind [NotificationManager]  to ctx.getSystemService(Context.NOTIFICATION_SERVICE).asInstanceOf[NotificationManager]
+    bind [TelephonyManager]     to ctx.getSystemService(Context.TELEPHONY_SERVICE).asInstanceOf[TelephonyManager]
     bind [RenderScript]         to RenderScript.create(ctx)
 
     def controllerFactory = APP_INSTANCE.asInstanceOf[ZApplication].getControllerFactory
