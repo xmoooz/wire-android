@@ -31,6 +31,7 @@ import com.waz.service.assets.AssetService.BitmapResult.BitmapLoaded
 import com.waz.service.call.CallInfo
 import com.waz.service.call.CallInfo.CallState._
 import com.waz.service.{AccountManager, AccountsService, GlobalModule, ZMessaging}
+import com.waz.services.calling.CallWakeService._
 import com.waz.services.calling.CallingNotificationsService
 import com.waz.threading.Threading.Implicits.Background
 import com.waz.ui.MemoryImageCache.BitmapRequest.Regular
@@ -43,7 +44,6 @@ import com.waz.zclient.calling.controllers.CallController
 import com.waz.zclient.common.views.ImageController
 import com.waz.zclient.utils.ContextUtils.{getString, _}
 import com.waz.zclient.utils.RingtoneUtils
-import com.waz.zms.CallWakeService
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -246,8 +246,8 @@ object CallingNotificationsController {
     builder
   }
 
-  def createJoinIntent(account: UserId, convId: ConvId)(implicit cxt: content.Context) = pendingIntent((account.str + convId.str).hashCode, CallWakeService.joinIntent(Context.wrap(cxt), account, convId))
-  def createEndIntent(account: UserId, convId: ConvId)(implicit cxt: content.Context) = pendingIntent((account.str + convId.str).hashCode, CallWakeService.silenceIntent(Context.wrap(cxt), account, convId))
+  def createJoinIntent(account: UserId, convId: ConvId)(implicit cxt: content.Context) = pendingIntent((account.str + convId.str).hashCode, joinIntent(Context.wrap(cxt), account, convId))
+  def createEndIntent(account: UserId, convId: ConvId)(implicit cxt: content.Context) = pendingIntent((account.str + convId.str).hashCode, silenceIntent(Context.wrap(cxt), account, convId))
 
   def pendingIntent(reqCode: Int, intent: Intent)(implicit cxt: content.Context) = PendingIntent.getService(cxt, reqCode, Intent.unwrap(intent), PendingIntent.FLAG_UPDATE_CURRENT)
 }

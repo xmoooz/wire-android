@@ -230,6 +230,9 @@
 
         <meta-data android:name="com.mixpanel.android.MPConfig.MinimumSessionDuration" android:value="2000" />
 
+        <service android:name="com.waz.zms.CallWakeService"
+                 android:exported="true"/>
+
         <service
             android:name="com.waz.services.fcm.FCMHandlerService">
             <intent-filter>
@@ -284,6 +287,8 @@
         </receiver>
 
         <service android:name="com.waz.services.calling.CallingNotificationsService" />
+        <service android:name="com.waz.services.calling.CallWakeService" android:exported="true" />
+
     </application>
 
 </manifest>
