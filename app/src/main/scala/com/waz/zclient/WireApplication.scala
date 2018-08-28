@@ -177,7 +177,8 @@ object WireApplication {
     bind [PasswordController]      to new PasswordController()
     bind [CallController]          to new CallController()
     bind [GlobalCameraController]  to new GlobalCameraController(new AndroidCameraFactory)
-    bind [SoundController]         to new SoundControllerImpl()
+    bind [SoundController2]        to new SoundConroller2Impl()
+    bind [VibrationController]     to new VibrationControllerImpl()
     bind [ThemeController]         to new ThemeController
     bind [SpinnerController]       to new SpinnerController()
 

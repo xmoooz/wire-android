@@ -40,6 +40,7 @@ import com.waz.utils.{LoggedTry, _}
 import com.waz.zclient.Intents.{CallIntent, OpenCallingScreen}
 import com.waz.zclient._
 import com.waz.zclient.calling.controllers.CallController
+import com.waz.zclient.common.controllers.SoundController2.Sound
 import com.waz.zclient.common.views.ImageController
 import com.waz.zclient.utils.ContextUtils.{getString, _}
 import com.waz.zclient.utils.RingtoneUtils
@@ -109,7 +110,13 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
 
   private lazy val currentNotificationsPref = inject[Signal[AccountManager]].map(_.userPrefs(UserPreferences.CurrentNotifications))
 
-  notifications.map(_.exists(!_.isMainCall)).onUi(soundController.playRingFromThemInCall)
+  (for {
+    userId <- callingZms.map(_.selfUserId)
+    play <- notifications.map(_.exists(!_.isMainCall))
+  } yield (play, userId)).onUi { case (play, userId) =>
+    if (play) soundController.play(userId, Sound.IncomingCallRingtoneInCall)
+    else soundController.stop(userId, Sound.IncomingCallRingtoneInCall)
+  }
 
   callCtrler.currentCallOpt.map(_.isDefined).onUi {
     case true => cxt.startService(new content.Intent(cxt, classOf[CallingNotificationsService]))

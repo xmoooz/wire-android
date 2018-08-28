@@ -33,7 +33,7 @@ import com.waz.threading.{CancellableFuture, Threading}
 import com.waz.utils.events.Signal
 import com.waz.utils.returning
 import com.waz.zclient.common.controllers.global.AccentColorController
-import com.waz.zclient.common.controllers.{SoundController, ThemeController, UserAccountsController}
+import com.waz.zclient.common.controllers.{ThemeController, UserAccountsController}
 import com.waz.zclient.connect.{PendingConnectRequestManagerFragment, SendConnectRequestFragment}
 import com.waz.zclient.controllers.camera.ICameraController
 import com.waz.zclient.controllers.confirmation._
@@ -78,7 +78,6 @@ class ConversationListManagerFragment extends Fragment
   lazy val userAccounts = inject[UserAccountsController]
   lazy val users        = inject[UsersController]
   lazy val themes       = inject[ThemeController]
-  lazy val sounds       = inject[SoundController]
   lazy val convListController = inject[ConversationListController]
 
   private lazy val convController                 = inject[ConversationController]

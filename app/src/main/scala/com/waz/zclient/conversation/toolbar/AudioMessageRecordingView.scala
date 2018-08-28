@@ -38,7 +38,7 @@ import com.waz.threading.Threading
 import com.waz.utils.events.{ClockSignal, Signal}
 import com.waz.utils.{RichThreetenBPDuration, returning}
 import com.waz.zclient.common.controllers.global.AccentColorController
-import com.waz.zclient.common.controllers.{SoundController, ThemeController}
+import com.waz.zclient.common.controllers.{ThemeController, VibrationController}
 import com.waz.zclient.controllers.globallayout.IGlobalLayoutController
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.core.api.scala.ModelObserver
@@ -65,6 +65,7 @@ class AudioMessageRecordingView (val context: Context, val attrs: AttributeSet, 
   lazy val permissions      = inject[PermissionsService]
   lazy val layoutController = inject[IGlobalLayoutController]
   lazy val convController   = inject[ConversationController]
+  lazy val zms = inject[ZMessaging]
 
   private val slideControlState = Signal(Recording)
 
@@ -220,7 +221,7 @@ class AudioMessageRecordingView (val context: Context, val attrs: AttributeSet, 
       case true =>
         setVisibility(VISIBLE)
         slideControlState ! Recording
-        inject[SoundController].shortVibrate()
+        inject[VibrationController].shortVibration(zms.selfUserId)
         record()
       case false =>
         permissions.requestAllPermissions(ListSet(RECORD_AUDIO)).map {

@@ -25,16 +25,17 @@ import com.waz.avs.VideoPreview
 import com.waz.model.{AssetId, LocalInstant, UserData, UserId}
 import com.waz.service.ZMessaging.clock
 import com.waz.service.call.Avs.VideoState
-import com.waz.service.call.{CallInfo, CallingService}
 import com.waz.service.call.CallInfo.CallState.{SelfJoining, _}
+import com.waz.service.call.{CallInfo, CallingService}
 import com.waz.service.{AccountsService, GlobalModule, NetworkModeService, ZMessaging}
 import com.waz.threading.{CancellableFuture, Threading}
 import com.waz.utils._
 import com.waz.utils.events._
 import com.waz.zclient.calling.CallingActivity
 import com.waz.zclient.calling.controllers.CallController.CallParticipantInfo
+import com.waz.zclient.common.controllers.SoundController2.Sound
 import com.waz.zclient.common.controllers.ThemeController.Theme
-import com.waz.zclient.common.controllers.{SoundController, ThemeController}
+import com.waz.zclient.common.controllers.{SoundController2, ThemeController, VibrationController}
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.DeprecationUtils
@@ -49,7 +50,8 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   import VideoState._
 
   private val screenManager  = new ScreenManager
-  val soundController        = inject[SoundController]
+  val soundController        = inject[SoundController2]
+  val vibrationController    = inject[VibrationController]
   val conversationController = inject[ConversationController]
   val networkMode            = inject[NetworkModeService].networkMode
   val accounts               = inject[AccountsService]
@@ -255,11 +257,13 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   }(EventContext.Global)
 
   (lastCallAccountId zip isCallEstablished).onChanged.filter(_._2 == true) { case (userId, _) =>
-    soundController.playCallEstablishedSound(userId)
+    soundController.play(userId, Sound.CallEstablished)
+    vibrationController.callEstablishedVibration(userId)
   }
 
   (lastCallAccountId zip isCallActive).onChanged.filter(_._2 == false) { case (userId, _) =>
-    soundController.playCallEndedSound(userId)
+    soundController.play(userId, Sound.CallEnded)
+    vibrationController.callEndedVibration(userId)
   }
 
   isCallActive.onChanged.filter(_ == false).on(Threading.Ui) { _ =>
@@ -283,10 +287,10 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   (for {
     m <- isMuted.orElse(Signal.const(false))
     i <- isCallIncoming
-    uid <- lastCallAccountId
-  } yield (m, i, uid)) { case (m, i, uid) =>
-    //TODO Why we call this method when isCallIncoming is false?
-    soundController.setIncomingRingTonePlaying(uid, !m && i)
+    userId <- lastCallAccountId
+  } yield (m, i, userId)) { case (m, i, uid) =>
+    if (!m && i) soundController.play(uid, Sound.IncomingCallRingtone)
+    else soundController.stop(uid, Sound.IncomingCallRingtone)
   }
 
   val convDegraded = conversation.map(_.verified == Verification.UNVERIFIED)
@@ -319,8 +323,10 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     v <- isVideoCall
     o <- isCallOutgoing
     d <- convDegraded
-  } yield (v, o & !d)) { case (v, play) =>
-    soundController.setOutgoingRingTonePlaying(play, v)
+    userId <- lastCallAccountId
+  } yield (v, o & !d, userId)) { case (v, play, userId) =>
+    val sound = if (v) Sound.OutgoingVideoCallRingtone else Sound.OutgoingCallRingtone
+    if (play) soundController.play(userId, sound) else soundController.stop(userId, sound)
   }
 
   def setVideoPreview(view: Option[VideoPreview]): Unit =

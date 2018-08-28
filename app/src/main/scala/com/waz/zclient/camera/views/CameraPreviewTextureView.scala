@@ -26,12 +26,14 @@ import android.util.AttributeSet
 import android.view._
 import com.waz.ZLog
 import com.waz.permissions.PermissionsService
+import com.waz.service.ZMessaging
 import com.waz.threading.CancellableFuture.CancelException
 import com.waz.threading.Threading
 import com.waz.utils.returning
 import com.waz.zclient.camera._
 import com.waz.zclient.camera.controllers.{GlobalCameraController, Orientation, PreviewSize}
-import com.waz.zclient.common.controllers.SoundController
+import com.waz.zclient.common.controllers.{SoundController2, VibrationController}
+import com.waz.zclient.common.controllers.SoundController2.Sound
 import com.waz.zclient.utils.ViewUtils
 import com.waz.zclient.{R, ViewHelper}
 import timber.log.Timber
@@ -50,7 +52,9 @@ class CameraPreviewTextureView(val cxt: Context, val attrs: AttributeSet, val de
 
   private val controller = inject[GlobalCameraController]
   private val permissions = inject[PermissionsService]
-  private val soundController = inject[SoundController]
+  private val soundController = inject[SoundController2]
+  private val vibrationController = inject[VibrationController]
+  private val zms = inject[ZMessaging]
 
   private var currentTexture = Option.empty[(SurfaceTexture, Int, Int)]
 
@@ -70,7 +74,8 @@ class CameraPreviewTextureView(val cxt: Context, val attrs: AttributeSet, val de
   }
 
   def takePicture() = controller.takePicture {
-    soundController.playCameraShutterSound()
+    soundController.play(zms.selfUserId, Sound.CameraShutter)
+    vibrationController.cameraShutterVibration(zms.selfUserId)
   }.onComplete {
     case Success(data) => observer.foreach {
       _.onPictureTaken(data, controller.getCurrentCameraFacing.getOrElse(CameraFacing.BACK) == CameraFacing.FRONT)

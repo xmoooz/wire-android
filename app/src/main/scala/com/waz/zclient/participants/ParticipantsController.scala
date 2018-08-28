@@ -23,7 +23,8 @@ import com.waz.model._
 import com.waz.service.ZMessaging
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, EventStream, Signal}
-import com.waz.zclient.common.controllers.{SoundController, ThemeController}
+import com.waz.zclient.common.controllers.SoundController2.Sound
+import com.waz.zclient.common.controllers.{SoundController2, ThemeController, VibrationController}
 import com.waz.zclient.controllers.confirmation.{ConfirmationRequest, IConfirmationController, TwoButtonConfirmationCallback}
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.pages.main.conversation.controller.IConversationScreenController
@@ -39,6 +40,8 @@ class ParticipantsController(implicit injector: Injector, context: Context, ec: 
 
   private implicit lazy val uiStorage     = inject[UiStorage]
   private lazy val zms                    = inject[Signal[ZMessaging]]
+  private lazy val soundController        = inject[SoundController2]
+  private lazy val vibrationController    = inject[VibrationController]
   private lazy val convController         = inject[ConversationController]
   private lazy val confirmationController = inject[IConfirmationController]
   private lazy val screenController       = inject[IConversationScreenController]
@@ -130,7 +133,10 @@ class ParticipantsController(implicit injector: Injector, context: Context, ec: 
         .withWireTheme(inject[ThemeController].getThemeDependentOptionsTheme)
         .build
       confirmationController.requestConfirmation(request, IConfirmationController.PARTICIPANTS)
-      inject[SoundController].playAlert()
+      zms.currentValue.foreach { zms =>
+        soundController.play(zms.selfUserId, Sound.Alert)
+        vibrationController.alertVibration(zms.selfUserId)
+      }
     case _ =>
   }(Threading.Ui)
 }

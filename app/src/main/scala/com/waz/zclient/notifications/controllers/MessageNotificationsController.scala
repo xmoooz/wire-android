@@ -42,8 +42,8 @@ import com.waz.utils.events.{EventContext, EventStream, Signal}
 import com.waz.utils.wrappers.Bitmap
 import com.waz.zclient.WireApplication.{AccountToAssetsStorage, AccountToImageLoader}
 import com.waz.zclient._
-import com.waz.zclient.common.controllers.SoundController
 import com.waz.zclient.common.controllers.global.AccentColorController
+import com.waz.zclient.common.controllers.{SoundController2, VibrationController}
 import com.waz.zclient.controllers.navigation.Page
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.messages.controllers.NavigationController
@@ -63,7 +63,8 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
   private lazy val notificationsService  = inject[GlobalNotificationsService]
   private lazy val accounts              = inject[AccountsService]
   private lazy val selfId                = inject[Signal[UserId]]
-  private lazy val soundController       = inject[SoundController]
+  private lazy val soundController       = inject[SoundController2]
+  private lazy val vibrationController   = inject[VibrationController]
   private lazy val navigationController  = inject[NavigationController]
   private lazy val convController        = inject[ConversationController]
   private lazy val convsStorage          = inject[Signal[ConversationStorage]]
@@ -324,7 +325,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
       category      = Some(NotificationCompat.CATEGORY_MESSAGE),
       priority      = Some(NotificationCompat.PRIORITY_HIGH),
       smallIcon     = Some(R.drawable.ic_menu_logo),
-      vibrate       = if (!silent && soundController.isVibrationEnabled(userId)) Some(getIntArray(R.array.new_message_gcm).map(_.toLong)) else Some(Array(0l,0l)),
+      vibrate       = if (!silent && vibrationController.isVibrationEnabled(userId)) Some(getIntArray(R.array.new_message_gcm).map(_.toLong)) else Some(Array(0l,0l)),
       autoCancel    = Some(true),
       sound         = getSound(ns, silent),
       onlyAlertOnce = Some(ns.forall(_.hasBeenDisplayed)),
@@ -337,15 +338,16 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
   }
 
   private def getSound(ns: Seq[NotificationInfo], silent: Boolean) = {
-    if (soundController.soundIntensityNone || silent) None
-    else if (!soundController.soundIntensityFull && (ns.size > 1 && ns.lastOption.forall(_.tpe != KNOCK))) None
-    else ns.map(_.tpe).lastOption.fold(Option.empty[Uri]) {
-      case ASSET | ANY_ASSET | VIDEO_ASSET | AUDIO_ASSET |
-           LOCATION | TEXT | CONNECT_ACCEPTED | CONNECT_REQUEST | RENAME |
-           LIKE  => Option(getSelectedSoundUri(soundController.currentTonePrefs._2, R.raw.new_message_gcm))
-      case KNOCK => Option(getSelectedSoundUri(soundController.currentTonePrefs._3, R.raw.ping_from_them))
-      case _     => None
-    }
+//    if (soundController.soundIntensityNone || silent) None
+//    else if (!soundController.soundIntensityFull && (ns.size > 1 && ns.lastOption.forall(_.tpe != KNOCK))) None
+//    else ns.map(_.tpe).lastOption.fold(Option.empty[Uri]) {
+//      case ASSET | ANY_ASSET | VIDEO_ASSET | AUDIO_ASSET |
+//           LOCATION | TEXT | CONNECT_ACCEPTED | CONNECT_REQUEST | RENAME |
+//           LIKE  => Option(getSelectedSoundUri(soundController.currentTonePrefs._2, R.raw.new_message_gcm))
+//      case KNOCK => Option(getSelectedSoundUri(soundController.currentTonePrefs._3, R.raw.ping_from_them))
+//      case _     => None
+//    }
+    None
   }
 
   private[notifications] def getMessage(n: NotificationInfo, singleConversationInBatch: Boolean): SpannableWrapper = {

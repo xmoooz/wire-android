@@ -33,6 +33,7 @@ import com.waz.service.{NetworkModeService, ZMessaging}
 import com.waz.threading.{CancellableFuture, Threading}
 import com.waz.utils.events.{EventContext, EventStream, Signal}
 import com.waz.zclient.calling.controllers.CallController
+import com.waz.zclient.common.controllers.SoundController2.Sound
 import com.waz.zclient.common.controllers._
 import com.waz.zclient.controllers.location.ILocationController
 import com.waz.zclient.conversation.ConversationController
@@ -58,6 +59,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
   val conversationController  = inject[ConversationController]
   lazy val convListController = inject[ConversationListController]
   lazy val callController     = inject[CallController]
+  lazy val vibrationController = inject[VibrationController]
 
   val conv = conversationController.currentConv
 
@@ -250,7 +252,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
     }
 
   private lazy val locationController = inject[ILocationController]
-  private lazy val soundController    = inject[SoundController]
+  private lazy val soundController    = inject[SoundController2]
   private lazy val permissions        = inject[PermissionsService]
   private lazy val activity           = inject[Activity]
   private lazy val screenController   = inject[ScreenController]
@@ -270,7 +272,10 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
         z    <- zms.head
         cId  <- conversationController.currentConvId.head
         _    <- z.convsUi.knock(cId)
-      } soundController.playPingFromMe()
+      } {
+        soundController.play(z.selfUserId, Sound.PingFromMe)
+        vibrationController.pingFromMeVibration(z.selfUserId)
+      }
     case Sketch =>
       screenController.showSketch ! DrawingFragment.Sketch.BlankSketch
     case File =>
