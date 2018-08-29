@@ -24,12 +24,12 @@ import android.net.Uri
 import android.os.Build
 import android.support.annotation.RawRes
 import android.support.v4.app.NotificationCompat
-import android.text.TextUtils
 import com.waz.ZLog.ImplicitTag.implicitLogTag
 import com.waz.ZLog.verbose
 import com.waz.api.NotificationsHandler.NotificationType._
 import com.waz.bitmap.BitmapUtils
 import com.waz.content.{AssetsStorage, ConversationStorage, TeamsStorage, UsersStorage}
+import com.waz.media.manager.context.IntensityLevel
 import com.waz.model._
 import com.waz.service.images.ImageLoader
 import com.waz.service.push.GlobalNotificationsService
@@ -43,7 +43,7 @@ import com.waz.utils.wrappers.Bitmap
 import com.waz.zclient.WireApplication.{AccountToAssetsStorage, AccountToImageLoader}
 import com.waz.zclient._
 import com.waz.zclient.common.controllers.global.AccentColorController
-import com.waz.zclient.common.controllers.{SoundController2, VibrationController}
+import com.waz.zclient.common.controllers.{SoundController, VibrationController}
 import com.waz.zclient.controllers.navigation.Page
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.messages.controllers.NavigationController
@@ -63,7 +63,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
   private lazy val notificationsService  = inject[GlobalNotificationsService]
   private lazy val accounts              = inject[AccountsService]
   private lazy val selfId                = inject[Signal[UserId]]
-  private lazy val soundController       = inject[SoundController2]
+  private lazy val soundController       = inject[SoundController]
   private lazy val vibrationController   = inject[VibrationController]
   private lazy val navigationController  = inject[NavigationController]
   private lazy val convController        = inject[ConversationController]
@@ -310,13 +310,8 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
       )
   }
 
-  private def getSelectedSoundUri(value: String, @RawRes defaultResId: Int): Uri =
-    getSelectedSoundUri(value, defaultResId, defaultResId)
-
-  private def getSelectedSoundUri(value: String, @RawRes preferenceDefault: Int, @RawRes returnDefault: Int): Uri = {
-    if (!TextUtils.isEmpty(value) && !RingtoneUtils.isDefaultValue(cxt, value, preferenceDefault)) Uri.parse(value)
-    else RingtoneUtils.getUriForRawId(cxt, returnDefault)
-  }
+  private def getSelectedSoundUri(uri: Option[Uri], @RawRes defaultResId: Int): Uri =
+    uri.getOrElse(RingtoneUtils.getUriForRawId(cxt, defaultResId))
 
   private def commonNotificationProperties(ns: Seq[NotificationInfo], userId: UserId, silent: Boolean, pic: Option[Bitmap]) = {
     val color = notificationColor(userId)
@@ -327,7 +322,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
       smallIcon     = Some(R.drawable.ic_menu_logo),
       vibrate       = if (!silent && vibrationController.isVibrationEnabled(userId)) Some(getIntArray(R.array.new_message_gcm).map(_.toLong)) else Some(Array(0l,0l)),
       autoCancel    = Some(true),
-      sound         = getSound(ns, silent),
+      sound         = getSound(userId, ns, silent),
       onlyAlertOnce = Some(ns.forall(_.hasBeenDisplayed)),
       group         = Some(userId),
       when          = Some(ns.maxBy(_.time.instant).time.instant.toEpochMilli),
@@ -337,17 +332,18 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
     )
   }
 
-  private def getSound(ns: Seq[NotificationInfo], silent: Boolean) = {
-//    if (soundController.soundIntensityNone || silent) None
-//    else if (!soundController.soundIntensityFull && (ns.size > 1 && ns.lastOption.forall(_.tpe != KNOCK))) None
-//    else ns.map(_.tpe).lastOption.fold(Option.empty[Uri]) {
-//      case ASSET | ANY_ASSET | VIDEO_ASSET | AUDIO_ASSET |
-//           LOCATION | TEXT | CONNECT_ACCEPTED | CONNECT_REQUEST | RENAME |
-//           LIKE  => Option(getSelectedSoundUri(soundController.currentTonePrefs._2, R.raw.new_message_gcm))
-//      case KNOCK => Option(getSelectedSoundUri(soundController.currentTonePrefs._3, R.raw.ping_from_them))
-//      case _     => None
-//    }
-    None
+  private def getSound(userId: UserId, ns: Seq[NotificationInfo], silent: Boolean) = {
+    val soundSettings = soundController.getCurrentSettings(userId)
+    val soundIntensity = soundSettings.map(_.soundIntensity).getOrElse(IntensityLevel.FULL)
+    if (soundIntensity == IntensityLevel.NONE || silent) None
+    else if (soundIntensity != IntensityLevel.FULL && (ns.size > 1 && ns.lastOption.forall(_.tpe != KNOCK))) None
+    else ns.map(_.tpe).lastOption.fold(Option.empty[Uri]) {
+      case ASSET | ANY_ASSET | VIDEO_ASSET | AUDIO_ASSET |
+           LOCATION | TEXT | CONNECT_ACCEPTED | CONNECT_REQUEST | RENAME |
+           LIKE  => Some(getSelectedSoundUri(soundSettings.flatMap(_.textTone), R.raw.new_message_gcm))
+      case KNOCK => Some(getSelectedSoundUri(soundSettings.flatMap(_.pingTone), R.raw.ping_from_them))
+      case _     => None
+    }
   }
 
   private[notifications] def getMessage(n: NotificationInfo, singleConversationInBatch: Boolean): SpannableWrapper = {

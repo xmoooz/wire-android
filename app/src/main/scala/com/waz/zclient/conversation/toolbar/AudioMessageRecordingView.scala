@@ -65,7 +65,8 @@ class AudioMessageRecordingView (val context: Context, val attrs: AttributeSet, 
   lazy val permissions      = inject[PermissionsService]
   lazy val layoutController = inject[IGlobalLayoutController]
   lazy val convController   = inject[ConversationController]
-  lazy val zms = inject[ZMessaging]
+  lazy val zms              = inject[Signal[ZMessaging]]
+  lazy val vibrationController = inject[VibrationController]
 
   private val slideControlState = Signal(Recording)
 
@@ -221,7 +222,7 @@ class AudioMessageRecordingView (val context: Context, val attrs: AttributeSet, 
       case true =>
         setVisibility(VISIBLE)
         slideControlState ! Recording
-        inject[VibrationController].shortVibration(zms.selfUserId)
+        zms.currentValue.foreach(z => vibrationController.shortVibration(z.selfUserId))
         record()
       case false =>
         permissions.requestAllPermissions(ListSet(RECORD_AUDIO)).map {

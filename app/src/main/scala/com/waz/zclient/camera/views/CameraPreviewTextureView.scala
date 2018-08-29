@@ -29,11 +29,12 @@ import com.waz.permissions.PermissionsService
 import com.waz.service.ZMessaging
 import com.waz.threading.CancellableFuture.CancelException
 import com.waz.threading.Threading
+import com.waz.utils.events.Signal
 import com.waz.utils.returning
 import com.waz.zclient.camera._
 import com.waz.zclient.camera.controllers.{GlobalCameraController, Orientation, PreviewSize}
-import com.waz.zclient.common.controllers.{SoundController2, VibrationController}
-import com.waz.zclient.common.controllers.SoundController2.Sound
+import com.waz.zclient.common.controllers.{SoundController, VibrationController}
+import com.waz.zclient.common.controllers.SoundController.Sound
 import com.waz.zclient.utils.ViewUtils
 import com.waz.zclient.{R, ViewHelper}
 import timber.log.Timber
@@ -42,7 +43,10 @@ import scala.collection.JavaConverters._
 import scala.collection.immutable.ListSet
 import scala.util.{Failure, Success}
 
-class CameraPreviewTextureView(val cxt: Context, val attrs: AttributeSet, val defStyleAttr: Int) extends TextureView(cxt, attrs, defStyleAttr) with ViewHelper with TextureView.SurfaceTextureListener {
+class CameraPreviewTextureView(val cxt: Context, val attrs: AttributeSet, val defStyleAttr: Int)
+  extends TextureView(cxt, attrs, defStyleAttr)
+    with ViewHelper
+    with TextureView.SurfaceTextureListener {
 
   implicit val logTag = ZLog.logTagFor[CameraPreviewTextureView]
 
@@ -52,9 +56,9 @@ class CameraPreviewTextureView(val cxt: Context, val attrs: AttributeSet, val de
 
   private val controller = inject[GlobalCameraController]
   private val permissions = inject[PermissionsService]
-  private val soundController = inject[SoundController2]
+  private val soundController = inject[SoundController]
   private val vibrationController = inject[VibrationController]
-  private val zms = inject[ZMessaging]
+  private val zms = inject[Signal[ZMessaging]]
 
   private var currentTexture = Option.empty[(SurfaceTexture, Int, Int)]
 
@@ -74,8 +78,10 @@ class CameraPreviewTextureView(val cxt: Context, val attrs: AttributeSet, val de
   }
 
   def takePicture() = controller.takePicture {
-    soundController.play(zms.selfUserId, Sound.CameraShutter)
-    vibrationController.cameraShutterVibration(zms.selfUserId)
+    zms.currentValue.foreach { z =>
+      soundController.play(z.selfUserId, Sound.CameraShutter)
+      vibrationController.cameraShutterVibration(z.selfUserId)
+    }
   }.onComplete {
     case Success(data) => observer.foreach {
       _.onPictureTaken(data, controller.getCurrentCameraFacing.getOrElse(CameraFacing.BACK) == CameraFacing.FRONT)

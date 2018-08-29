@@ -33,7 +33,7 @@ import com.waz.service.{NetworkModeService, ZMessaging}
 import com.waz.threading.{CancellableFuture, Threading}
 import com.waz.utils.events.{EventContext, EventStream, Signal}
 import com.waz.zclient.calling.controllers.CallController
-import com.waz.zclient.common.controllers.SoundController2.Sound
+import com.waz.zclient.common.controllers.SoundController.Sound
 import com.waz.zclient.common.controllers._
 import com.waz.zclient.controllers.location.ILocationController
 import com.waz.zclient.conversation.ConversationController
@@ -252,7 +252,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
     }
 
   private lazy val locationController = inject[ILocationController]
-  private lazy val soundController    = inject[SoundController2]
+  private lazy val soundController    = inject[SoundController]
   private lazy val permissions        = inject[PermissionsService]
   private lazy val activity           = inject[Activity]
   private lazy val screenController   = inject[ScreenController]

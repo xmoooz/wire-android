@@ -40,7 +40,7 @@ import com.waz.utils.{LoggedTry, _}
 import com.waz.zclient.Intents.{CallIntent, OpenCallingScreen}
 import com.waz.zclient._
 import com.waz.zclient.calling.controllers.CallController
-import com.waz.zclient.common.controllers.SoundController2.Sound
+import com.waz.zclient.common.controllers.SoundController.Sound
 import com.waz.zclient.common.views.ImageController
 import com.waz.zclient.utils.ContextUtils.{getString, _}
 import com.waz.zclient.utils.RingtoneUtils

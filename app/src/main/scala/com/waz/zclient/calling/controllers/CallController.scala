@@ -33,9 +33,9 @@ import com.waz.utils._
 import com.waz.utils.events._
 import com.waz.zclient.calling.CallingActivity
 import com.waz.zclient.calling.controllers.CallController.CallParticipantInfo
-import com.waz.zclient.common.controllers.SoundController2.Sound
+import com.waz.zclient.common.controllers.SoundController.Sound
 import com.waz.zclient.common.controllers.ThemeController.Theme
-import com.waz.zclient.common.controllers.{SoundController2, ThemeController, VibrationController}
+import com.waz.zclient.common.controllers.{SoundController, ThemeController, VibrationController}
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.DeprecationUtils
@@ -50,7 +50,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   import VideoState._
 
   private val screenManager  = new ScreenManager
-  val soundController        = inject[SoundController2]
+  val soundController        = inject[SoundController]
   val vibrationController    = inject[VibrationController]
   val conversationController = inject[ConversationController]
   val networkMode            = inject[NetworkModeService].networkMode
@@ -289,6 +289,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     i <- isCallIncoming
     userId <- lastCallAccountId
   } yield (m, i, userId)) { case (m, i, uid) =>
+    verbose(s"Incoming ringtone signal: uid: $uid isMuted: $m isCallIncoming: $i")
     if (!m && i) soundController.play(uid, Sound.IncomingCallRingtone)
     else soundController.stop(uid, Sound.IncomingCallRingtone)
   }
