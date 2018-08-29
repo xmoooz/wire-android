@@ -82,7 +82,8 @@ case class SpannableWrapper(header: ResString,
 
     returning(new SpannableString(wholeStr)) { ss =>
       spans.map(span => (style(span), range(span))).foreach {
-        case (style, (start, end)) => ss.setSpan(style, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        case (style, (start, end)) if end > start => ss.setSpan(style, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        case _ =>
       }
     }
   }
@@ -261,13 +262,6 @@ object NotificationManagerWrapper {
 
   class AndroidNotificationsManager(notificationManager: NotificationManager)(implicit inj: Injector, cxt: Context, eventContext: EventContext) extends NotificationManagerWrapper with Injectable {
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      notificationManager.createNotificationChannel(
-        returning(new NotificationChannel(ChannelId, getString(R.string.default_channel_name), NotificationManager.IMPORTANCE_MAX)) {
-          _.setDescription(getString(R.string.default_channel_description))
-        })
-    }
-
     private val controller = inject[MessageNotificationsController]
 
     controller.notificationsToCancel.onUi { ids =>
@@ -277,6 +271,19 @@ object NotificationManagerWrapper {
 
     controller.notificationToBuild.onUi { case (id, props) =>
       verbose(s"build: $id")
+
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (notificationManager.getNotificationChannel(ChannelId) == null)
+          notificationManager.createNotificationChannel(
+            returning(new NotificationChannel(ChannelId, getString(R.string.default_channel_name), NotificationManager.IMPORTANCE_HIGH)) { channel =>
+              verbose(s"notification channel created: $ChannelId")
+              channel.setDescription(getString(R.string.default_channel_description))
+              channel.setShowBadge(true)
+              channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE)
+            }
+          )
+      }
+
       notificationManager.notify(id, props.build(ChannelId))
     }
 

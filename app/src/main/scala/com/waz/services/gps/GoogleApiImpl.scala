@@ -32,13 +32,13 @@ import com.waz.content.GlobalPreferences.GPSErrorDialogShowCount
 import com.waz.model.PushToken
 import com.waz.service.BackendConfig
 import com.waz.service.BackendConfig.FirebaseOptions
-import com.waz.utils.LoggedTry
+import com.waz.utils.{LoggedTry, returning}
 import com.waz.utils.events.Signal
 import com.waz.utils.wrappers.GoogleApi
 
 import scala.util.Try
 
-class GoogleApiImpl(context: Context, beConfig: BackendConfig, prefs: GlobalPreferences) extends GoogleApi {
+class GoogleApiImpl private (context: Context, beConfig: BackendConfig, prefs: GlobalPreferences) extends GoogleApi {
 
   import GoogleApiImpl._
 
@@ -85,12 +85,21 @@ object GoogleApiImpl {
   val RequestGooglePlayServices = 7976
   val MaxErrorDialogShowCount = 3
 
-  def initFirebase(context: Context, options: FirebaseOptions) = LoggedTry {
+  private[GoogleApiImpl] def initFirebase(context: Context, options: FirebaseOptions) = LoggedTry {
     FirebaseApp.initializeApp(context, new com.google.firebase.FirebaseOptions.Builder()
       .setApplicationId(options.appId)
       .setApiKey(options.apiKey)
       .setGcmSenderId(options.pushSenderId)
       .build())
   }.toOption
+
+  private var instance = Option.empty[GoogleApiImpl]
+
+  def apply(context: Context, beConfig: BackendConfig, prefs: GlobalPreferences): GoogleApiImpl = synchronized {
+    instance match {
+      case Some(api) => api
+      case None => returning(new GoogleApiImpl(context, beConfig, prefs)){ api: GoogleApiImpl => instance = Some(api) }
+    }
+  }
 
 }

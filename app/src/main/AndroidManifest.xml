@@ -240,7 +240,8 @@
         <!--For Evernote Background jobs-->
         <service
             android:name="com.evernote.android.job.gcm.PlatformGcmService"
-            android:enabled="false"
+            android:enabled="true"
+            tools:replace="android:enabled"
             android:exported="true"
             android:permission="com.google.android.gms.permission.BIND_NETWORK_TASK_SERVICE">
             <intent-filter>

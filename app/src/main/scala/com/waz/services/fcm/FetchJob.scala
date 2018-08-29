@@ -75,7 +75,7 @@ object FetchJob {
   val AccountExtra = "accounts"
   val NotificationExtra = "notification"
 
-  val MaxExecutionDelay = 30.seconds
+  val MaxExecutionDelay = 15.seconds
   val InitialBackoffDelay = 500.millis
 
   def apply(userId: UserId, nId: Option[Uid]): Unit = {
@@ -99,6 +99,7 @@ object FetchJob {
 
       new JobRequest.Builder(tag)
         .setBackoffCriteria(InitialBackoffDelay.toMillis, JobRequest.BackoffPolicy.EXPONENTIAL)
+        .setExecutionWindow(9L, MaxExecutionDelay.toMillis)
         .setExtras(args)
         .startNow()
         .build()
