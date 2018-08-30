@@ -370,7 +370,6 @@ trait CallingBannerActivity extends ActivityHelper {
     v.onClick(CallingActivity.startIfCallIsActive(this))
   }
   lazy val callBannerStatus   = findById[TextView](R.id.call_banner_status)
-  lazy val callBannerDuration = findById[TextView](R.id.call_banner_duration)
 
   override def onCreate(savedInstanceState: Bundle) = {
     super.onCreate(savedInstanceState)
@@ -382,7 +381,6 @@ trait CallingBannerActivity extends ActivityHelper {
     }
 
     callController.callBannerText.onUi(callBannerStatus.setText)
-    callController.duration.onUi(callBannerDuration.setText)
   }
 }
 
