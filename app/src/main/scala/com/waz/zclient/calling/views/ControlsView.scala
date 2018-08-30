@@ -124,7 +124,6 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
     onButtonClick ! {}
     val sendingVideo  = await(controller.videoSendState.head) == Started
     val perms         = await(permissions.requestPermissions(if (sendingVideo) ListSet(CAMERA, RECORD_AUDIO) else ListSet(RECORD_AUDIO)))
-    val cameraGranted = perms.exists(p => p.key.equals(CAMERA) && p.granted)
     val audioGranted  = perms.exists(p => p.key.equals(RECORD_AUDIO) && p.granted)
     val callingConvId = await(controller.callConvId.head)
     val callingZms    = await(controller.callingZms.head)
@@ -135,7 +134,7 @@ class ControlsView(val context: Context, val attrs: AttributeSet, val defStyleAt
       showPermissionsErrorDialog(R.string.calling__cannot_start__title,
         R.string.calling__cannot_start__no_permission__message,
         R.string.calling__cannot_start__cancel__message
-        ).flatMap(_ => callingZms.calling.endCall(callingConvId))
+        ).flatMap(_ => callingZms.calling.endCall(callingConvId, skipTerminating = true))
   }
 
   private def leave(): Unit = {
