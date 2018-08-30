@@ -20,6 +20,7 @@ package com.waz.zclient.qa
 import android.app.Activity
 import android.content.{BroadcastReceiver, Context, Intent}
 import com.waz.ZLog.ImplicitTag._
+import com.waz.ZLog.verbose
 import com.waz.content.GlobalPreferences._
 import com.waz.content.Preferences.PrefKey
 import com.waz.content.Preferences.Preference.PrefCodec
@@ -31,6 +32,10 @@ import com.waz.zclient.controllers.userpreferences.UserPreferencesController._
 import com.waz.zclient.tracking.GlobalTrackingController
 import com.waz.zclient.{BuildConfig, WireApplication}
 
+/**
+  * to test, fire an intent using:
+  * adb shell am broadcast -a com.waz.zclient.dev.intent.action.ENABLE_TRACKING
+  */
 trait AbstractPreferenceReceiver extends BroadcastReceiver {
 
   import AbstractPreferenceReceiver._
@@ -51,7 +56,7 @@ trait AbstractPreferenceReceiver extends BroadcastReceiver {
   }
 
   override def onReceive(context: Context, intent: Intent) = {
-
+    verbose(s"onReceive: ${intent.getAction}")
     intent.getAction match {
       case AUTO_ANSWER_CALL_INTENT =>
         setGlobalPref(AutoAnswerCallPrefKey, intent.getBooleanExtra(AUTO_ANSWER_CALL_INTENT_EXTRA_KEY, false))
@@ -96,20 +101,20 @@ trait AbstractPreferenceReceiver extends BroadcastReceiver {
 }
 
 object AbstractPreferenceReceiver {
-  val AUTO_ANSWER_CALL_INTENT_EXTRA_KEY = "AUTO_ANSWER_CALL_EXTRA_KEY"
-  private val packageName = BuildConfig.APPLICATION_ID
-  private val AUTO_ANSWER_CALL_INTENT = packageName + ".intent.action.AUTO_ANSWER_CALL"
-  private val ENABLE_GCM_INTENT = packageName + ".intent.action.ENABLE_GCM"
-  private val DISABLE_GCM_INTENT = packageName + ".intent.action.DISABLE_GCM"
-  private val ENABLE_TRACKING_INTENT = packageName + ".intent.action.ENABLE_TRACKING"
-  private val DISABLE_TRACKING_INTENT = packageName + ".intent.action.DISABLE_TRACKING"
-  private val SILENT_MODE = packageName + ".intent.action.SILENT_MODE"
-  private val NO_CONTACT_SHARING = packageName + ".intent.action.NO_CONTACT_SHARING"
-  private val TRACKING_ID_INTENT = packageName + ".intent.action.TRACKING_ID"
-  private val FULL_CONVERSATION_INTENT = packageName + ".intent.action.FULL_CONVERSATION_INTENT"
-  private val FULL_CONVERSATION_VALUE = "FULL_CONVERSATION_VALUE"
+  private val AUTO_ANSWER_CALL_INTENT_EXTRA_KEY = "AUTO_ANSWER_CALL_EXTRA_KEY"
+  private val FULL_CONVERSATION_VALUE           = "FULL_CONVERSATION_VALUE"
 
-  private final val HIDE_GDPR_POPUPS = packageName + ".intent.action.HIDE_GDPR_POPUPS"
+  private val packageName = BuildConfig.APPLICATION_ID
+  private val AUTO_ANSWER_CALL_INTENT  = packageName + ".intent.action.AUTO_ANSWER_CALL"
+  private val ENABLE_GCM_INTENT        = packageName + ".intent.action.ENABLE_GCM"
+  private val DISABLE_GCM_INTENT       = packageName + ".intent.action.DISABLE_GCM"
+  private val ENABLE_TRACKING_INTENT   = packageName + ".intent.action.ENABLE_TRACKING"
+  private val DISABLE_TRACKING_INTENT  = packageName + ".intent.action.DISABLE_TRACKING"
+  private val SILENT_MODE              = packageName + ".intent.action.SILENT_MODE"
+  private val NO_CONTACT_SHARING       = packageName + ".intent.action.NO_CONTACT_SHARING"
+  private val TRACKING_ID_INTENT       = packageName + ".intent.action.TRACKING_ID"
+  private val FULL_CONVERSATION_INTENT = packageName + ".intent.action.FULL_CONVERSATION_INTENT"
+  private val HIDE_GDPR_POPUPS         = packageName + ".intent.action.HIDE_GDPR_POPUPS"
 
   private lazy val DeveloperAnalyticsEnabled = PrefKey[Boolean]("DEVELOPER_TRACKING_ENABLED")
 }
