@@ -22,13 +22,15 @@ import android.net.Uri
 import android.os.Vibrator
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.verbose
+import com.waz.content.Preferences.PrefKey
+import com.waz.content.Preferences.Preference.PrefCodec
 import com.waz.content.UserPreferences
 import com.waz.media.manager.MediaManager
 import com.waz.media.manager.context.IntensityLevel
 import com.waz.model.UserId
 import com.waz.service.{AccountsService, ZMessaging}
 import com.waz.threading.{DispatchQueue, Threading}
-import com.waz.utils.events.{EventContext, Signal}
+import com.waz.utils.events.{EventContext, EventStream, Signal}
 import com.waz.zclient.common.controllers.SoundController.Sound
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.DeprecationUtils
@@ -61,6 +63,11 @@ object SoundController {
     case object CameraShutter extends Sound
   }
 
+  sealed trait SoundSetting
+  case class Ringtone(value: Option[Uri]) extends SoundSetting
+  case class Texttone(value: Option[Uri]) extends SoundSetting
+  case class Pingtone(value: Option[Uri]) extends SoundSetting
+
   case class SoundSettings(soundIntensity: Option[IntensityLevel],
                            ringTone: Option[Uri],
                            textTone: Option[Uri],
@@ -84,40 +91,32 @@ class SoundControllerImpl(implicit inj: Injector, cxt: Context) extends SoundCon
     }
   }
 
-  private def mediaManagerWithSettings(zms: ZMessaging): Signal[(UserId, SoundSettings)] = {
-    val soundIntensityPref = zms.userPrefs.preference(UserPreferences.Sounds).signal.optional
-    val ringtonePref = zms.userPrefs.preference(UserPreferences.RingTone).signal.optional
-    val texttonePref = zms.userPrefs.preference(UserPreferences.TextTone).signal.optional
-    val pingtonePref = zms.userPrefs.preference(UserPreferences.PingTone).signal.optional
+  private def mediaManagerWithSettings(zms: ZMessaging): EventStream[(UserId, SoundSetting)] = {
+    def getSoundSettingStream[T: PrefCodec](key: PrefKey[T])(creator: Option[T] => SoundSetting) =
+      zms.userPrefs.preference(key).signal.optional.onChanged.map(creator)
+    def parseUri(str: Option[String]): Option[Uri] = str.filter(_.nonEmpty).map(Uri.parse)
 
-    (soundIntensityPref zip ringtonePref zip texttonePref zip pingtonePref)
-      .map { case (((soundIntensity, ringTone), textTone), pingTone) =>
-      val settings = SoundSettings(
-        soundIntensity,
-        ringTone.filter(_.nonEmpty).map(Uri.parse),
-        textTone.filter(_.nonEmpty).map(Uri.parse),
-        pingTone.filter(_.nonEmpty).map(Uri.parse)
-      )
-      verbose(s"New settings for user: ${zms.selfUserId}. $settings")
-      zms.selfUserId -> settings
-    }
+    List(
+      getSoundSettingStream(UserPreferences.RingTone)(str => Ringtone(parseUri(str))),
+      getSoundSettingStream(UserPreferences.TextTone)(str => Texttone(parseUri(str))),
+      getSoundSettingStream(UserPreferences.PingTone)(str => Pingtone(parseUri(str)))
+    ).reduce(_ union _).map(zms.selfUserId -> _)
   }
 
-  private val userIdsWithSettings =
-    for {
-      zmss <- accountsService.zmsInstances
-      userIdsWithSettings <- Signal.traverse(zmss.toList)(mediaManagerWithSettings)
-    } yield userIdsWithSettings
+  accountsService.zmsInstances.onChanged.flatMap(_.map(mediaManagerWithSettings)
+    .reduce(_ union _)) { userIdWithSetting =>
+      val (userId, setting) = userIdWithSetting
+      val (uri, sounds) = setting match {
+        case Ringtone(value) => value -> Seq(IncomingCallRingtone, OutgoingCallRingtone, IncomingCallRingtoneInCall)
+        case Texttone(value) => value -> Seq(PingFromMe, PingFromThem)
+        case Pingtone(value) => value -> Seq(IncomingMessage, FirstIncomingMessage)
+      }
 
-  userIdsWithSettings {
-    _ foreach { case (userId, settings) =>
+      verbose(s"New sound setting for user: $userId. $setting")
       withMediaManager(userId) { mm =>
-        registerCustomUri(userId, mm, settings.ringTone, Seq(IncomingCallRingtone, OutgoingCallRingtone, IncomingCallRingtoneInCall))
-        registerCustomUri(userId, mm, settings.pingTone, Seq(PingFromMe, PingFromThem))
-        registerCustomUri(userId, mm, settings.textTone, Seq(IncomingMessage, FirstIncomingMessage))
+        registerCustomUri(userId, mm, uri, sounds)
       }
     }
-  }
 
   private val mediaManagersByUserId = for {
     zmss <- accountsService.zmsInstances
@@ -144,7 +143,7 @@ class SoundControllerImpl(implicit inj: Injector, cxt: Context) extends SoundCon
   }
 
   override def getCurrentSettings(userId: UserId): Option[SoundSettings] = {
-    userIdsWithSettings.currentValue.flatMap(_.toMap.get(userId))
+    Some(SoundSettings(None, None, None, None))
   }
 }
 
