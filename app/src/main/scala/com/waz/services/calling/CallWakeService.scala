@@ -58,7 +58,7 @@ class CallWakeService extends FutureService with ZMessagingService {
     zms.calling.startCall(conv, withVideo)
 
   private def end()(implicit zms: ZMessaging, conv: ConvId) =
-    zms.calling.endCall(conv)
+    zms.calling.endCall(conv, skipTerminating = true)
 }
 
 object CallWakeService {

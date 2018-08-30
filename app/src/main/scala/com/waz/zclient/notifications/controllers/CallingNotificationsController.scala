@@ -60,12 +60,13 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
 
   import callCtrler._
 
-  val filteredGlobalProfile: Signal[(Option[ConvId], Seq[(ConvId, (UserId, UserId))])] = for {
-    globalProfile <- inject[GlobalModule].calling.globalCallProfile
-    curCallId = globalProfile.activeCall.map(_.convId)
-    allCalls = globalProfile.availableCalls.values.filter(c => c.state.contains(OtherCalling) || (curCallId.contains(c.convId) && !c.state.contains(Ongoing)))
-      .map(c => c.convId -> (c.caller, c.account)).toSeq
-  } yield (curCallId, allCalls)
+  val filteredGlobalProfile: Signal[(Option[ConvId], Seq[(ConvId, (UserId, UserId))])] =
+    for {
+      globalProfile <- inject[GlobalModule].calling.globalCallProfile
+      curCallId     = globalProfile.activeCall.map(_.convId)
+      allCalls = globalProfile.calls.values.filter(c => c.state == OtherCalling || (curCallId.contains(c.convId) && c.state != Ongoing))
+        .map(c => c.convId -> (c.caller, c.account)).toSeq
+    } yield (curCallId, allCalls)
 
   val notifications =
     for {
@@ -76,7 +77,7 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
       }: _*).map(_.toMap)
       notInfo <- Signal.sequence(allCallsF.map { case (conv, (caller, account)) =>
         zs.find(_.selfUserId == account).fold2(Signal.const(Option.empty[CallInfo], "", "", false),
-          z => Signal(z.calling.availableCalls.map(_.get(conv)),
+          z => Signal(z.calling.joinableCalls.map(_.get(conv)),
             z.usersStorage.optSignal(caller).map(_.map(_.name).getOrElse("")),
             z.convsStorage.optSignal(conv).map(_.map(_.displayName).getOrElse("")),
             z.conversations.groupConversation(conv))).map(conv -> _)
@@ -84,8 +85,8 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
       notificationData = notInfo.collect {
         case (convId, (Some(callInfo), title, msg, isGroup)) =>
           val action = callInfo.state match {
-            case Some(OtherCalling) => NotificationAction.DeclineOrJoin
-            case Some(SelfConnected | SelfCalling | SelfJoining) => NotificationAction.Leave
+            case OtherCalling => NotificationAction.DeclineOrJoin
+            case SelfConnected | SelfCalling | SelfJoining => NotificationAction.Leave
             case _ => NotificationAction.Nothing
           }
           CallNotification(
@@ -168,16 +169,6 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
         case BitmapLoaded(bmp, _) => Option(BitmapUtils.createRoundBitmap(bmp, callImageSizePx, 0, Color.TRANSPARENT))
         case _ => None
       }
-
-  private def getCallStateMessage(call: CallInfo): String =
-    getString((call.stateCollapseJoin, call.isVideoCall) match {
-      case (Some(SelfCalling),   true)  => R.string.system_notification__outgoing_video
-      case (Some(SelfCalling),   false) => R.string.system_notification__outgoing
-      case (Some(OtherCalling),  true)  => R.string.system_notification__incoming_video
-      case (Some(OtherCalling),  false) => R.string.system_notification__incoming
-      case (Some(SelfConnected), _)     => R.string.system_notification__ongoing
-      case _                            => R.string.empty_string
-    })
 }
 
 object CallingNotificationsController {
@@ -207,9 +198,9 @@ object CallingNotificationsController {
   def androidNotificationBuilder(not: CallNotification)(implicit cxt: content.Context): NotificationCompat.Builder = {
     val title = if (not.isGroup) not.convName else not.caller
     val message = (not.isGroup, not.videoCall) match {
-      case (true, true) => getString(R.string.system_notification__video_calling_group, not.caller)
-      case (true, false) => getString(R.string.system_notification__calling_group, not.caller)
-      case (false, true) => getString(R.string.system_notification__video_calling_one)
+      case (true, true)   => getString(R.string.system_notification__video_calling_group, not.caller)
+      case (true, false)  => getString(R.string.system_notification__calling_group, not.caller)
+      case (false, true)  => getString(R.string.system_notification__video_calling_one)
       case (false, false) => getString(R.string.system_notification__calling_one)
     }
 
@@ -247,7 +238,7 @@ object CallingNotificationsController {
   }
 
   def createJoinIntent(account: UserId, convId: ConvId)(implicit cxt: content.Context) = pendingIntent((account.str + convId.str).hashCode, joinIntent(Context.wrap(cxt), account, convId))
-  def createEndIntent(account: UserId, convId: ConvId)(implicit cxt: content.Context) = pendingIntent((account.str + convId.str).hashCode, silenceIntent(Context.wrap(cxt), account, convId))
+  def createEndIntent(account: UserId, convId: ConvId)(implicit cxt: content.Context) = pendingIntent((account.str + convId.str).hashCode, endIntent(Context.wrap(cxt), account, convId))
 
   def pendingIntent(reqCode: Int, intent: Intent)(implicit cxt: content.Context) = PendingIntent.getService(cxt, reqCode, Intent.unwrap(intent), PendingIntent.FLAG_UPDATE_CURRENT)
 }

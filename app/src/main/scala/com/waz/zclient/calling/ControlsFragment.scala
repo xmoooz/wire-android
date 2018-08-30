@@ -65,13 +65,6 @@ class ControlsFragment extends FragmentHelper {
     callingControls
     callingMiddle // initializing it later than the header and controls to reduce the number of height recalculations
 
-    controller.isCallActive.onUi {
-      case false =>
-        verbose("call no longer exists, finishing activity")
-        getActivity.finish()
-      case _ =>
-    }
-
     (for {
       state                 <- controller.callState
       incoming              =  state == CallState.SelfJoining || state == CallState.OtherCalling

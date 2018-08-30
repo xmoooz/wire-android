@@ -23,6 +23,7 @@ import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
 import com.waz.api.Verification
 import com.waz.avs.VideoPreview
+import com.waz.content.GlobalPreferences
 import com.waz.model.{AssetId, LocalInstant, UserData, UserId}
 import com.waz.service.ZMessaging.clock
 import com.waz.service.call.Avs.VideoState
@@ -56,13 +57,17 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   val accounts               = inject[AccountsService]
   val themeController        = inject[ThemeController]
 
+  inject[GlobalPreferences].apply(GlobalPreferences.SkipTerminatingState) := true
+
   val callControlsVisible = Signal(false)
+
   //the zms of the account that currently has an active call (if any)
   val callingZmsOpt =
     for {
       acc <- inject[GlobalModule].calling.activeAccount
       zms <- acc.fold(Signal.const(Option.empty[ZMessaging]))(id => Signal.future(ZMessaging.currentAccounts.getZms(id)))
     } yield zms
+
   val callingZms = callingZmsOpt.collect { case Some(z) => z }
 
   val currentCallOpt: Signal[Option[CallInfo]] = callingZmsOpt.flatMap {
@@ -87,7 +92,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     lastCallZms = zms
   }
 
-  val callStateOpt          = currentCallOpt.map(_.flatMap(_.state))
+  val callStateOpt          = currentCallOpt.map(_.map(_.state))
   val callState             = callStateOpt.collect { case Some(s) => s }
   val callStateCollapseJoin = currentCall.map(_.stateCollapseJoin)
 
@@ -208,7 +213,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
 
   def leaveCall(): Unit = {
     verbose(s"leaveCall")
-    updateCall { case (call, cs) => cs.endCall(call.convId) }
+    updateCall { case (call, cs) => cs.endCall(call.convId, skipTerminating = true) }
   }
 
   def toggleMuted(): Unit = {
