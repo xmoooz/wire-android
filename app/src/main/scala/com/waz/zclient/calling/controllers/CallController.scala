@@ -329,13 +329,20 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
       fm.setVideoPreview(view.orNull)
     } (Threading.Ui)
 
-  val callBannerText = Signal(isVideoCall, callState).map {
-    case (_,     SelfCalling)   => R.string.call_banner_outgoing
-    case (true,  OtherCalling)  => R.string.call_banner_incoming_video
-    case (false, OtherCalling)  => R.string.call_banner_incoming
-    case (_,     SelfJoining)   => R.string.call_banner_joining
-    case (_,     SelfConnected) => R.string.call_banner_tap_to_return_to_call
-    case _                      => R.string.empty_string
+  private lazy val callingUsername: Signal[String] =
+    for {
+      users <- userStorage
+      userId <- callerId
+      data <- users.signal(userId)
+    } yield data.getDisplayName.toUpperCase(getLocale) + " "
+
+  val callBannerText = Signal(isVideoCall, callState, isGroupCall, callingUsername, conversationName).map {
+    case (_, SelfCalling, _, _, _)                 => getString(R.string.call_banner_outgoing)
+    case (_, OtherCalling, true, caller, convName) => getString(R.string.call_banner_incoming_group, convName.toUpperCase(getLocale), caller)
+    case (_, OtherCalling, false, caller, _)       => getString(R.string.call_banner_incoming, caller)
+    case (_, SelfJoining, _, _, _)                 => getString(R.string.call_banner_joining)
+    case (_, SelfConnected, _, _, _)               => getString(R.string.call_banner_tap_to_return_to_call)
+    case _                                         => getString(R.string.empty_string)
   }
 
   val subtitleText: Signal[String] =
