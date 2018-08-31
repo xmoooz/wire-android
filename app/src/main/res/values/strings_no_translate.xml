@@ -168,6 +168,7 @@
     <string translatable="false" name="pref_dev_full_conv_key">>PREF_FULL_CONV</string>
     <string translatable="false" name="pref_dev_full_conv_summary">Instead of an empty conversation, create one populated with all contacts in the list (up to 256)</string>
     <string translatable="false" name="pref_dev_full_conv_title">Create full conversation</string>
+    <string translatable="false" name="prefs__username_change__username_at">\@</string>
 
     <!--Account preferences-->
     <string translatable="false" name="pref_dev_category_sign_in_account_key">PREF_ACCOUNTS_SIGN_IN</string>
@@ -179,7 +180,7 @@
     <string translatable="false" name="pick_user_manage_team_url">https://teams.wire.com/login/?utm_source=client_landing&amp;utm_term=android</string>
 
     <string translatable="false" name="invalid_email_help">https://support.wire.com/hc/en-us/articles/115004082129-My-email-address-is-already-in-use-and-I-cannot-create-an-account-What-can-I-do-</string>
-
+    <string translatable="false" name="teams_set_email_about_url">https://support.wire.com/hc/en-us/articles/115004082129</string>
 
     <string translatable="false" name="url_home">https://wire.com</string>
     <string translatable="false" name="url_terms_of_service_personal">https://wire.com/legal/terms/personal/</string>
@@ -199,6 +200,11 @@
 
     <string translatable="false" name="url_manage_services">https://teams.wire.com/</string>
     <string translatable="false" name="url_manage_services_staging">https://wire-admin-dev.zinfra.io/services/</string>
+    <string translatable="false" name="usernames__learn_more__link">https://wire.com/support/username/</string>
+    <string translatable="false" name="pref_support_website_url">https://support.wire.com</string>
+    <string translatable="false" name="pref_support_contact_url">https://support.wire.com/hc/de/requests/new</string>
+    <string translatable="false" name="pref_about_website_url">https://wire.com</string>
+
 
 </resources>
 
