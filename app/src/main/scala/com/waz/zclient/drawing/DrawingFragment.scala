@@ -285,6 +285,7 @@ class DrawingFragment extends FragmentHelper
                 v.setLayoutParams(params)
               case MotionEvent.ACTION_UP =>
                 closeKeyboard()
+              case _ =>
             }
           drawingCanvasView.exists(_.onTouchEvent(event))
         }
