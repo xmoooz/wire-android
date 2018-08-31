@@ -336,12 +336,13 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
       data <- users.signal(userId)
     } yield data.getDisplayName.toUpperCase(getLocale) + " "
 
-  val callBannerText = Signal(isVideoCall, callState, isGroupCall, callingUsername, conversationName).map {
-    case (_, SelfCalling, _, _, _)                 => getString(R.string.call_banner_outgoing)
-    case (_, OtherCalling, true, caller, convName) => getString(R.string.call_banner_incoming_group, convName.toUpperCase(getLocale), caller)
-    case (_, OtherCalling, false, caller, _)       => getString(R.string.call_banner_incoming, caller)
-    case (_, SelfJoining, _, _, _)                 => getString(R.string.call_banner_joining)
-    case (_, SelfConnected, _, _, _)               => getString(R.string.call_banner_tap_to_return_to_call)
+  val callBannerText = Signal(callState, isGroupCall, callingUsername, conversationName, duration).map {
+    case (SelfCalling, false, caller, _, _)        => getString(R.string.call_banner_outgoing, caller).toUpperCase(getLocale)
+    case (SelfCalling, true, _, convName, _)       => getString(R.string.call_banner_outgoing, convName).toUpperCase(getLocale)
+    case (OtherCalling, true, caller, convName, _) => getString(R.string.call_banner_incoming_group, convName.toUpperCase(getLocale), caller)
+    case (OtherCalling, false, caller, _, _)       => getString(R.string.call_banner_incoming, caller).toUpperCase(getLocale)
+    case (SelfJoining, _, _, _, _)                 => getString(R.string.call_banner_joining).toUpperCase(getLocale)
+    case (SelfConnected, _, _, _, d)               => getString(R.string.call_banner_tap_to_return_to_call, d).toUpperCase(getLocale)
     case _                                         => getString(R.string.empty_string)
   }
 
