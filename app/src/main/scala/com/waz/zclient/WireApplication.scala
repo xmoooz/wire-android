@@ -326,7 +326,7 @@ class WireApplication extends MultiDexApplication with WireContext with Injectab
     })
 
     val prefs = GlobalPreferences(this)
-    val googleApi = new GoogleApiImpl(this, backend, prefs)
+    val googleApi = GoogleApiImpl(this, backend, prefs)
 
     ZMessaging.onCreate(this, backend, prefs, googleApi)
 
