@@ -41,7 +41,7 @@ class CallingActivity extends BaseActivity {
       .replace(R.id.calling_layout, CallingFragment(), CallingFragment.Tag)
       .commit
 
-    controller.isCallActive.onChanged.filter(_ == false).onUi { _ =>
+    controller.isCallActive.filter(_ == false).onUi { _ =>
       verbose("call no longer exists, finishing activity")
       finish()
     }
