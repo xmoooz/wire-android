@@ -31,12 +31,14 @@ import android.view.animation.{AlphaAnimation, Animation, AnimationUtils}
 import android.view.{LayoutInflater, View, ViewGroup, ViewStub}
 import android.widget.TextView
 import com.waz.ZLog._
+import com.waz.service.call.Avs.AvsClosedReason
+import com.waz.service.call.CallInfo.CallState.Terminating
 import com.waz.utils.events._
 import com.waz.utils.returning
 import com.waz.zclient.FragmentHelper.getNextAnimationDuration
 import com.waz.zclient.calling.CallingActivity
 import com.waz.zclient.calling.controllers.CallController
-import com.waz.zclient.utils.{ContextUtils, RichView}
+import com.waz.zclient.utils.{ContextUtils, DebugUtils, RichView, ViewUtils}
 
 import scala.language.implicitConversions
 
@@ -383,6 +385,37 @@ trait CallingBannerActivity extends ActivityHelper {
 
     callController.callBannerText.onUi(callBannerStatus.setText)
     callController.duration.onUi(callBannerDuration.setText)
+  }
+}
+
+trait CallingRaterActivity extends ActivityHelper {
+
+  private lazy val callController = inject[CallController]
+
+  override def onCreate(savedInstanceState: Bundle): Unit = {
+    super.onCreate(savedInstanceState)
+
+    callController.currentCall.filter(_.state == Terminating).map(_.endReason).onUi {
+      case Some(reason) if !Set(AvsClosedReason.Normal, AvsClosedReason.Rejected, AvsClosedReason.Canceled).contains(reason) =>
+        ViewUtils.showAlertDialog(
+          this,
+          R.string.call_end_error_title,
+          R.string.call_end_error_message,
+          R.string.call_end_error_send_report,
+          android.R.string.cancel,
+          new DialogInterface.OnClickListener {
+            override def onClick(d: DialogInterface, i: Int): Unit = {
+              DebugUtils.sendDebugReport(CallingRaterActivity.this)
+              callController.finishTerminatingCall()
+            }
+          },
+          new DialogInterface.OnClickListener {
+            override def onClick(d: DialogInterface, i: Int): Unit = callController.finishTerminatingCall()
+          })
+      case _ =>
+        //TODO: show call rating dialog
+        callController.finishTerminatingCall()
+    }
   }
 }
 

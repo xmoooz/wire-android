@@ -35,14 +35,15 @@ import com.waz.zclient.controllers.IControllerFactory
 import com.waz.zclient.tracking.GlobalTrackingController
 import com.waz.zclient.utils.ViewUtils
 
-import scala.collection.immutable.ListSet
 import scala.collection.breakOut
+import scala.collection.immutable.ListSet
 
 
 class BaseActivity extends AppCompatActivity
   with ServiceContainer
   with ActivityHelper
-  with PermissionProvider {
+  with PermissionProvider
+  with CallingRaterActivity {
 
   import BaseActivity._
 

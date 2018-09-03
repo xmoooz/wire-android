@@ -1499,4 +1499,8 @@
     <string name="participant_search_title">PEOPLE</string>
     <string name="generic_service_warning">Services have access to the content of this conversation</string>
     <string name="add_services_button_text">Manage services</string>
+
+    <string name="call_end_error_title">Call terminated with error</string>
+    <string name="call_end_error_message">Sending a debug report will help improve calling in the future</string>
+    <string name="call_end_error_send_report">Send report</string>
 </resources>

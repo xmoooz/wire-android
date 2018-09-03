@@ -23,7 +23,6 @@ import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
 import com.waz.api.Verification
 import com.waz.avs.VideoPreview
-import com.waz.content.GlobalPreferences
 import com.waz.model.{AssetId, LocalInstant, UserData, UserId}
 import com.waz.service.ZMessaging.clock
 import com.waz.service.call.Avs.VideoState
@@ -43,6 +42,7 @@ import com.waz.zclient.utils.DeprecationUtils
 import com.waz.zclient.{Injectable, Injector, R, WireContext}
 import org.threeten.bp.Instant
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class CallController(implicit inj: Injector, cxt: WireContext, eventContext: EventContext) extends Injectable {
@@ -56,8 +56,6 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   val networkMode            = inject[NetworkModeService].networkMode
   val accounts               = inject[AccountsService]
   val themeController        = inject[ThemeController]
-
-  inject[GlobalPreferences].apply(GlobalPreferences.SkipTerminatingState) := true
 
   val callControlsVisible = Signal(false)
 
@@ -213,7 +211,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
 
   def leaveCall(): Unit = {
     verbose(s"leaveCall")
-    updateCall { case (call, cs) => cs.endCall(call.convId, skipTerminating = true) }
+    updateCall { case (call, cs) => cs.endCall(call.convId, skipTerminating = false) }
   }
 
   def toggleMuted(): Unit = {
@@ -242,6 +240,8 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
       }
     }
   }
+
+  def finishTerminatingCall(): Future[Unit] = callingService.head.flatMap(_.dismissCall())
 
   private def updateCall(f: (CallInfo, CallingService) => Unit): Unit =
     for {
