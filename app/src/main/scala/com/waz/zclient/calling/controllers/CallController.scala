@@ -75,7 +75,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     case _       => Signal.const(None)
   }
 
-  private val gcmManager = new GCMManager(currentCallOpt.map(_.isDefined))
+  private val gcmManager = new GSMManager(currentCallOpt.map(_.isDefined))
 
   val currentCall   = currentCallOpt.collect { case Some(c) => c }
   val callConvIdOpt = currentCallOpt.map(_.map(_.convId))
@@ -429,7 +429,7 @@ private class ScreenManager(implicit injector: Injector) extends Injectable {
   }
 }
 
-private class GCMManager(callActive: Signal[Boolean])(implicit inject: Injector, ec: EventContext) extends Injectable {
+private class GSMManager(callActive: Signal[Boolean])(implicit inject: Injector, ec: EventContext) extends Injectable {
   private lazy val telephonyManager = inject[TelephonyManager]
 
   private var listening = false
