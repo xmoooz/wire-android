@@ -358,11 +358,11 @@
     <string name="calling__header__incoming_subtitle__video">Calling…</string>
     <string name="calling__header__incoming_subtitle__group">%1$s is calling…</string>
 
-    <string name="call_banner_joining">CONNECTING…</string>
-    <string name="call_banner_outgoing">CALLING %1$S…</string>
-    <string name="call_banner_incoming">%1$s IS CALLING…</string>
-    <string name="call_banner_incoming_group">%1$s \u30FB %2$s IS CALLING…</string>
-    <string name="call_banner_tap_to_return_to_call">TAP TO RETURN TO CALL</string>
+    <string name="call_banner_joining">Connecting…</string>
+    <string name="call_banner_outgoing">Calling %1$S…</string>
+    <string name="call_banner_incoming">%1$s is calling…</string>
+    <string name="call_banner_incoming_group">%1$s \u30FB %2$s is calling…</string>
+    <string name="call_banner_tap_to_return_to_call">Tap to return to call \u30FB %1$s</string>
 
     <string name="calling_ongoing_call_title">Ongoing call</string>
 

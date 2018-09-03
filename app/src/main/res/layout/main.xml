@@ -57,17 +57,6 @@
                 android:paddingStart="@dimen/wire__padding__16"
                 android:paddingEnd="@dimen/wire__padding__16"
             />
-
-            <com.waz.zclient.ui.text.TypefaceTextView
-                android:paddingStart="@dimen/wire__padding__small"
-                android:id="@+id/call_banner_duration"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/white"
-                android:textSize="@dimen/wire__text_size__small"
-                app:w_font="@string/wire__typeface__medium"
-            />
-
         </LinearLayout>
 
         <FrameLayout
