@@ -259,8 +259,23 @@ trait NotificationManagerWrapper {
 object NotificationManagerWrapper {
 
   val ChannelId = "DEFAULT_CHANNEL_ID"
+  val StickyNotificationsChannelId = "STICKY_NOTIFICATIONS_CHANNEL_ID"
 
   class AndroidNotificationsManager(notificationManager: NotificationManager)(implicit inj: Injector, cxt: Context, eventContext: EventContext) extends NotificationManagerWrapper with Injectable {
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      notificationManager.createNotificationChannel(
+        returning(new NotificationChannel(ChannelId, getString(R.string.default_channel_name), NotificationManager.IMPORTANCE_MAX)) {
+          _.setDescription(getString(R.string.default_channel_description))
+        })
+
+      notificationManager.createNotificationChannel(
+        returning(new NotificationChannel(StickyNotificationsChannelId, getString(R.string.ongoing_channel_name), NotificationManager.IMPORTANCE_LOW)) { ch =>
+          ch.setDescription(getString(R.string.ongoing_channel_description))
+          ch.enableVibration(false)
+          ch.setSound(null, null)
+        })
+    }
 
     private val controller = inject[MessageNotificationsController]
 

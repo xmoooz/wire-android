@@ -1493,4 +1493,7 @@
     <string name="participant_search_title">PEOPLE</string>
     <string name="generic_service_warning">Services have access to the content of this conversation</string>
     <string name="add_services_button_text">Manage services</string>
+
+    <string name="ongoing_channel_name">Ongoing notifications</string>
+    <string name="ongoing_channel_description">Silent notifications that display an ongoing process</string>
 </resources>

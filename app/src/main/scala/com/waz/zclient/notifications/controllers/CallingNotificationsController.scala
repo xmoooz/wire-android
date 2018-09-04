@@ -204,7 +204,7 @@ object CallingNotificationsController {
       case (false, false) => getString(R.string.system_notification__calling_one)
     }
 
-    val builder = new NotificationCompat.Builder(cxt, NotificationManagerWrapper.ChannelId)
+    val builder = new NotificationCompat.Builder(cxt, if (not.isMainCall) NotificationManagerWrapper.StickyNotificationsChannelId else NotificationManagerWrapper.ChannelId)
       .setSmallIcon(R.drawable.call_notification_icon)
       .setLargeIcon(not.bitmap.orNull)
       .setContentTitle(title)
