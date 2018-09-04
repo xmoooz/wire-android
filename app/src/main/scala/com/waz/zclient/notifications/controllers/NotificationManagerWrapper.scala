@@ -201,7 +201,10 @@ case class NotificationProps(when:                     Option[Long] = None,
     contentTitle.map(_.build).foreach(builder.setContentTitle)
     contentText.map(_.build).foreach(builder.setContentText)
     style.map(_.build).foreach(builder.setStyle)
-    groupSummary.foreach(builder.setGroupSummary)
+    groupSummary.foreach { summary =>
+      builder.setGroupSummary(summary)
+      builder.setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
+    }
     group.foreach(accountId => builder.setGroup(accountId.str))
 
     openAccountIntent.foreach(userId => builder.setContentIntent(Intents.OpenAccountIntent(userId)))
