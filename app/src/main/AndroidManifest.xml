@@ -53,6 +53,8 @@
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false"
@@ -230,7 +232,7 @@
 
         <meta-data android:name="com.mixpanel.android.MPConfig.MinimumSessionDuration" android:value="2000" />
 
-        <service android:name="com.waz.zms.CallWakeService"
+        <service android:name="com.waz.services.calling.CallWakeService"
                  android:exported="true"/>
 
         <service
@@ -239,6 +241,19 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT"/>
             </intent-filter>
         </service>
+
+        <receiver android:name="com.waz.services.websocket.WebSocketBroadcastReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.PACKAGE_DATA_CLEARED" />
+            </intent-filter>
+        </receiver>
+
+        <service android:name="com.waz.services.websocket.WebSocketService"
+            android:exported="false"
+            />
 
         <!--For Evernote Background jobs-->
         <service

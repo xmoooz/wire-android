@@ -22,7 +22,7 @@ import java.util.Calendar
 
 import javax.net.ssl.SSLContext
 import android.app.{Activity, ActivityManager, NotificationManager}
-import android.content.{Context, ContextWrapper}
+import android.content.{Context, ContextWrapper, Intent}
 import android.hardware.SensorManager
 import android.media.AudioManager
 import android.os.{Build, PowerManager, Vibrator}
@@ -81,6 +81,8 @@ import com.waz.zclient.tracking.{CrashController, GlobalTrackingController, UiTr
 import com.waz.zclient.utils.{BackStackNavigator, BackendPicker, Callback, LocalThumbnailCache, UiStorage}
 import com.waz.zclient.views.DraftMap
 import net.hockeyapp.android.Constants
+
+import com.waz.services.websocket.WebSocketService
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -331,6 +333,8 @@ class WireApplication extends MultiDexApplication with WireContext with Injectab
     val googleApi = GoogleApiImpl(this, backend, prefs)
 
     ZMessaging.onCreate(this, backend, prefs, googleApi)
+
+    startService(new Intent(this, classOf[WebSocketService]))
 
     inject[NotificationManagerWrapper]
     inject[ImageNotificationsController]
