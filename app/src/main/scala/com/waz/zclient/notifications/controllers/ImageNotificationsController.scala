@@ -29,10 +29,9 @@ import com.waz.service.images.BitmapSignal
 import com.waz.threading.Threading
 import com.waz.ui.MemoryImageCache.BitmapRequest.Single
 import com.waz.utils.LoggedTry
-import com.waz.utils.wrappers.URI
 import com.waz.utils.events.{EventContext, Signal}
+import com.waz.utils.wrappers.URI
 import com.waz.zclient.utils.ContextUtils._
-import com.waz.zclient.utils.DeprecationUtils
 import com.waz.zclient.utils.IntentUtils._
 import com.waz.zclient.{Injectable, Injector, R, WireContext}
 
@@ -78,7 +77,7 @@ class ImageNotificationsController(implicit cxt: WireContext, eventContext: Even
       .bigPicture(bitmap)
       .setSummaryText(summaryText)
 
-    val builder = DeprecationUtils.getBuilder(cxt)
+    val builder = new NotificationCompat.Builder(cxt, NotificationManagerWrapper.ChannelId)
       .setContentTitle(notificationTitle)
       .setContentText(summaryText)
       .setSmallIcon(R.drawable.ic_menu_save_image_gallery)
