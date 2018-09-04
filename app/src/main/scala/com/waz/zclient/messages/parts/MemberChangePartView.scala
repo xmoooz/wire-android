@@ -21,8 +21,8 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.widget.{LinearLayout, TextView}
-import com.waz.ZLog
 import com.waz.ZLog.ImplicitTag._
+import com.waz.ZLog.verbose
 import com.waz.api.Message
 import com.waz.api.Message.Type.MEMBER_JOIN
 import com.waz.model.MessageContent
@@ -99,6 +99,7 @@ class MemberChangePartView(context: Context, attrs: AttributeSet, style: Int) ex
       case (MEMBER_JOIN, Me, _) if shorten                                                 => getQuantityString(R.plurals.content__system__you_added_people_with_others, othersCount, namesListString, othersCount.toString)
       case (MEMBER_JOIN, Me, _)                                                            => getString(R.string.content__system__you_added_people, namesListString)
       case (MEMBER_JOIN, Other(name), Seq(`me`))                                           => getString(R.string.content__system__someone_added_you, name)
+      case (MEMBER_JOIN, Other(name), Seq(other)) if userId == other                       => getString(R.string.content__system__other_joined, name)
       case (MEMBER_JOIN, Other(name), _) if shorten && msg.members.contains(me)            => getQuantityString(R.plurals.content__system__someone_added_people_and_you_with_others, othersCount, name, namesListString, othersCount.toString)
       case (MEMBER_JOIN, Other(name), _) if shorten                                        => getQuantityString(R.plurals.content__system__someone_added_people_with_others, othersCount, name, namesListString, othersCount.toString)
       case (MEMBER_JOIN, Other(name), _)                                                   => getString(R.string.content__system__someone_added_people, name, namesListString)
@@ -111,7 +112,7 @@ class MemberChangePartView(context: Context, attrs: AttributeSet, style: Int) ex
       case (MEMBER_LEAVE, Other(name), _)                                                  => getString(R.string.content__system__other_removed_other, name, namesListString)
 
       case _ =>
-        ZLog.verbose(s"Unexpected system message format: (${msg.msgType} from $displayName with ${msg.members.toSeq})")
+        verbose(s"Unexpected system message format: (${msg.msgType} from $displayName with ${msg.members.toSeq})")
         ""
     }
   }
