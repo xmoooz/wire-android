@@ -40,6 +40,11 @@ class CallingActivity extends BaseActivity {
       .beginTransaction()
       .replace(R.id.calling_layout, CallingFragment(), CallingFragment.Tag)
       .commit
+
+    controller.isCallActive.filter(_ == false).onUi { _ =>
+      verbose("call no longer exists, finishing activity")
+      finish()
+    }
   }
 
   override def onAttachedToWindow(): Unit = {

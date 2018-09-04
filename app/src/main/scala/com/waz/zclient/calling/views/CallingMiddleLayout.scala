@@ -46,8 +46,8 @@ class CallingMiddleLayout(val context: Context, val attrs: AttributeSet, val def
 
   Signal(controller.callStateCollapseJoin, controller.isVideoCall, controller.isGroupCall).map {
     case (_,                   false, false) => CallDisplay.Chathead
-    case (Some(OtherCalling),  false, true)  => CallDisplay.Chathead
-    case (Some(SelfConnected), _,     true)  => CallDisplay.Participants
+    case (OtherCalling,  false, true)  => CallDisplay.Chathead
+    case (SelfConnected, _,     true)  => CallDisplay.Participants
     case _                                   => CallDisplay.Empty
   }.onUi { display =>
     chathead.setVisible(display == CallDisplay.Chathead)
