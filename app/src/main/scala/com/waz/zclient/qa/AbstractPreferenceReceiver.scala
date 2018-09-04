@@ -92,6 +92,8 @@ trait AbstractPreferenceReceiver extends BroadcastReceiver {
             setResultData("")
             setResultCode(Activity.RESULT_CANCELED)
         }
+      case SKIP_CALL_TERMINATING =>
+        setGlobalPref(SkipTerminatingState, true)
       case _ =>
         setResultData("Unknown Intent!")
         setResultCode(Activity.RESULT_CANCELED)
@@ -115,6 +117,7 @@ object AbstractPreferenceReceiver {
   private val TRACKING_ID_INTENT       = packageName + ".intent.action.TRACKING_ID"
   private val FULL_CONVERSATION_INTENT = packageName + ".intent.action.FULL_CONVERSATION_INTENT"
   private val HIDE_GDPR_POPUPS         = packageName + ".intent.action.HIDE_GDPR_POPUPS"
+  private val SKIP_CALL_TERMINATING    = packageName + ".intent.action.SKIP_CALL_TERMINATING"
 
   private lazy val DeveloperAnalyticsEnabled = PrefKey[Boolean]("DEVELOPER_TRACKING_ENABLED")
 }
