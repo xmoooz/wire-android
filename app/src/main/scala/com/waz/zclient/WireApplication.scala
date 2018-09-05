@@ -20,9 +20,8 @@ package com.waz.zclient
 import java.io.File
 import java.util.Calendar
 
-import javax.net.ssl.SSLContext
 import android.app.{Activity, ActivityManager, NotificationManager}
-import android.content.{Context, ContextWrapper, Intent}
+import android.content.{Context, ContextWrapper}
 import android.hardware.SensorManager
 import android.media.AudioManager
 import android.os.{Build, PowerManager, Vibrator}
@@ -30,14 +29,14 @@ import android.renderscript.RenderScript
 import android.support.multidex.MultiDexApplication
 import android.support.v4.app.{FragmentActivity, FragmentManager}
 import android.telephony.TelephonyManager
-import com.google.android.gms.security.ProviderInstaller
 import com.evernote.android.job.{JobCreator, JobManager}
+import com.google.android.gms.security.ProviderInstaller
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.verbose
 import com.waz.api.NetworkMode
-import com.waz.model.{AccentColor, ConversationData, TeamId, UserId}
 import com.waz.content._
 import com.waz.log.InternalLog
+import com.waz.model.{AccentColor, ConversationData, TeamId, UserId}
 import com.waz.permissions.PermissionsService
 import com.waz.service._
 import com.waz.service.conversation.{ConversationsListStateService, ConversationsService, ConversationsUiService}
@@ -80,9 +79,8 @@ import com.waz.zclient.preferences.PreferencesController
 import com.waz.zclient.tracking.{CrashController, GlobalTrackingController, UiTrackingController}
 import com.waz.zclient.utils.{BackStackNavigator, BackendPicker, Callback, LocalThumbnailCache, UiStorage}
 import com.waz.zclient.views.DraftMap
+import javax.net.ssl.SSLContext
 import net.hockeyapp.android.Constants
-
-import com.waz.services.websocket.WebSocketService
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -333,8 +331,6 @@ class WireApplication extends MultiDexApplication with WireContext with Injectab
     val googleApi = GoogleApiImpl(this, backend, prefs)
 
     ZMessaging.onCreate(this, backend, prefs, googleApi)
-
-    startService(new Intent(this, classOf[WebSocketService]))
 
     inject[NotificationManagerWrapper]
     inject[ImageNotificationsController]
