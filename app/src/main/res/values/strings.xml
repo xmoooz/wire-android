@@ -731,9 +731,17 @@
     </plurals>
 
     <!-- Lockscreen and notifications -->
+    <string name="message_notifications_channel_name">Message Notification Channel</string>
+    <string name="message_notifications_channel_description">Notifications regarding all message types in the application: text, images, audio and video messages.</string>
 
-    <string name="default_channel_name">Default Notification Channel</string>
-    <string name="default_channel_description">All notifications in Wire are currently handled using this channel.</string>
+    <string name="incoming_call_notifications_channel_name">Incoming Call Notification Channel</string>
+    <string name="incoming_call_notifications_channel_description">Notifications regarding incoming calls </string>
+
+    <string name="ping_notifications_channel_name">Ping Notification Channel</string>
+    <string name="ping_notifications_channel_description">Notification settings for when other users ping you.</string>
+
+    <string name="ongoing_channel_name">Background notifications</string>
+    <string name="ongoing_channel_description">Notifications that display an ongoing process or secondary action of low importance, such as calls or successfully saving an image.</string>
 
     <string name="lockscreen__talk">IS CALLING</string>
     <plurals name="notification__new_messages">
@@ -1493,7 +1501,4 @@
     <string name="participant_search_title">PEOPLE</string>
     <string name="generic_service_warning">Services have access to the content of this conversation</string>
     <string name="add_services_button_text">Manage services</string>
-
-    <string name="ongoing_channel_name">Ongoing notifications</string>
-    <string name="ongoing_channel_description">Silent notifications that display an ongoing process</string>
 </resources>

@@ -42,6 +42,7 @@ import com.waz.zclient.Intents.{CallIntent, OpenCallingScreen}
 import com.waz.zclient._
 import com.waz.zclient.calling.controllers.CallController
 import com.waz.zclient.common.views.ImageController
+import com.waz.zclient.notifications.controllers.NotificationManagerWrapper.{IncomingCallNotificationsChannelId, OngoingNotificationsChannelId}
 import com.waz.zclient.utils.ContextUtils.{getString, _}
 import com.waz.zclient.utils.RingtoneUtils
 
@@ -204,7 +205,7 @@ object CallingNotificationsController {
       case (false, false) => getString(R.string.system_notification__calling_one)
     }
 
-    val builder = new NotificationCompat.Builder(cxt, if (not.isMainCall) NotificationManagerWrapper.StickyNotificationsChannelId else NotificationManagerWrapper.ChannelId)
+    val builder = new NotificationCompat.Builder(cxt, if (not.isMainCall) OngoingNotificationsChannelId else IncomingCallNotificationsChannelId)
       .setSmallIcon(R.drawable.call_notification_icon)
       .setLargeIcon(not.bitmap.orNull)
       .setContentTitle(title)

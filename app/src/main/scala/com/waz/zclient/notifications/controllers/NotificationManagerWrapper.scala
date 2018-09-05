@@ -261,21 +261,34 @@ trait NotificationManagerWrapper {
 
 object NotificationManagerWrapper {
 
-  val ChannelId = "DEFAULT_CHANNEL_ID"
-  val StickyNotificationsChannelId = "STICKY_NOTIFICATIONS_CHANNEL_ID"
+  val PingNotificationsChannelId         = "PINGS_NOTIFICATIONS_CHANNEL_ID"
+  val MessageNotificationsChannelId      = "MESSAGE_NOTIFICATIONS_CHANNEL_ID"
+  val IncomingCallNotificationsChannelId = "INCOMING_CALL_NOTIFICATIONS_CHANNEL_ID"
+  val OngoingNotificationsChannelId      = "STICKY_NOTIFICATIONS_CHANNEL_ID"
 
   class AndroidNotificationsManager(notificationManager: NotificationManager)(implicit inj: Injector, cxt: Context, eventContext: EventContext) extends NotificationManagerWrapper with Injectable {
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      notificationManager.createNotificationChannel(
-        returning(new NotificationChannel(ChannelId, getString(R.string.default_channel_name), NotificationManager.IMPORTANCE_MAX)) {
-          _.setDescription(getString(R.string.default_channel_description))
-        })
+      Seq(PingNotificationsChannelId, MessageNotificationsChannelId).foreach { id =>
+        val (name, description, sound) = id match {
+          case PingNotificationsChannelId         => (R.string.ping_notifications_channel_name,          R.string.ping_notifications_channel_description,          R.raw.ping_from_them)
+          case IncomingCallNotificationsChannelId => (R.string.incoming_call_notifications_channel_name, R.string.incoming_call_notifications_channel_description, R.raw.ringing_from_them)
+          case _                                  => (R.string.message_notifications_channel_name,       R.string.message_notifications_channel_description,       R.raw.new_message_gcm)
+        }
+        notificationManager.createNotificationChannel(
+          returning(new NotificationChannel(id, getString(name), NotificationManager.IMPORTANCE_MAX)) { ch =>
+            ch.setDescription(getString(description))
+            ch.setShowBadge(true)
+            ch.enableVibration(true)
+            ch.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE)
+          })
+      }
 
       notificationManager.createNotificationChannel(
-        returning(new NotificationChannel(StickyNotificationsChannelId, getString(R.string.ongoing_channel_name), NotificationManager.IMPORTANCE_LOW)) { ch =>
+        returning(new NotificationChannel(OngoingNotificationsChannelId, getString(R.string.ongoing_channel_name), NotificationManager.IMPORTANCE_LOW)) { ch =>
           ch.setDescription(getString(R.string.ongoing_channel_description))
           ch.enableVibration(false)
+          ch.setShowBadge(false)
           ch.setSound(null, null)
         })
     }
@@ -290,19 +303,7 @@ object NotificationManagerWrapper {
     controller.notificationToBuild.onUi { case (id, props) =>
       verbose(s"build: $id")
 
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        if (notificationManager.getNotificationChannel(ChannelId) == null)
-          notificationManager.createNotificationChannel(
-            returning(new NotificationChannel(ChannelId, getString(R.string.default_channel_name), NotificationManager.IMPORTANCE_HIGH)) { channel =>
-              verbose(s"notification channel created: $ChannelId")
-              channel.setDescription(getString(R.string.default_channel_description))
-              channel.setShowBadge(true)
-              channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE)
-            }
-          )
-      }
-
-      notificationManager.notify(id, props.build(ChannelId))
+      notificationManager.notify(id, props.build(MessageNotificationsChannelId))
     }
 
     override def getActiveNotificationIds: Seq[Int] =
