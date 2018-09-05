@@ -18,33 +18,31 @@
 package com.waz.services.calling
 
 import android.app.Service
-import android.content
+import android.content.{Context, Intent}
 import android.os.IBinder
 import com.waz.zclient.ServiceHelper
 import com.waz.zclient.notifications.controllers.CallingNotificationsController
 import com.waz.zclient.notifications.controllers.CallingNotificationsController.androidNotificationBuilder
-import com.waz.utils.events.Subscription
 
 class CallingNotificationsService extends ServiceHelper {
   private lazy val callNCtrl = inject[CallingNotificationsController]
-  private var sub = Option.empty[Subscription]
 
-  override def onBind(intent: content.Intent): IBinder = null
+  implicit lazy val cxt: Context = getApplicationContext
 
-  override def onStartCommand(intent: content.Intent, flags: Int, startId: Int): Int = {
-    implicit val cxt: content.Context = getApplicationContext
+  private lazy val sub = callNCtrl.notifications.map(_.find(_.isMainCall)).onUi {
+    case Some(not) =>
+      val builder = androidNotificationBuilder(not)
+      startForeground(not.convId.str.hashCode, builder.build())
+    case _ =>
+      stopForeground(true)
+      stopSelf()
+  }
 
+  override def onBind(intent: Intent): IBinder = null
+
+  override def onStartCommand(intent: Intent, flags: Int, startId: Int): Int = {
     super.onStartCommand(intent, flags, startId)
-    if (sub.isEmpty) {
-      sub = Some(callNCtrl.notifications.map(_.find(_.isMainCall)).onUi {
-        case Some(not) =>
-          val builder = androidNotificationBuilder(not)
-          startForeground(not.convId.str.hashCode, builder.build())
-        case _ =>
-          stopForeground(true)
-          stopSelf()
-      })
-    }
+    sub
     Service.START_STICKY
   }
 }
