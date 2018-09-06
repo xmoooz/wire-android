@@ -56,7 +56,6 @@ class BaseActivity extends AppCompatActivity
   override def onCreate(savedInstanceState: Bundle) = {
     super.onCreate(savedInstanceState)
     setTheme(getBaseTheme)
-    WebSocketService(this)
   }
 
   override def onStart(): Unit = {
@@ -71,12 +70,13 @@ class BaseActivity extends AppCompatActivity
     permissions.registerProvider(this)
   }
 
-  def onBaseActivityStart() = {
+  def onBaseActivityStart(): Unit = {
     getControllerFactory.setActivity(this)
     ZMessaging.currentUi.onStart()
     inject[UiLifeCycle].acquireUi()
     if (!this.isInstanceOf[LaunchActivity]) permissions.registerProvider(this)
     Option(ViewUtils.getContentView(getWindow)).foreach(getControllerFactory.setGlobalLayout)
+    WebSocketService(this)
   }
 
   override def onStop() = {
