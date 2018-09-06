@@ -373,6 +373,8 @@ object NotificationManagerWrapper {
         warn(s"Tried to access method getActiveNotifications from api level: ${Build.VERSION.SDK_INT}")
         Seq.empty
       }
+
+    def getNotificationChannel(channelId: String) = notificationManager.getNotificationChannel(channelId)
   }
 }
 

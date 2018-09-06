@@ -29,7 +29,7 @@ import android.view.View
 import android.widget.LinearLayout
 import com.waz.content.UserPreferences._
 import com.waz.media.manager.context.IntensityLevel
-import com.waz.service.ZMessaging
+import com.waz.service.{UiLifeCycle, ZMessaging}
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.zclient._
@@ -40,6 +40,7 @@ import com.waz.zclient.utils.{BackStackKey, RichView, RingtoneUtils}
 import OptionsView._
 import com.waz.model.UserId
 import com.waz.zclient.notifications.controllers.NotificationManagerWrapper
+import com.waz.zclient.notifications.controllers.NotificationManagerWrapper.AndroidNotificationsManager
 
 trait OptionsView {
   def setSounds(level: IntensityLevel): Unit
@@ -73,7 +74,6 @@ class OptionsViewImpl(context: Context, attrs: AttributeSet, style: Int) extends
   val darkThemeSwitch      = findById[SwitchPreference](R.id.preferences_dark_theme)
   val sendButtonSwitch     = findById[SwitchPreference](R.id.preferences_send_button)
   val soundsButton         = findById[TextButton](R.id.preferences_sounds)
-  val alertCategory        = findById[View](R.id.preferences_alerts_category_title)
   val downloadImagesSwitch = findById[SwitchPreference](R.id.preferences_options_image_download)
 
   val ringToneButton         = findById[TextButton](R.id.preference_sounds_ringtone)
@@ -99,9 +99,7 @@ class OptionsViewImpl(context: Context, attrs: AttributeSet, style: Int) extends
   sendButtonSwitch.setPreference(SendButtonEnabled)
 
   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-    vibrationSwitch.setVisible(false)
     soundsButton.setVisible(false)
-    alertCategory.setVisible(false)
   }
 
   private def openNotificationSettings(channelId: String) = {
@@ -220,12 +218,32 @@ class OptionsViewController(view: OptionsView)(implicit inj: Injector, ec: Event
   val zms = inject[Signal[ZMessaging]]
   val userPrefs = zms.map(_.userPrefs)
   val team = zms.flatMap(_.teams.selfTeam)
+  val notificationManagerWrapper = inject[NotificationManagerWrapper] match {
+    case nmw: AndroidNotificationsManager => Some(nmw)
+    case _ => None
+  }
+
+  private def getChannelTone(channelId: UserId => String) = for {
+      uId <- zms.map(_.selfUserId)
+      _ <- inject[UiLifeCycle].uiActive // This forces updating in case the user changes the tone in the system channel
+    } yield notificationManagerWrapper.map(_.getNotificationChannel(channelId(uId)).getSound)
+
+  private val channelPingTone = getChannelTone(NotificationManagerWrapper.PingNotificationsChannelId)
+  private val channelTextTone = getChannelTone(NotificationManagerWrapper.MessageNotificationsChannelId)
 
   userPrefs.flatMap(_.preference(DownloadImagesAlways).signal).onUi{ view.setDownloadPictures }
   userPrefs.flatMap(_.preference(Sounds).signal).onUi{ view.setSounds }
   userPrefs.flatMap(_.preference(RingTone).signal).onUi{ view.setRingtone }
-  userPrefs.flatMap(_.preference(TextTone).signal).onUi{ view.setTextTone }
-  userPrefs.flatMap(_.preference(PingTone).signal).onUi{ view.setPingTone }
+
+  Signal(userPrefs.flatMap(_.preference(TextTone).signal), channelTextTone).map {
+    case (_, Some(uri)) if Build.VERSION.SDK_INT >= Build.VERSION_CODES.O => uri.toString
+    case (uri, _) => uri
+  }.onUi(view.setTextTone)
+
+  Signal(userPrefs.flatMap(_.preference(PingTone).signal), channelPingTone).map {
+    case (_, Some(uri)) if Build.VERSION.SDK_INT >= Build.VERSION_CODES.O => uri.toString
+    case (uri, _) => uri
+  }.onUi(view.setPingTone)
 
   team.onUi{ team => view.setShareEnabled(team.isEmpty) }
 
