@@ -37,6 +37,7 @@ object Intents {
   type Page = String
   object Page {
     lazy val Settings = "Settings"
+    lazy val Advanced = "Advanced"
     lazy val Devices  = "Devices"
   }
 
@@ -66,6 +67,9 @@ object Intents {
 
   def ShowDevicesIntent(implicit context: Context) =
     new Intent(context, classOf[PreferencesActivity]).putExtra(OpenPageExtra, Page.Devices)
+
+  def ShowAdvancedSettingsIntent(implicit context: Context) =
+    new Intent(context, classOf[PreferencesActivity]).putExtra(OpenPageExtra, Page.Advanced)
 
   def OpenSettingsIntent(implicit context: Context) =
     new Intent(context, classOf[PreferencesActivity])

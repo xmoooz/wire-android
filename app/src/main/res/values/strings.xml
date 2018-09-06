@@ -563,6 +563,9 @@
     <string name="pref_advanced_send_anonymous_data_summary">Help make Wire better by sending anonymous usage and crash reports.</string>
     <string name="pref_advanced_receive_news_and_offers_title">Receive Newsletter</string>
     <string name="pref_advanced_receive_news_and_offers_summary">Receive news and product updates from Wire via email.</string>
+    <string name="pref_advanced_ws_foreground_title">Connection-to-Server Foreground Service</string>
+    <string name="pref_advanced_ws_foreground_summary">If we detect you do not have Google Play Services (GPS) installed, Wire for Android will attempt to keep an open connection with the Wire server in order to receive notifications while the application is not in the foreground.
+        Turning off this setting may improve Wire\'s battery performance, however you will no longer receive notifications when Wire is in the background. This applies to all logged-in accounts on this device. Note, if you have GPS installed, changing this setting does nothing.</string>
 
     <!-- Options -->
     <string name="pref_options_dark_theme_title">Dark theme</string>
@@ -830,6 +833,11 @@
     <string name="system_notification__calling_group">%1$s is calling…</string>
     <string name="system_notification__video_calling_one">Calling with video…</string>
     <string name="system_notification__video_calling_group">%1$s is calling with video…</string>
+
+    <string name="ws_foreground_notification_connected_title">Connected to Wire server</string>
+    <string name="ws_foreground_notification_no_internet_title">Waiting for Internet connection…</string>
+    <string name="ws_foreground_notification_connecting_title">Establishing connection…</string>
+    <string name="ws_foreground_notification_summary">Tap here for more information.</string>
 
     <!-- Notification actions -->
     <string name="notification__action__call">Call</string>
