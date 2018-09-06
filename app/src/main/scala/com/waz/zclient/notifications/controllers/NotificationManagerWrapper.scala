@@ -33,8 +33,9 @@ import com.waz.utils.events.EventContext
 import com.waz.utils.returning
 import com.waz.utils.wrappers.Bitmap
 import com.waz.zclient.Intents.{CallIntent, QuickReplyIntent}
+import com.waz.zclient.notifications.controllers.NotificationManagerWrapper.{MessageNotificationsChannelId, PingNotificationsChannelId}
 import com.waz.zclient.utils.ContextUtils.getString
-import com.waz.zclient.utils.{ResString, format}
+import com.waz.zclient.utils.{ResString, RingtoneUtils, format}
 import com.waz.zclient.{Injectable, Injector, Intents, R}
 import com.waz.zms.NotificationsAndroidService
 
@@ -163,7 +164,8 @@ case class NotificationProps(when:                     Option[Long] = None,
                              lights:                   Option[(Int, Int, Int)] = None,
                              largeIcon:                Option[Bitmap] = None,
                              action1:                  Option[(UserId, ConvId, Int, Boolean)] = None,
-                             action2:                  Option[(UserId, ConvId, Int, Boolean)] = None
+                             action2:                  Option[(UserId, ConvId, Int, Boolean)] = None,
+                             lastIsPing:               Option[Boolean] = None
                             ) {
   override def toString: String =
     format(className = "NotificationProps", oneLiner = false,
@@ -187,10 +189,12 @@ case class NotificationProps(when:                     Option[Long] = None,
       "lights"                   -> lights,
       "largeIcon"                -> largeIcon,
       "action1"                  -> action1,
-      "action2"                  -> action2
+      "action2"                  -> action2,
+      "lastIsPing"               -> lastIsPing
     )
 
-  def build(channelId: String)(implicit cxt: Context): Notification = {
+  def build()(implicit cxt: Context): Notification = {
+    val channelId = if (lastIsPing.contains(true)) PingNotificationsChannelId else MessageNotificationsChannelId
     val builder = new NotificationCompat.Builder(cxt, channelId)
 
     when.foreach(builder.setWhen)
@@ -281,6 +285,7 @@ object NotificationManagerWrapper {
             ch.setShowBadge(true)
             ch.enableVibration(true)
             ch.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE)
+            ch.setSound(RingtoneUtils.getUriForRawId(cxt, sound), Notification.AUDIO_ATTRIBUTES_DEFAULT)
           })
       }
 
@@ -303,7 +308,7 @@ object NotificationManagerWrapper {
     controller.notificationToBuild.onUi { case (id, props) =>
       verbose(s"build: $id")
 
-      notificationManager.notify(id, props.build(MessageNotificationsChannelId))
+      notificationManager.notify(id, props.build())
     }
 
     override def getActiveNotificationIds: Seq[Int] =
