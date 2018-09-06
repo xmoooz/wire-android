@@ -27,6 +27,7 @@ import com.waz.content.GlobalPreferences.WsForegroundKey
 import com.waz.service.ZMessaging
 import com.waz.threading.{CancellableFuture, Threading}
 import com.waz.utils.returning
+import com.waz.utils.wrappers.GoogleApi
 import com.waz.zclient.preferences.views.{SwitchPreference, TextButton}
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.{BackStackKey, DebugUtils}
@@ -40,6 +41,7 @@ class AdvancedViewImpl(context: Context, attrs: AttributeSet, style: Int) extend
   def this(context: Context) = this(context, null, 0)
 
   inflate(R.layout.preferences_advanced_layout)
+
 
   val submitReport = returning(findById[TextButton](R.id.preferences_debug_report)) { v =>
     v.onClickEvent { _ =>
@@ -62,6 +64,7 @@ class AdvancedViewImpl(context: Context, attrs: AttributeSet, style: Int) extend
   }
 
   val webSocketForegroundServiceSwitch = returning(findById[SwitchPreference](R.id.preferences_websocket_service)) { v =>
+    inject[GoogleApi].isGooglePlayServicesAvailable.map(if (_) View.GONE else View.VISIBLE).onUi(v.setVisibility)
     v.setPreference(WsForegroundKey, global = true)
   }
 }

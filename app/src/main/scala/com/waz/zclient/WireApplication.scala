@@ -47,6 +47,7 @@ import com.waz.service.tracking.TrackingService
 import com.waz.services.fcm.FetchJob
 import com.waz.services.gps.GoogleApiImpl
 import com.waz.utils.events.{EventContext, Signal}
+import com.waz.utils.wrappers.GoogleApi
 import com.waz.zclient.appentry.controllers.{CreateTeamController, InvitationsController}
 import com.waz.zclient.calling.controllers.{CallController, CallStartController}
 import com.waz.zclient.camera.controllers.{AndroidCameraFactory, GlobalCameraController}
@@ -119,6 +120,7 @@ object WireApplication {
     bind [TeamsStorage]                   to inject[GlobalModule].teamsStorage
     bind [SSOService]                     to inject[GlobalModule].ssoService
     bind [GlobalNotificationsService]     to inject[GlobalModule].notifications
+    bind [GoogleApi]                      to inject[GlobalModule].googleApi
 
     bind [Signal[Option[AccountManager]]] to ZMessaging.currentAccounts.activeAccountManager
     bind [Signal[AccountManager]]         to inject[Signal[Option[AccountManager]]].collect { case Some(am) => am }

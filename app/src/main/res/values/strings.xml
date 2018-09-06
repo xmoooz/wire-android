@@ -563,9 +563,6 @@
     <string name="pref_advanced_send_anonymous_data_summary">Help make Wire better by sending anonymous usage and crash reports.</string>
     <string name="pref_advanced_receive_news_and_offers_title">Receive Newsletter</string>
     <string name="pref_advanced_receive_news_and_offers_summary">Receive news and product updates from Wire via email.</string>
-    <string name="pref_advanced_ws_foreground_title">Connection-to-Server Foreground Service</string>
-    <string name="pref_advanced_ws_foreground_summary">If we detect you do not have Google Play Services (GPS) installed, Wire for Android will attempt to keep an open connection with the Wire server in order to receive notifications while the application is not in the foreground.
-        Turning off this setting may improve Wire\'s battery performance, however you will no longer receive notifications when Wire is in the background. This applies to all logged-in accounts on this device. Note, if you have GPS installed, changing this setting does nothing.</string>
 
     <!-- Options -->
     <string name="pref_options_dark_theme_title">Dark theme</string>
@@ -628,11 +625,14 @@
     <string name="pref_advanced_debug_report_summary">This helps Wire Support diagnose problems.</string>
     <string name="pref_advanced_analytics_title">Usage data and crash reports</string>
     <string name="pref_advanced_analytics_summary">Make Wire better by sending anonymous information.</string>
-    <string name="pref_advanced_reset_push_title">Reset Push Notifications Token</string>
+    <string name="pref_advanced_reset_push_title">Reset push notifications token</string>
     <string name="pref_advanced_reset_push_summary">If you experience problems with push notifications, Wire Support may ask you to reset this token.</string>
     <string name="pref_advanced_reset_push_completed">Push token has been reset</string>
     <string name="debug_report__title">Wire debug report - %1$s</string>
     <string name="debug_report__body">Please describe the steps required to reproduce the issue, provide screenshots if possible and send this email.\n\n</string>
+    <string name="pref_advanced_ws_foreground_title">Maintain connection to server</string>
+    <string name="pref_advanced_ws_foreground_summary">We have detected that you do not have Google Play Services installed. Wire for Android will attempt to keep an open connection with the Wire server in order to receive notifications while the application is not in the foreground.
+        Turning off this setting may improve Wire\'s battery performance, however you will no longer receive notifications when Wire is in the background. This applies to all logged-in accounts on this device.</string>
 
     <!-- Support -->
     <string name="pref_support_screen_title">Support</string>
