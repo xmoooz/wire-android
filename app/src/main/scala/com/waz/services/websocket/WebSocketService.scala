@@ -21,16 +21,16 @@ package com.waz.services.websocket
 import android.app.{PendingIntent, Service}
 import android.content
 import android.content.{BroadcastReceiver, Context, Intent}
-import android.os.IBinder
+import android.os.{Build, IBinder}
 import android.support.v4.app.NotificationCompat
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
-import com.waz.content.GlobalPreferences.PushEnabledKey
+import com.waz.content.GlobalPreferences.{PushEnabledKey, WsForegroundKey}
 import com.waz.service.AccountsService.InForeground
 import com.waz.service.{AccountsService, GlobalModule}
 import com.waz.utils.events.Signal
 import com.waz.zclient.notifications.controllers.NotificationManagerWrapper
-import com.waz.zclient.{R, ServiceHelper}
+import com.waz.zclient.{Intents, R, ServiceHelper}
 
 /**
   * Receiver called on boot or when app is updated.
@@ -38,7 +38,11 @@ import com.waz.zclient.{R, ServiceHelper}
 class WebSocketBroadcastReceiver extends BroadcastReceiver {
   override def onReceive(context: Context, intent: Intent): Unit = {
     verbose(s"onReceive $intent")
-    WebSocketService(context)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      context.startForegroundService(new Intent(context, classOf[WebSocketService]))
+    } else {
+      WebSocketService(context)
+    }
   }
 }
 
@@ -50,49 +54,69 @@ class WebSocketService extends ServiceHelper {
 
   private implicit def context = getApplicationContext
 
-  private lazy val launchIntent = PendingIntent.getActivity(context, 1, getPackageManager.getLaunchIntentForPackage(context.getPackageName), 0)
+  private lazy val launchIntent = PendingIntent.getActivity(context, 1, Intents.ShowAdvancedSettingsIntent, 0)
 
   private lazy val global   = inject[GlobalModule]
   private lazy val accounts = inject[AccountsService]
 
   private lazy val webSocketActiveSubscription =
     (for {
-      gpsAvailable     <- global.googleApi.isGooglePlayServicesAvailable
-      cloudPushEnabled <- global.prefs(PushEnabledKey).signal
-      accs             <- accounts.zmsInstances
-      accsInFG         <- Signal.sequence(accs.map(_.selfUserId).map(id => accounts.accountState(id).map(st => id -> st)).toSeq : _*)
-    } yield (!gpsAvailable || !cloudPushEnabled, accs, accsInFG.toMap)) {
-      case (cloudPushDisabled, accs, accsInFg) =>
-        val (zmsWithWSActive, zmsWithWSInactive) = accs.partition(zms => accsInFg(zms.selfUserId) == InForeground || cloudPushDisabled)
-        verbose(s"cloudPushDisabled: $cloudPushDisabled, zmsWithWSActive: ${zmsWithWSActive.map(_.selfUserId)}, zmsWithWSInactive: ${zmsWithWSInactive.map(_.selfUserId)}")
-
+      gpsAvailable        <- global.googleApi.isGooglePlayServicesAvailable
+      cloudPushEnabled    <- global.prefs(PushEnabledKey).signal
+      wsForegroundEnabled <- global.prefs(WsForegroundKey).signal
+      accs                <- accounts.zmsInstances
+      accsInFG            <- Signal.sequence(accs.map(_.selfUserId).map(id => accounts.accountState(id).map(st => id -> st)).toSeq : _*).map(_.toMap)
+      (zmsWithWSActive, zmsWithWSInactive) = {
+        val cloudPushDisabled = !gpsAvailable || !cloudPushEnabled
+        accs.partition(zms => accsInFG(zms.selfUserId) == InForeground || (cloudPushDisabled && wsForegroundEnabled))
+      }
+    } yield (zmsWithWSActive, zmsWithWSInactive)) {
+      case (zmsWithWSActive, zmsWithWSInactive) =>
+        verbose(s"zmsWithWSActive: ${zmsWithWSActive.map(_.selfUserId)}, zmsWithWSInactive: ${zmsWithWSInactive.map(_.selfUserId)}")
         zmsWithWSActive.foreach(_.wsPushService.activate())
         zmsWithWSInactive.foreach(_.wsPushService.deactivate())
-
         if (zmsWithWSActive.isEmpty) {
           verbose("stopping")
           stopSelf()
         }
     }
 
-  private lazy val appInForegroundSubscription =
-    global.lifecycle.uiActive.zip(global.network.isOnline) {
-      case (true, _) =>
+  private lazy val appInForegroundSubscription = {
+
+    global.prefs(WsForegroundKey).signal.flatMap {
+      case true =>
+        global.lifecycle.uiActive.flatMap {
+          case false => global.network.isOnline.flatMap {
+            //checks to see if there are any accounts that haven't yet established a web socket
+            case true => accounts.zmsInstances.flatMap(zs => Signal.sequence(zs.map(_.wsPushService.connected).toSeq: _ *).map(_.exists(!identity(_)))).map {
+              case true => Option(R.string.ws_foreground_notification_connecting_title)
+              case _    => Option(R.string.ws_foreground_notification_connected_title)
+            }
+            case _ => Signal.const(Option(R.string.ws_foreground_notification_no_internet_title))
+          }
+          case _ => Signal.const(Option.empty[Int])
+        }
+      case _ => Signal.const(Option.empty[Int])
+    } {
+      case None =>
         verbose("stopForeground")
         stopForeground(true)
-      case (false, online) =>
+
+      case Some(title) =>
         verbose("startForeground")
         startForeground(WebSocketService.ForegroundId,
           new NotificationCompat.Builder(this, NotificationManagerWrapper.OngoingNotificationsChannelId)
             .setSmallIcon(R.drawable.ic_menu_logo)
-            .setContentTitle(getString(if (online) R.string.zms_websocket_connected else R.string.zms_websocket_connection_offline))
-            .setContentText(getString(R.string.zms_websocket_connection_info))
+            .setContentTitle(getString(title))
             .setContentIntent(launchIntent)
+            .setStyle(new NotificationCompat.BigTextStyle()
+              .bigText(getString(R.string.ws_foreground_notification_summary)))
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
         )
     }
+  }
 
 
   override def onBind(intent: content.Intent): IBinder = null

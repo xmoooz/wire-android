@@ -168,7 +168,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
     }
 
   private def createSummaryNotificationProps(userId: UserId, silent: Boolean, nots: Seq[NotificationInfo], teamName: Option[String]) =
-    NotificationProps (
+    NotificationProps (userId,
       when                     = Some(nots.minBy(_.time.instant).time.instant.toEpochMilli),
       showWhen                 = Some(true),
       category                 = Some(NotificationCompat.CATEGORY_MESSAGE),
@@ -319,7 +319,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
 
   private def commonNotificationProperties(ns: Seq[NotificationInfo], userId: UserId, silent: Boolean, pic: Option[Bitmap]) = {
     val color = notificationColor(userId)
-    NotificationProps(
+    NotificationProps(userId,
       showWhen      = Some(true),
       category      = Some(NotificationCompat.CATEGORY_MESSAGE),
       priority      = Some(NotificationCompat.PRIORITY_HIGH),
@@ -331,7 +331,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
       group         = Some(userId),
       when          = Some(ns.maxBy(_.time.instant).time.instant.toEpochMilli),
       largeIcon     = pic,
-      lights        = color.map(c => (c, getInt(R.integer.notifications__system__led_on), getInt(R.integer.notifications__system__led_off))),
+      lights        = Some(color.getOrElse(Color.WHITE), getInt(R.integer.notifications__system__led_on), getInt(R.integer.notifications__system__led_off)),
       color         = color,
       lastIsPing    = ns.map(_.tpe).lastOption.map(_ == KNOCK)
     )
