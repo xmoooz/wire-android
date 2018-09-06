@@ -21,7 +21,7 @@ package com.waz.services.websocket
 import android.app.{PendingIntent, Service}
 import android.content
 import android.content.{BroadcastReceiver, Context, Intent}
-import android.os.IBinder
+import android.os.{Build, IBinder}
 import android.support.v4.app.NotificationCompat
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
@@ -38,7 +38,11 @@ import com.waz.zclient.{Intents, R, ServiceHelper}
 class WebSocketBroadcastReceiver extends BroadcastReceiver {
   override def onReceive(context: Context, intent: Intent): Unit = {
     verbose(s"onReceive $intent")
-    WebSocketService(context)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      context.startForegroundService(new Intent(context, classOf[WebSocketService]))
+    } else {
+      WebSocketService(context)
+    }
   }
 }
 
