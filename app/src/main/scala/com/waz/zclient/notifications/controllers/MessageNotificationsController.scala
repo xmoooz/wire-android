@@ -168,7 +168,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
     }
 
   private def createSummaryNotificationProps(userId: UserId, silent: Boolean, nots: Seq[NotificationInfo], teamName: Option[String]) =
-    NotificationProps (
+    NotificationProps (userId,
       when                     = Some(nots.minBy(_.time.instant).time.instant.toEpochMilli),
       showWhen                 = Some(true),
       category                 = Some(NotificationCompat.CATEGORY_MESSAGE),
@@ -319,7 +319,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
 
   private def commonNotificationProperties(ns: Seq[NotificationInfo], userId: UserId, silent: Boolean, pic: Option[Bitmap]) = {
     val color = notificationColor(userId)
-    NotificationProps(
+    NotificationProps(userId,
       showWhen      = Some(true),
       category      = Some(NotificationCompat.CATEGORY_MESSAGE),
       priority      = Some(NotificationCompat.PRIORITY_HIGH),
