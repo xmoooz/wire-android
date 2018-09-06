@@ -20,7 +20,7 @@ package com.waz.zclient.preferences.pages
 import android.content.{Context, Intent}
 import android.media.RingtoneManager
 import android.net.Uri
-import android.os.Bundle
+import android.os.{Build, Bundle}
 import android.provider.Settings
 import android.support.v4.app.{Fragment, FragmentTransaction}
 import android.text.TextUtils
@@ -38,6 +38,8 @@ import com.waz.zclient.preferences.PreferencesActivity
 import com.waz.zclient.preferences.dialogs.SoundLevelDialog
 import com.waz.zclient.utils.{BackStackKey, RichView, RingtoneUtils}
 import OptionsView._
+import com.waz.model.UserId
+import com.waz.zclient.notifications.controllers.NotificationManagerWrapper
 
 trait OptionsView {
   def setSounds(level: IntensityLevel): Unit
@@ -46,6 +48,7 @@ trait OptionsView {
   def setPingTone(string: String): Unit
   def setDownloadPictures(wifiOnly: Boolean): Unit
   def setShareEnabled(enabled: Boolean): Unit
+  def setAccountId(userId: UserId): Unit
 }
 
 object OptionsView {
@@ -70,6 +73,7 @@ class OptionsViewImpl(context: Context, attrs: AttributeSet, style: Int) extends
   val darkThemeSwitch      = findById[SwitchPreference](R.id.preferences_dark_theme)
   val sendButtonSwitch     = findById[SwitchPreference](R.id.preferences_send_button)
   val soundsButton         = findById[TextButton](R.id.preferences_sounds)
+  val alertCategory        = findById[View](R.id.preferences_alerts_category_title)
   val downloadImagesSwitch = findById[SwitchPreference](R.id.preferences_options_image_download)
 
   val ringToneButton         = findById[TextButton](R.id.preference_sounds_ringtone)
@@ -84,6 +88,7 @@ class OptionsViewImpl(context: Context, attrs: AttributeSet, style: Int) extends
   private var textToneUri = ""
   private var pingToneUri = ""
   private var soundLevel = IntensityLevel.NONE
+  private var accountId = UserId()
 
   contactsSwitch.setPreference(ShareContacts)
   darkThemeSwitch.setPreference(DarkTheme)
@@ -93,9 +98,34 @@ class OptionsViewImpl(context: Context, attrs: AttributeSet, style: Int) extends
   vibrationSwitch.setPreference(VibrateEnabled)
   sendButtonSwitch.setPreference(SendButtonEnabled)
 
+  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    vibrationSwitch.setVisible(false)
+    soundsButton.setVisible(false)
+    alertCategory.setVisible(false)
+  }
+
+  private def openNotificationSettings(channelId: String) = {
+    val intent = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+    intent.putExtra(Settings.EXTRA_APP_PACKAGE, getContext.getPackageName)
+    intent.putExtra(Settings.EXTRA_CHANNEL_ID, channelId)
+    context.asInstanceOf[BaseActivity].startActivityForResult(intent, 0)
+  }
+
   ringToneButton.onClickEvent{ _ => showRingtonePicker(RingtoneManager.TYPE_RINGTONE, defaultRingToneUri, RingToneResultId, ringToneUri)}
-  textToneButton.onClickEvent{ _ => showRingtonePicker(RingtoneManager.TYPE_NOTIFICATION, defaultTextToneUri, TextToneResultId, textToneUri) }
-  pingToneButton.onClickEvent{ _ => showRingtonePicker(RingtoneManager.TYPE_NOTIFICATION, defaultPingToneUri, PingToneResultId, pingToneUri) }
+  textToneButton.onClickEvent{ _ =>
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      openNotificationSettings(NotificationManagerWrapper.MessageNotificationsChannelId(accountId))
+    } else {
+      showRingtonePicker(RingtoneManager.TYPE_NOTIFICATION, defaultTextToneUri, TextToneResultId, textToneUri)
+    }
+  }
+  pingToneButton.onClickEvent{ _ =>
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      openNotificationSettings(NotificationManagerWrapper.PingNotificationsChannelId(accountId))
+    } else {
+      showRingtonePicker(RingtoneManager.TYPE_NOTIFICATION, defaultPingToneUri, PingToneResultId, pingToneUri)
+    }
+  }
   soundsButton.onClickEvent{ _ => showPrefDialog(SoundLevelDialog(soundLevel), SoundLevelDialog.Tag)}
 
   override def setSounds(level: IntensityLevel) = {
@@ -166,6 +196,8 @@ class OptionsViewImpl(context: Context, attrs: AttributeSet, style: Int) extends
     intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, uri)
     context.asInstanceOf[PreferencesActivity].startActivityForResult(intent, resultId)
   }
+
+  override def setAccountId(userId: UserId): Unit = accountId = userId
 }
 
 case class OptionsBackStackKey(args: Bundle = new Bundle()) extends BackStackKey(args) {
@@ -196,4 +228,6 @@ class OptionsViewController(view: OptionsView)(implicit inj: Injector, ec: Event
   userPrefs.flatMap(_.preference(PingTone).signal).onUi{ view.setPingTone }
 
   team.onUi{ team => view.setShareEnabled(team.isEmpty) }
+
+  zms.onUi(z => view.setAccountId(z.selfUserId))
 }
