@@ -330,6 +330,7 @@ object NotificationManagerWrapper {
                     ch.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE)
                     ch.setSound(sound, Notification.AUDIO_ATTRIBUTES_DEFAULT)
                     ch.setGroup(groupId)
+                    ch.enableLights(true)
                   })
           }
         }

@@ -331,7 +331,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
       group         = Some(userId),
       when          = Some(ns.maxBy(_.time.instant).time.instant.toEpochMilli),
       largeIcon     = pic,
-      lights        = color.map(c => (c, getInt(R.integer.notifications__system__led_on), getInt(R.integer.notifications__system__led_off))),
+      lights        = Some(color.getOrElse(Color.WHITE), getInt(R.integer.notifications__system__led_on), getInt(R.integer.notifications__system__led_off)),
       color         = color,
       lastIsPing    = ns.map(_.tpe).lastOption.map(_ == KNOCK)
     )
