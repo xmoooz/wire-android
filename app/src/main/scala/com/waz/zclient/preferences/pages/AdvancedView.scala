@@ -23,9 +23,11 @@ import android.os.Bundle
 import android.util.AttributeSet
 import android.view.View
 import android.widget.{LinearLayout, Toast}
+import com.waz.content.GlobalPreferences.WsForegroundKey
 import com.waz.service.ZMessaging
 import com.waz.threading.{CancellableFuture, Threading}
-import com.waz.zclient.preferences.views.TextButton
+import com.waz.utils.returning
+import com.waz.zclient.preferences.views.{SwitchPreference, TextButton}
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.{BackStackKey, DebugUtils}
 import com.waz.zclient.{R, ViewHelper}
@@ -39,23 +41,28 @@ class AdvancedViewImpl(context: Context, attrs: AttributeSet, style: Int) extend
 
   inflate(R.layout.preferences_advanced_layout)
 
-  val submitReport = findById[TextButton](R.id.preferences_debug_report)
-  val resetPush = findById[TextButton](R.id.preferences_reset_push)
-
-  submitReport.onClickEvent { _ =>
-    DebugUtils.sendDebugReport(context.asInstanceOf[Activity])
+  val submitReport = returning(findById[TextButton](R.id.preferences_debug_report)) { v =>
+    v.onClickEvent { _ =>
+      DebugUtils.sendDebugReport(context.asInstanceOf[Activity])
+    }
   }
 
-  resetPush.onClickEvent { _ =>
-    ZMessaging.currentGlobal.tokenService.resetGlobalToken()
-    Toast.makeText(getContext, getString(R.string.pref_advanced_reset_push_completed)(getContext), Toast.LENGTH_LONG).show()
-    setResetEnabled(false)
-    CancellableFuture.delay(5.seconds).map(_ => setResetEnabled(true))(Threading.Ui)
+  val resetPush = returning(findById[TextButton](R.id.preferences_reset_push)) { v =>
+    def setResetEnabled(enabled: Boolean): Unit = {
+      v.setEnabled(enabled)
+      v.setAlpha(if (enabled) 1.0f else 0.5f)
+    }
+
+    v.onClickEvent { _ =>
+      ZMessaging.currentGlobal.tokenService.resetGlobalToken()
+      Toast.makeText(getContext, getString(R.string.pref_advanced_reset_push_completed)(getContext), Toast.LENGTH_LONG).show()
+      setResetEnabled(false)
+      CancellableFuture.delay(5.seconds).map(_ => setResetEnabled(true))(Threading.Ui)
+    }
   }
 
-  private def setResetEnabled(enabled: Boolean) = {
-    resetPush.setEnabled(enabled)
-    resetPush.setAlpha(if (enabled) 1.0f else 0.5f)
+  val webSocketForegroundServiceSwitch = returning(findById[SwitchPreference](R.id.preferences_websocket_service)) { v =>
+    v.setPreference(WsForegroundKey, global = true)
   }
 }
 
