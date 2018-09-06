@@ -26,6 +26,7 @@ import android.support.v4.app.NotificationCompat
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
 import com.waz.content.GlobalPreferences.{PushEnabledKey, WsForegroundKey}
+import com.waz.model.UserId
 import com.waz.service.AccountsService.InForeground
 import com.waz.service.{AccountsService, GlobalModule}
 import com.waz.utils.events.Signal
@@ -62,13 +63,19 @@ class WebSocketService extends ServiceHelper {
   private lazy val webSocketActiveSubscription =
     (for {
       gpsAvailable        <- global.googleApi.isGooglePlayServicesAvailable
+      uiActive            <- global.lifecycle.uiActive
       cloudPushEnabled    <- global.prefs(PushEnabledKey).signal
       wsForegroundEnabled <- global.prefs(WsForegroundKey).signal
       accs                <- accounts.zmsInstances
       accsInFG            <- Signal.sequence(accs.map(_.selfUserId).map(id => accounts.accountState(id).map(st => id -> st)).toSeq : _*).map(_.toMap)
       (zmsWithWSActive, zmsWithWSInactive) = {
+
         val cloudPushDisabled = !gpsAvailable || !cloudPushEnabled
-        accs.partition(zms => accsInFG(zms.selfUserId) == InForeground || (cloudPushDisabled && wsForegroundEnabled))
+
+        def shouldWebsocketBeActive(id: UserId) =
+          accsInFG(id) == InForeground || (cloudPushDisabled && (uiActive || wsForegroundEnabled))
+
+        accs.partition(zms => shouldWebsocketBeActive(zms.selfUserId))
       }
     } yield (zmsWithWSActive, zmsWithWSInactive)) {
       case (zmsWithWSActive, zmsWithWSInactive) =>
