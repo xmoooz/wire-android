@@ -281,9 +281,9 @@ object NotificationManagerWrapper {
 
   case class ChannelGroup(id: String, name: String, channels: Set[ChannelInfo])
 
-  case class ChannelInfo(id: String, name: String, description: String, sound: Uri)
+  case class ChannelInfo(id: String, name: String, description: String, sound: Uri, vibration: Boolean)
   object ChannelInfo {
-    def apply(id: String, name: Int, description: Int, sound: Uri)(implicit cxt: Context): ChannelInfo = ChannelInfo(id, getString(name), getString(description), sound)
+    def apply(id: String, name: Int, description: Int, sound: Uri, vibration: Boolean)(implicit cxt: Context): ChannelInfo = ChannelInfo(id, getString(name), getString(description), sound, vibration)
   }
 
   class AndroidNotificationsManager(notificationManager: NotificationManager)(implicit inj: Injector, cxt: Context, eventContext: EventContext) extends NotificationManagerWrapper with Injectable {
@@ -299,9 +299,10 @@ object NotificationManagerWrapper {
       for {
         msgSound <- Signal.future(getSound(UserPreferences.TextTone, R.raw.new_message_gcm))
         pingSound <- Signal.future(getSound(UserPreferences.PingTone, R.raw.ping_from_them))
+        vibration <- Signal.future(am.userPrefs.preference(UserPreferences.VibrateEnabled).apply())
         channel <- am.storage.usersStorage.signal(am.userId).map(user => ChannelGroup(user.id.str, user.getDisplayName, Set(
-            ChannelInfo(MessageNotificationsChannelId(am.userId), R.string.message_notifications_channel_name, R.string.message_notifications_channel_description, msgSound),
-            ChannelInfo(PingNotificationsChannelId(am.userId), R.string.ping_notifications_channel_name, R.string.ping_notifications_channel_description, pingSound)
+            ChannelInfo(MessageNotificationsChannelId(am.userId), R.string.message_notifications_channel_name, R.string.message_notifications_channel_description, msgSound, vibration),
+            ChannelInfo(PingNotificationsChannelId(am.userId), R.string.ping_notifications_channel_name, R.string.ping_notifications_channel_description, pingSound, vibration)
           )))
       } yield channel
     }.toSeq:_*))
@@ -321,12 +322,12 @@ object NotificationManagerWrapper {
           case ChannelGroup(groupId, groupName, channelInfos) =>
             notificationManager.createNotificationChannelGroup(new NotificationChannelGroup(groupId, groupName))
             channelInfos.foreach {
-              case ChannelInfo(id, name, description, sound) =>
+              case ChannelInfo(id, name, description, sound, vibration) =>
                 notificationManager.createNotificationChannel(
                   returning(new NotificationChannel(id, name, NotificationManager.IMPORTANCE_MAX)) { ch =>
                     ch.setDescription(description)
                     ch.setShowBadge(true)
-                    ch.enableVibration(true)
+                    ch.enableVibration(vibration)
                     ch.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE)
                     ch.setSound(sound, Notification.AUDIO_ATTRIBUTES_DEFAULT)
                     ch.setGroup(groupId)
