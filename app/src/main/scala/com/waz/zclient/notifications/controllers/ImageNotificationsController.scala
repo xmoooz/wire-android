@@ -77,7 +77,7 @@ class ImageNotificationsController(implicit cxt: WireContext, eventContext: Even
       .bigPicture(bitmap)
       .setSummaryText(summaryText)
 
-    val builder = new NotificationCompat.Builder(cxt, NotificationManagerWrapper.ChannelId)
+    val builder = new NotificationCompat.Builder(cxt, NotificationManagerWrapper.OngoingNotificationsChannelId)
       .setContentTitle(notificationTitle)
       .setContentText(summaryText)
       .setSmallIcon(R.drawable.ic_menu_save_image_gallery)
