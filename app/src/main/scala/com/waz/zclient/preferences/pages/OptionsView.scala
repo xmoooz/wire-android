@@ -41,6 +41,7 @@ import OptionsView._
 import com.waz.model.UserId
 import com.waz.zclient.notifications.controllers.NotificationManagerWrapper
 import com.waz.zclient.notifications.controllers.NotificationManagerWrapper.AndroidNotificationsManager
+import com.waz.zclient.utils.ContextUtils.getString
 
 trait OptionsView {
   def setSounds(level: IntensityLevel): Unit
@@ -62,7 +63,6 @@ class OptionsViewImpl(context: Context, attrs: AttributeSet, style: Int) extends
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null, 0)
 
-  implicit val ctx = context
   implicit val ec = Threading.Ui
   protected lazy val zms = inject[Signal[ZMessaging]]
 
@@ -100,6 +100,7 @@ class OptionsViewImpl(context: Context, attrs: AttributeSet, style: Int) extends
 
   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
     soundsButton.setVisible(false)
+    vibrationSwitch.setTitle(getString(R.string.pref_options_vibration_title_o))
   }
 
   private def openNotificationSettings(channelId: String) = {
