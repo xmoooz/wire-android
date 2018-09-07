@@ -18,7 +18,7 @@
 
 package com.waz.services.websocket
 
-import android.app.{PendingIntent, Service}
+import android.app._
 import android.content
 import android.content.{BroadcastReceiver, Context, Intent}
 import android.os.{Build, IBinder}
@@ -26,24 +26,81 @@ import android.support.v4.app.NotificationCompat
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
 import com.waz.content.GlobalPreferences.{PushEnabledKey, WsForegroundKey}
-import com.waz.model.UserId
 import com.waz.service.AccountsService.InForeground
-import com.waz.service.{AccountsService, GlobalModule}
+import com.waz.service.{AccountsService, GlobalModule, ZMessaging}
+import com.waz.threading.Threading
 import com.waz.utils.events.Signal
-import com.waz.zclient.notifications.controllers.NotificationManagerWrapper
-import com.waz.zclient.{Intents, R, ServiceHelper}
+import com.waz.utils.returning
+import com.waz.zclient._
+
+class WebSocketController(implicit inj: Injector) extends Injectable {
+  private lazy val global   = inject[GlobalModule]
+  private lazy val accounts = inject[AccountsService]
+
+  private lazy val cloudPushAvailable =
+    for {
+      gpsAvailable   <- global.googleApi.isGooglePlayServicesAvailable
+      devPrefEnabled <- global.prefs(PushEnabledKey).signal
+    } yield gpsAvailable && devPrefEnabled
+
+  lazy val accountWebsocketStates: Signal[(Set[ZMessaging], Set[ZMessaging])] =
+    for {
+      cloudPushAvailable  <- cloudPushAvailable
+      uiActive            <- global.lifecycle.uiActive
+      wsForegroundEnabled <- global.prefs(WsForegroundKey).signal
+      accs                <- accounts.zmsInstances
+      accsInFG            <- Signal.sequence(accs.map(_.selfUserId).map(id => accounts.accountState(id).map(st => id -> st)).toSeq : _*).map(_.toMap)
+      (zmsWithWSActive, zmsWithWSInactive) =
+        accs.partition(zms => accsInFG(zms.selfUserId) == InForeground || (!cloudPushAvailable && (uiActive || wsForegroundEnabled)))
+    } yield (zmsWithWSActive, zmsWithWSInactive)
+
+  lazy val serviceInForeground: Signal[Boolean] =
+    for {
+      uiActive       <- global.lifecycle.uiActive
+      (zmsWithWS, _) <- accountWebsocketStates
+    } yield !uiActive && zmsWithWS.nonEmpty
+
+  lazy val notificationTitleRes: Signal[Option[Int]] =
+    serviceInForeground.flatMap {
+      case true => global.network.isOnline.flatMap {
+        //checks to see if there are any accounts that haven't yet established a web socket
+        case true => accounts.zmsInstances.flatMap(zs => Signal.sequence(zs.map(_.wsPushService.connected).toSeq: _ *).map(_.exists(!identity(_)))).map {
+          case true => Option(R.string.ws_foreground_notification_connecting_title)
+          case _    => Option(R.string.ws_foreground_notification_connected_title)
+        }
+        case _ => Signal.const(Option(R.string.ws_foreground_notification_no_internet_title))
+      }
+      case _ => Signal.const(Option.empty[Int])
+    }
+}
 
 /**
   * Receiver called on boot or when app is updated.
   */
 class WebSocketBroadcastReceiver extends BroadcastReceiver {
+
+  private var context: Context = _
+
+  implicit lazy val injector: Injector =
+    context.getApplicationContext.asInstanceOf[WireApplication].module
+
+  private lazy val controller =
+    injector.binding[WebSocketController].getOrElse(throw new Exception(s"Failed to load WebSocketController")).apply()
+
   override def onReceive(context: Context, intent: Intent): Unit = {
+    this.context = context
     verbose(s"onReceive $intent")
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      context.startForegroundService(new Intent(context, classOf[WebSocketService]))
-    } else {
-      WebSocketService(context)
-    }
+
+    controller.serviceInForeground.head.foreach {
+      case true =>
+        verbose("startForegroundService")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+          context.startForegroundService(new Intent(context, classOf[WebSocketService]))
+        else
+          WebSocketService(context)
+      case false =>
+        verbose("foreground service not needed, will wait for application to start service if necessary")
+    } (Threading.Ui)
   }
 }
 
@@ -53,31 +110,17 @@ class WebSocketBroadcastReceiver extends BroadcastReceiver {
   */
 class WebSocketService extends ServiceHelper {
 
+  import WebSocketService._
+
   private implicit def context = getApplicationContext
 
   private lazy val launchIntent = PendingIntent.getActivity(context, 1, Intents.ShowAdvancedSettingsIntent, 0)
 
-  private lazy val global   = inject[GlobalModule]
-  private lazy val accounts = inject[AccountsService]
+  private lazy val controller = inject[WebSocketController]
+  private lazy val notificationManager = inject[NotificationManager]
 
   private lazy val webSocketActiveSubscription =
-    (for {
-      gpsAvailable        <- global.googleApi.isGooglePlayServicesAvailable
-      uiActive            <- global.lifecycle.uiActive
-      cloudPushEnabled    <- global.prefs(PushEnabledKey).signal
-      wsForegroundEnabled <- global.prefs(WsForegroundKey).signal
-      accs                <- accounts.zmsInstances
-      accsInFG            <- Signal.sequence(accs.map(_.selfUserId).map(id => accounts.accountState(id).map(st => id -> st)).toSeq : _*).map(_.toMap)
-      (zmsWithWSActive, zmsWithWSInactive) = {
-
-        val cloudPushDisabled = !gpsAvailable || !cloudPushEnabled
-
-        def shouldWebsocketBeActive(id: UserId) =
-          accsInFG(id) == InForeground || (cloudPushDisabled && (uiActive || wsForegroundEnabled))
-
-        accs.partition(zms => shouldWebsocketBeActive(zms.selfUserId))
-      }
-    } yield (zmsWithWSActive, zmsWithWSInactive)) {
+    controller.accountWebsocketStates {
       case (zmsWithWSActive, zmsWithWSInactive) =>
         verbose(s"zmsWithWSActive: ${zmsWithWSActive.map(_.selfUserId)}, zmsWithWSInactive: ${zmsWithWSInactive.map(_.selfUserId)}")
         zmsWithWSActive.foreach(_.wsPushService.activate())
@@ -88,31 +131,17 @@ class WebSocketService extends ServiceHelper {
         }
     }
 
-  private lazy val appInForegroundSubscription = {
-
-    global.prefs(WsForegroundKey).signal.flatMap {
-      case true =>
-        global.lifecycle.uiActive.flatMap {
-          case false => global.network.isOnline.flatMap {
-            //checks to see if there are any accounts that haven't yet established a web socket
-            case true => accounts.zmsInstances.flatMap(zs => Signal.sequence(zs.map(_.wsPushService.connected).toSeq: _ *).map(_.exists(!identity(_)))).map {
-              case true => Option(R.string.ws_foreground_notification_connecting_title)
-              case _    => Option(R.string.ws_foreground_notification_connected_title)
-            }
-            case _ => Signal.const(Option(R.string.ws_foreground_notification_no_internet_title))
-          }
-          case _ => Signal.const(Option.empty[Int])
-        }
-      case _ => Signal.const(Option.empty[Int])
-    } {
+  private lazy val appInForegroundSubscription =
+    controller.notificationTitleRes {
       case None =>
         verbose("stopForeground")
         stopForeground(true)
 
       case Some(title) =>
         verbose("startForeground")
+        createNotificationChannel()
         startForeground(WebSocketService.ForegroundId,
-          new NotificationCompat.Builder(this, NotificationManagerWrapper.OngoingNotificationsChannelId)
+          new NotificationCompat.Builder(this, ForegroundNotificationChannelId)
             .setSmallIcon(R.drawable.ic_menu_logo)
             .setContentTitle(getString(title))
             .setContentIntent(launchIntent)
@@ -123,8 +152,6 @@ class WebSocketService extends ServiceHelper {
             .build()
         )
     }
-  }
-
 
   override def onBind(intent: content.Intent): IBinder = null
 
@@ -135,9 +162,23 @@ class WebSocketService extends ServiceHelper {
 
     Service.START_STICKY
   }
+
+  private def createNotificationChannel(): Unit =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      notificationManager.createNotificationChannel(
+        returning(new NotificationChannel(ForegroundNotificationChannelId, getString(R.string.foreground_service_notification_name), NotificationManager.IMPORTANCE_LOW)) { ch =>
+          ch.setDescription(getString(R.string.foreground_service_notification_description))
+          ch.enableVibration(false)
+          ch.setShowBadge(false)
+          ch.setSound(null, null)
+        })
+    }
 }
 
 object WebSocketService {
+
+  val ForegroundNotificationChannelId = "FOREGROUND_NOTIFICATION_CHANNEL_ID"
+
   val ForegroundId = 41235
 
   def apply(context: Context) = context.startService(new Intent(context, classOf[WebSocketService]))

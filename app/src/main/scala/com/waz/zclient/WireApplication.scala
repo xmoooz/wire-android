@@ -46,6 +46,7 @@ import com.waz.service.push.GlobalNotificationsService
 import com.waz.service.tracking.TrackingService
 import com.waz.services.fcm.FetchJob
 import com.waz.services.gps.GoogleApiImpl
+import com.waz.services.websocket.WebSocketController
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.utils.wrappers.GoogleApi
 import com.waz.zclient.appentry.controllers.{CreateTeamController, InvitationsController}
@@ -110,7 +111,7 @@ object WireApplication {
 
     def controllerFactory = APP_INSTANCE.asInstanceOf[ZApplication].getControllerFactory
 
-    bind [NotificationManagerWrapper] to new AndroidNotificationsManager(APP_INSTANCE.getSystemService(Context.NOTIFICATION_SERVICE).asInstanceOf[NotificationManager])
+    bind [NotificationManagerWrapper] to new AndroidNotificationsManager(inject[NotificationManager])
 
     //SE Services
     bind [GlobalModule]                   to ZMessaging.currentGlobal
@@ -176,6 +177,7 @@ object WireApplication {
     bind [IConfirmationController]       toProvider controllerFactory.getConfirmationController
 
     // global controllers
+    bind [WebSocketController]     to new WebSocketController
     bind [CrashController]         to new CrashController
     bind [AccentColorController]   to new AccentColorController()
     bind [PasswordController]      to new PasswordController()

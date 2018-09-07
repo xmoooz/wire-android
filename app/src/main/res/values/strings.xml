@@ -747,6 +747,9 @@
     <string name="ongoing_channel_name">Background notifications</string>
     <string name="ongoing_channel_description">Notifications that display an ongoing process or secondary action of low importance, such as calls or successfully saving an image.</string>
 
+    <string name="foreground_service_notification_name">Maintain connection to server</string>
+    <string name="foreground_service_notification_description">This notification is necessary to keep the connection to the Wire server alive while Wire is in the background for users without Google play services installed.</string>
+
     <string name="lockscreen__talk">IS CALLING</string>
     <plurals name="notification__new_messages">
         <item quantity="one">Message from %2$s</item>
