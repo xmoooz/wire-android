@@ -346,7 +346,7 @@ object NotificationManagerWrapper {
         })
 
       notificationManager.createNotificationChannel(
-        returning(new NotificationChannel(IncomingCallNotificationsChannelId, getString(R.string.incoming_call_notifications_channel_name), NotificationManager.IMPORTANCE_DEFAULT)) { ch =>
+        returning(new NotificationChannel(IncomingCallNotificationsChannelId, getString(R.string.incoming_call_notifications_channel_name), NotificationManager.IMPORTANCE_HIGH)) { ch =>
           ch.setDescription(getString(R.string.ongoing_channel_description))
           ch.enableVibration(false)
           ch.setShowBadge(false)
