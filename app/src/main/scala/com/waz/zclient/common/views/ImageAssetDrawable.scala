@@ -335,20 +335,19 @@ class ImageController(implicit inj: Injector) extends Injectable {
 
   val zMessaging = inject[Signal[ZMessaging]]
 
-  def imageData(id: AssetId) = zMessaging.flatMap {
-    zms => zms.assetsStorage.signal(id).flatMap {
+  def imageData(id: AssetId, zms: ZMessaging) =
+    zms.assetsStorage.signal(id).flatMap {
       case a@IsImage() => Signal.const(a)
       case a@IsVideo() => a.previewId.fold(Signal.const(AssetData.Empty))(zms.assetsStorage.signal)
       case _ => Signal.const(AssetData.Empty)
     }
-  }
 
   def imageSignal(id: AssetId, req: BitmapRequest, forceDownload: Boolean): Signal[BitmapResult] =
     zMessaging.flatMap(imageSignal(_, id, req, forceDownload))
 
   def imageSignal(zms: ZMessaging, id: AssetId, req: BitmapRequest, forceDownload: Boolean = true): Signal[BitmapResult] =
     for {
-      data <- imageData(id)
+      data <- imageData(id, zms)
       res <- BitmapSignal(data, req, zms.imageLoader, zms.network, zms.assetsStorage.get, zms.userPrefs.preference(UserPreferences.DownloadImagesAlways).signal, forceDownload)
     } yield res
 
