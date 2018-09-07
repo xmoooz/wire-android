@@ -62,10 +62,6 @@ class DevSettingsViewImpl(context: Context, attrs: AttributeSet, style: Int) ext
     v.setPreference(PushEnabledKey, global = true)
   }
 
-  val webSocketForegroundServiceSwitch = returning(findById[SwitchPreference](R.id.preferences_dev_websocket_service)) { v =>
-    v.setPreference(WsForegroundKey, global = true)
-  }
-
   val randomLastIdButton = findById[TextButton](R.id.preferences_dev_generate_random_lastid)
 
   val slowSyncButton = returning(findById[TextButton](R.id.preferences_dev_slow_sync)) {

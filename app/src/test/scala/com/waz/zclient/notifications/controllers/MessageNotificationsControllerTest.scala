@@ -436,4 +436,15 @@ class MessageNotificationsControllerTest extends AndroidFreeSpec { this: Suite =
 
   }
 
+  @Test
+  def receivePingAfterText(): Unit = {
+    setup(bundleEnabled = true)
+
+    val convId = ConvId()
+
+    sendInfos(List(createInfo("1:1", convId = convId), createInfo("1:2", convId = convId, notificationType = NotificationType.KNOCK)))
+
+    waitForProps(_.exists(_._2.lastIsPing.contains(true)))
+  }
+
 }

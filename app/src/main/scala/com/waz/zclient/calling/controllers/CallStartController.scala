@@ -33,6 +33,7 @@ import com.waz.zclient.utils.ContextUtils.{getString, showConfirmationDialog, sh
 import com.waz.zclient.utils.PhoneUtils
 import com.waz.zclient.utils.PhoneUtils.PhoneState
 
+import scala.collection.immutable.ListSet
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
@@ -50,7 +51,7 @@ class CallStartController(implicit inj: Injector, cxt: WireContext, ec: EventCon
   for {
     Some(call) <- currentCallOpt
     autoAnswer <- prefs.flatMap(_.preference(AutoAnswerCallPrefKey).signal)
-  } if (call.state.contains(CallState.OtherCalling) && autoAnswer) startCall(call.account, call.convId)
+  } if (call.state == CallState.OtherCalling && autoAnswer) startCall(call.account, call.convId)
 
   def startCallInCurrentConv(withVideo: Boolean, forceOption: Boolean = false) = {
     (for {
@@ -79,9 +80,9 @@ class CallStartController(implicit inj: Injector, cxt: WireContext, ec: EventCon
         curCall           <- currentCallOpt.head
         Some(newCallZms)  <- accounts.getZms(account)
         Some(newCallConv) <- newCallZms.convsStorage.get(conv)
-        ongoingCalls      <- newCallZms.calling.availableCalls.head
+        ongoingCalls      <- newCallZms.calling.joinableCalls.head
         acceptingCall     =  curCall.exists(c => c.convId == conv && c.account == account) //the call we're trying to start is the same as the current one
-        isJoiningCall     =  ongoingCalls.contains(conv)  //the call we're trying to start is ongoing in the background (note, this will also contain the incoming call)
+        isJoiningCall     =  ongoingCalls.contains(conv) //the call we're trying to start is ongoing in the background (note, this will also contain the incoming call)
         _                 =  verbose(s"accepting? $acceptingCall, isJoiningCall?: $isJoiningCall, curCall: $curCall")
         (true, canceled)  <- (curCallZms, curCall) match { //End any active call if it is not the one we're trying to join, confirm with the user before ending. Only proceed on confirmed
           case (Some(z), Some(c)) if !acceptingCall =>
@@ -90,7 +91,7 @@ class CallStartController(implicit inj: Injector, cxt: WireContext, ec: EventCon
               getString(if (isJoiningCall) R.string.calling_ongoing_call_join_message else R.string.calling_ongoing_call_start_message),
               positiveRes = if (isJoiningCall) R.string.calling_ongoing_call_join_anyway else R.string.calling_ongoing_call_start_anyway
             ).flatMap {
-              case true  => z.calling.endCall(c.convId).map(_ => (true, true))
+              case true  => z.calling.endCall(c.convId, skipTerminating = true).map(_ => (true, true))
               case false => Future.successful((false, false))
             }
           case _ => Future.successful((true, false))
@@ -114,7 +115,7 @@ class CallStartController(implicit inj: Injector, cxt: WireContext, ec: EventCon
               positiveRes = R.string.group_calling_confirm)
           else
             Future.successful(true)
-        hasPerms          <- inject[PermissionsService].requestAllPermissions(if (curWithVideo) Set(CAMERA, RECORD_AUDIO) else Set(RECORD_AUDIO)) //check or request permissions
+        hasPerms          <- inject[PermissionsService].requestAllPermissions(if (curWithVideo) ListSet(CAMERA, RECORD_AUDIO) else ListSet(RECORD_AUDIO)) //check or request permissions
         _                 <-
           if (hasPerms) newCallZms.calling.startCall(newCallConv.id, curWithVideo, forceOption)
           else showPermissionsErrorDialog(

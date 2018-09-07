@@ -121,9 +121,9 @@
     <color name="teams_description_text">#90272A2C</color>
     <color name="teams_placeholder_text">@color/light_graphite</color>
     <color name="teams_error_red">#FB0807</color>
-    <color name="teams_active_button">#2391D3</color>
+    <color name="teams_create_personal_button">@color/accent_green</color>
     <color name="teams_active_button_pressed">#006eb0</color>
-    <color name="teams_create_button">@color/accent_green</color>
+    <color name="teams_create_team_button">#2391D3</color>
     <color name="teams_create_button_pressed">#009b00</color>
     <color name="banner_grey">#95989A</color>
 

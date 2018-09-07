@@ -41,6 +41,7 @@ import com.waz.zclient.controllers.confirmation.TwoButtonConfirmationCallback
 import com.waz.zclient.sharing.ShareToMultipleFragment
 import com.waz.zclient.views.menus.ConfirmationMenu
 
+import scala.collection.immutable.ListSet
 import scala.util.control.NonFatal
 
 
@@ -87,7 +88,7 @@ class ShareActivity extends BaseActivity with ActivityHelper {
   }
 
   private def handleIncomingIntent() =
-    inject[PermissionsService].requestAllPermissions(Set(READ_EXTERNAL_STORAGE)).map {
+    inject[PermissionsService].requestAllPermissions(ListSet(READ_EXTERNAL_STORAGE)).map {
       case true =>
         val intent = getIntent
         verbose(s"$intent")

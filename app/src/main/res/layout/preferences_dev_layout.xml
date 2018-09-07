@@ -78,20 +78,11 @@
                 app:subtitle="@string/pref_dev_websocket_ping_interval_summary"
                 />
 
-            <com.waz.zclient.preferences.views.SwitchPreference
-                android:id="@+id/preferences_dev_websocket_service"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/wire__padding__20"
-                app:subtitle="@string/pref_dev_ws_foreground_summary"
-                app:title="@string/pref_dev_ws_foreground_title"
-                app:key="@string/pref_dev_ws_foreground_key"
-                />
-
             <com.waz.zclient.preferences.views.TextButton
                 android:id="@+id/preferences_dev_slow_sync"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/wire__padding__20"
                 app:title="@string/pref_dev_random_full_sync_title"
                 app:subtitle="@string/pref_dev_random_full_sync_summary"
             />

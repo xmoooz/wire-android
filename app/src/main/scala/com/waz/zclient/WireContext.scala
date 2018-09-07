@@ -36,6 +36,7 @@ import com.waz.utils.returning
 import com.waz.zclient.FragmentHelper.getNextAnimationDuration
 import com.waz.zclient.calling.CallingActivity
 import com.waz.zclient.calling.controllers.CallController
+import com.waz.zclient.ui.text.GlyphTextView
 import com.waz.zclient.utils.{ContextUtils, RichView}
 
 import scala.language.implicitConversions
@@ -369,8 +370,9 @@ trait CallingBannerActivity extends ActivityHelper {
   lazy val callBanner = returning(findById[View](R.id.call_banner)) { v =>
     v.onClick(CallingActivity.startIfCallIsActive(this))
   }
-  lazy val callBannerStatus   = findById[TextView](R.id.call_banner_status)
-  lazy val callBannerDuration = findById[TextView](R.id.call_banner_duration)
+  lazy val callBannerStatus = findById[TextView](R.id.call_banner_status)
+  lazy val mutedGlyph       = findById[GlyphTextView](R.id.muted_glyph)
+  lazy val spacerGlyph      = findById[GlyphTextView](R.id.spacer_glyph)
 
   override def onCreate(savedInstanceState: Bundle) = {
     super.onCreate(savedInstanceState)
@@ -381,8 +383,16 @@ trait CallingBannerActivity extends ActivityHelper {
       callBanner.setVisibility(if (est) View.VISIBLE else View.GONE)
     }
 
+    Signal(callController.isMuted, callController.isCallEstablished).onUi {
+      case (true, true) =>
+        mutedGlyph.setVisibility(View.VISIBLE)
+        spacerGlyph.setVisibility(View.INVISIBLE)
+      case _ =>
+        mutedGlyph.setVisibility(View.GONE)
+        spacerGlyph.setVisibility(View.GONE)
+    }
+
     callController.callBannerText.onUi(callBannerStatus.setText)
-    callController.duration.onUi(callBannerDuration.setText)
   }
 }
 

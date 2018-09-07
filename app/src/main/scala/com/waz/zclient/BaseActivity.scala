@@ -29,11 +29,16 @@ import com.waz.log.InternalLog
 import com.waz.permissions.PermissionsService
 import com.waz.permissions.PermissionsService.{Permission, PermissionProvider}
 import com.waz.service.{UiLifeCycle, ZMessaging}
+import com.waz.services.websocket.WebSocketService
 import com.waz.utils.returning
 import com.waz.zclient.common.controllers.ThemeController
 import com.waz.zclient.controllers.IControllerFactory
 import com.waz.zclient.tracking.GlobalTrackingController
 import com.waz.zclient.utils.ViewUtils
+
+import scala.collection.immutable.ListSet
+import scala.collection.breakOut
+
 
 class BaseActivity extends AppCompatActivity
   with ServiceContainer
@@ -45,8 +50,6 @@ class BaseActivity extends AppCompatActivity
   lazy val themeController          = inject[ThemeController]
   lazy val globalTrackingController = inject[GlobalTrackingController]
   lazy val permissions              = inject[PermissionsService]
-
-  private var started: Boolean = false
 
   def injectJava[T](cls: Class[T]) = inject[T](reflect.Manifest.classType(cls), injector)
 
@@ -67,35 +70,20 @@ class BaseActivity extends AppCompatActivity
     permissions.registerProvider(this)
   }
 
-  def onBaseActivityStart() = {
-    getApplication.asInstanceOf[ZApplication].ensureInitialized()
+  def onBaseActivityStart(): Unit = {
     getControllerFactory.setActivity(this)
-    if (!started) {
-      started = true
-      ZMessaging.currentUi.onStart()
-      inject[UiLifeCycle].acquireUi()
-    }
+    ZMessaging.currentUi.onStart()
+    inject[UiLifeCycle].acquireUi()
     if (!this.isInstanceOf[LaunchActivity]) permissions.registerProvider(this)
     Option(ViewUtils.getContentView(getWindow)).foreach(getControllerFactory.setGlobalLayout)
+    WebSocketService(this)
   }
 
   override def onStop() = {
-    if (started) {
-      ZMessaging.currentUi.onPause()
-      inject[UiLifeCycle].releaseUi()
-      started = false
-    }
+    ZMessaging.currentUi.onPause()
+    inject[UiLifeCycle].releaseUi()
     InternalLog.flush()
     super.onStop()
-  }
-
-  override def finish() = {
-    if (started) {
-      ZMessaging.currentUi.onPause()
-      inject[UiLifeCycle].releaseUi()
-      started = false
-    }
-    super.finish()
   }
 
   override def onDestroy() = {
@@ -106,12 +94,12 @@ class BaseActivity extends AppCompatActivity
 
   def getControllerFactory: IControllerFactory = ZApplication.from(this).getControllerFactory
 
-  override def requestPermissions(ps: Set[Permission]) = {
+  override def requestPermissions(ps: ListSet[Permission]) = {
     verbose(s"requestPermissions: $ps")
     ActivityCompat.requestPermissions(this, ps.map(_.key).toArray, PermissionsRequestId)
   }
 
-  override def hasPermissions(ps: Set[Permission]) = ps.map { p =>
+  override def hasPermissions(ps: ListSet[Permission]) = ps.map { p =>
     returning(p.copy(granted = ContextCompat.checkSelfPermission(this, p.key) == PackageManager.PERMISSION_GRANTED)) { p =>
       verbose(s"hasPermission: $p")
     }
@@ -120,7 +108,7 @@ class BaseActivity extends AppCompatActivity
   override def onRequestPermissionsResult(requestCode: Int, keys: Array[String], grantResults: Array[Int]): Unit = {
     verbose(s"onRequestPermissionsResult: $requestCode, ${keys.toSet}, ${grantResults.toSet.map((r: Int) => r == PackageManager.PERMISSION_GRANTED)}")
     if (requestCode == PermissionsRequestId) {
-      val ps = hasPermissions(keys.map(Permission(_)).toSet)
+      val ps = hasPermissions(keys.map(Permission(_))(breakOut))
       //if we somehow call requestPermissions twice, ps will be empty - so don't send results back to PermissionsService, as it will probably be for the wrong request.
       if (ps.nonEmpty) permissions.onPermissionsResult(ps)
     }

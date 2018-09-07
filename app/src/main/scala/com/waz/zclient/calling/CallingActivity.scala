@@ -18,7 +18,7 @@
 package com.waz.zclient.calling
 
 import android.content.{Context, Intent}
-import android.os.Bundle
+import android.os.{Build, Bundle}
 import android.view.WindowManager
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
@@ -40,15 +40,24 @@ class CallingActivity extends BaseActivity {
       .beginTransaction()
       .replace(R.id.calling_layout, CallingFragment(), CallingFragment.Tag)
       .commit
+
+    controller.isCallActive.filter(_ == false).onUi { _ =>
+      verbose("call no longer exists, finishing activity")
+      finish()
+    }
   }
 
   override def onAttachedToWindow(): Unit = {
     getWindow.addFlags(
-        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
         WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
-        WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
-        DeprecationUtils.FLAG_DISMISS_KEYGUARD
-    )
+        DeprecationUtils.FLAG_DISMISS_KEYGUARD)
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+      setShowWhenLocked(true)
+      setTurnScreenOn(true)
+    } else {
+      getWindow.addFlags(DeprecationUtils.FLAG_TURN_SCREEN_ON | DeprecationUtils.FLAG_SHOW_WHEN_LOCKED)
+    }
   }
 
   override def onBackPressed() = {

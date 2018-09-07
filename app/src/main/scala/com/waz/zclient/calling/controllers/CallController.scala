@@ -18,14 +18,16 @@
 package com.waz.zclient.calling.controllers
 
 import android.os.PowerManager
+import android.telephony.{PhoneStateListener, TelephonyManager}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
 import com.waz.api.Verification
 import com.waz.avs.VideoPreview
+import com.waz.content.GlobalPreferences
 import com.waz.model.{AssetId, LocalInstant, UserData, UserId}
 import com.waz.service.ZMessaging.clock
 import com.waz.service.call.Avs.VideoState
-import com.waz.service.call.{CallInfo, CallingService}
+import com.waz.service.call.{CallInfo, CallingService, GlobalCallingService}
 import com.waz.service.call.CallInfo.CallState.{SelfJoining, _}
 import com.waz.service.{AccountsService, GlobalModule, NetworkModeService, ZMessaging}
 import com.waz.threading.{CancellableFuture, Threading}
@@ -55,19 +57,26 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
   val accounts               = inject[AccountsService]
   val themeController        = inject[ThemeController]
 
+  inject[GlobalPreferences].apply(GlobalPreferences.SkipTerminatingState) := true
+
   val callControlsVisible = Signal(false)
+
   //the zms of the account that currently has an active call (if any)
   val callingZmsOpt =
     for {
       acc <- inject[GlobalModule].calling.activeAccount
       zms <- acc.fold(Signal.const(Option.empty[ZMessaging]))(id => Signal.future(ZMessaging.currentAccounts.getZms(id)))
     } yield zms
+
   val callingZms = callingZmsOpt.collect { case Some(z) => z }
 
   val currentCallOpt: Signal[Option[CallInfo]] = callingZmsOpt.flatMap {
     case Some(z) => z.calling.currentCall
     case _       => Signal.const(None)
   }
+
+  private val gcmManager = new GSMManager(currentCallOpt.map(_.isDefined))
+
   val currentCall   = currentCallOpt.collect { case Some(c) => c }
   val callConvIdOpt = currentCallOpt.map(_.map(_.convId))
 
@@ -83,7 +92,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     lastCallZms = zms
   }
 
-  val callStateOpt          = currentCallOpt.map(_.flatMap(_.state))
+  val callStateOpt          = currentCallOpt.map(_.map(_.state))
   val callState             = callStateOpt.collect { case Some(s) => s }
   val callStateCollapseJoin = currentCall.map(_.stateCollapseJoin)
 
@@ -204,7 +213,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
 
   def leaveCall(): Unit = {
     verbose(s"leaveCall")
-    updateCall { case (call, cs) => cs.endCall(call.convId) }
+    updateCall { case (call, cs) => cs.endCall(call.convId, skipTerminating = true) }
   }
 
   def toggleMuted(): Unit = {
@@ -329,14 +338,29 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
       fm.setVideoPreview(view.orNull)
     } (Threading.Ui)
 
-  val callBannerText = Signal(isVideoCall, callState).map {
-    case (_,     SelfCalling)   => R.string.call_banner_outgoing
-    case (true,  OtherCalling)  => R.string.call_banner_incoming_video
-    case (false, OtherCalling)  => R.string.call_banner_incoming
-    case (_,     SelfJoining)   => R.string.call_banner_joining
-    case (_,     SelfConnected) => R.string.call_banner_tap_to_return_to_call
-    case _                      => R.string.empty_string
-  }
+  private lazy val callingUsername: Signal[String] =
+    for {
+      users <- userStorage
+      userId <- callerId
+      data <- users.signal(userId)
+    } yield data.getDisplayName.toUpperCase(getLocale) + " "
+
+  val callBannerText: Signal[String] =
+    (for {
+      state <- callState
+      isGroupCall <- isGroupCall
+      userName <- callingUsername
+      convName <- conversationName
+      duration <- duration
+    } yield (state, isGroupCall, userName, convName, duration)).map {
+      case (SelfCalling, false, caller, _, _)        => getString(R.string.call_banner_outgoing, caller)
+      case (SelfCalling, true, _, convName, _)       => getString(R.string.call_banner_outgoing, convName)
+      case (OtherCalling, true, caller, convName, _) => getString(R.string.call_banner_incoming_group, convName, caller)
+      case (OtherCalling, false, caller, _, _)       => getString(R.string.call_banner_incoming, caller)
+      case (SelfJoining, _, _, _, _)                 => getString(R.string.call_banner_joining)
+      case (SelfConnected, _, _, _, d)               => getString(R.string.call_banner_tap_to_return_to_call, d)
+      case _                                         => getString(R.string.empty_string)
+    }.map(_.toUpperCase(getLocale))
 
   val subtitleText: Signal[String] =
     (for {
@@ -418,6 +442,50 @@ private class ScreenManager(implicit injector: Injector) extends Injectable {
     }
     wakeLock = None
   }
+}
+
+private class GSMManager(callActive: Signal[Boolean])(implicit inject: Injector, ec: EventContext) extends Injectable {
+  private lazy val telephonyManager = inject[TelephonyManager]
+
+  private var listening = false
+  private lazy val listener = new PhoneStateListener {
+    override def onCallStateChanged(state: Int, incomingNumber: String): Unit = {
+
+      import TelephonyManager._
+      val stateStr = state match {
+        case CALL_STATE_IDLE => "idle"
+        case CALL_STATE_RINGING => "ringing"
+        case CALL_STATE_OFFHOOK => "offhook"
+      }
+
+      info(s"GSM call state changed: $stateStr")
+      if (state == CALL_STATE_OFFHOOK) dropWireCalls()
+    }
+  }
+
+  callActive.onUi {
+    case false => stopListening()
+    case true =>
+      if (telephonyManager.getCallState == TelephonyManager.CALL_STATE_OFFHOOK) {
+        info(s"GSM call in progress, leaving voice channels or v3 call")
+        dropWireCalls()
+      }
+      else startListening()
+  }
+
+  private def startListening() = if (!listening) {
+    info("startListening")
+    telephonyManager.listen(listener, PhoneStateListener.LISTEN_CALL_STATE)
+    listening = true
+  }
+
+  private def stopListening() = if (listening) {
+    info("stopListening")
+    telephonyManager.listen(listener, PhoneStateListener.LISTEN_NONE)
+    listening = false
+  }
+
+  private def dropWireCalls() = inject[GlobalCallingService].dropActiveCalls()
 }
 
 object CallController {

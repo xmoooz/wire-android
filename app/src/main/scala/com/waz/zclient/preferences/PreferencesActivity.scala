@@ -42,7 +42,7 @@ import com.waz.zclient.common.controllers.global.AccentColorController
 import com.waz.zclient.common.views.AccountTabsView
 import com.waz.zclient.controllers.camera.{CameraActionObserver, ICameraController}
 import com.waz.zclient.pages.main.profile.camera.CameraContext
-import com.waz.zclient.preferences.pages.{DevicesBackStackKey, OptionsView, ProfileBackStackKey}
+import com.waz.zclient.preferences.pages.{AdvancedBackStackKey, DevicesBackStackKey, OptionsView, ProfileBackStackKey}
 import com.waz.zclient.utils.{BackStackNavigator, RingtoneUtils, ViewUtils}
 import com.waz.zclient.views.LoadingIndicatorView
 import com.waz.zclient.{BaseActivity, R, _}
@@ -77,8 +77,9 @@ class PreferencesActivity extends BaseActivity
       backStackNavigator.setup(findViewById(R.id.content).asInstanceOf[ViewGroup])
 
       getIntent.page match {
-        case Some(Page.Devices) => backStackNavigator.goTo(DevicesBackStackKey())
-        case _                  => backStackNavigator.goTo(ProfileBackStackKey())
+        case Some(Page.Devices)  => backStackNavigator.goTo(DevicesBackStackKey())
+        case Some(Page.Advanced) => backStackNavigator.goTo(AdvancedBackStackKey())
+        case _                   => backStackNavigator.goTo(ProfileBackStackKey())
       }
 
       Signal(backStackNavigator.currentState, ZMessaging.currentAccounts.accountsWithManagers.map(_.toSeq.length)).on(Threading.Ui){
