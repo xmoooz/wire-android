@@ -223,10 +223,14 @@ class OptionsViewController(view: OptionsView)(implicit inj: Injector, ec: Event
     case _ => None
   }
 
-  private def getChannelTone(channelId: UserId => String) = for {
-      uId <- zms.map(_.selfUserId)
-      _ <- inject[UiLifeCycle].uiActive // This forces updating in case the user changes the tone in the system channel
-    } yield notificationManagerWrapper.map(_.getNotificationChannel(channelId(uId)).getSound)
+  private def getChannelTone(channelId: UserId => String) =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      for {
+        uId <- zms.map(_.selfUserId)
+        _ <- inject[UiLifeCycle].uiActive // This forces updating in case the user changes the tone in the system channel
+      } yield notificationManagerWrapper.map(_.getNotificationChannel(channelId(uId)).getSound)
+    } else Signal.const(Option.empty[Uri])
+
 
   private val channelPingTone = getChannelTone(NotificationManagerWrapper.PingNotificationsChannelId)
   private val channelTextTone = getChannelTone(NotificationManagerWrapper.MessageNotificationsChannelId)
