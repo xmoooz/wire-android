@@ -34,44 +34,55 @@
         android:layout_marginStart="@dimen/preference_button_padding"
         />
 
-    <com.waz.zclient.ui.text.TypefaceTextView
-        android:id="@+id/preference_title"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="@dimen/wire__text_size__regular"
-        android:ellipsize="end"
-        android:textColor="@color/white"
-        app:w_font="@string/wire__typeface__light"
-        android:layout_alignParentTop="true"
-        android:layout_toStartOf="@id/preference_switch"
-        android:layout_toEndOf="@id/preference_icon_start"
-        android:layout_marginStart="@dimen/preference_button_padding"
-        android:layout_marginEnd="@dimen/preference_button_padding"
-    />
+        android:orientation="vertical"
+        android:layout_centerVertical="true"
+        android:layout_toEndOf="@id/preference_icon_start">
 
-    <com.waz.zclient.ui.text.TypefaceTextView
-        android:id="@+id/preference_subtitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="@dimen/wire__text_size__small"
-        android:ellipsize="end"
-        android:visibility="visible"
-        android:textColor="@color/light_graphite"
-        app:w_font="@string/wire__typeface__light"
-        android:layout_below="@id/preference_title"
-        android:layout_toStartOf="@id/preference_switch"
-        android:layout_toEndOf="@id/preference_icon_start"
-        android:layout_marginStart="@dimen/preference_button_padding"
-        android:layout_marginEnd="@dimen/preference_button_padding"
-    />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
-    <Switch
-        android:id="@+id/preference_switch"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginEnd="@dimen/preference_button_padding"
-        />
+            <com.waz.zclient.ui.text.TypefaceTextView
+                android:id="@+id/preference_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="@dimen/wire__text_size__regular"
+                android:ellipsize="end"
+                android:textColor="@color/white"
+                app:w_font="@string/wire__typeface__light"
+                android:layout_marginStart="@dimen/preference_button_padding"
+                android:layout_marginEnd="@dimen/preference_button_padding"
+                android:layout_gravity="center"
+                />
+
+            <Switch
+                android:id="@+id/preference_switch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/preference_button_padding"
+                android:layout_gravity="center"
+                />
+
+        </LinearLayout>
+
+        <com.waz.zclient.ui.text.TypefaceTextView
+            android:id="@+id/preference_subtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/wire__text_size__small"
+            android:ellipsize="end"
+            android:visibility="visible"
+            android:textColor="@color/light_graphite"
+            app:w_font="@string/wire__typeface__light"
+            android:layout_marginStart="@dimen/preference_button_padding"
+            android:layout_marginEnd="@dimen/preference_button_padding"
+            />
+
+    </LinearLayout>
 
 </merge>
