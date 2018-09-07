@@ -53,6 +53,8 @@
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false"
@@ -219,6 +221,16 @@
             android:exported="false"
             android:grantUriPermissions="true"/>
 
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_paths"/>
+        </provider>
+
         <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version"/>
         <meta-data android:name="net.hockeyapp.android.appIdentifier" android:value="${hockeyAppKey}" />
         <!-- Internal features from SE -->
@@ -230,7 +242,7 @@
 
         <meta-data android:name="com.mixpanel.android.MPConfig.MinimumSessionDuration" android:value="2000" />
 
-        <service android:name="com.waz.zms.CallWakeService"
+        <service android:name="com.waz.services.calling.CallWakeService"
                  android:exported="true"/>
 
         <service
@@ -239,6 +251,19 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT"/>
             </intent-filter>
         </service>
+
+        <receiver android:name="com.waz.services.websocket.WebSocketBroadcastReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.PACKAGE_DATA_CLEARED" />
+            </intent-filter>
+        </receiver>
+
+        <service android:name="com.waz.services.websocket.WebSocketService"
+            android:exported="false"
+            />
 
         <!--For Evernote Background jobs-->
         <service

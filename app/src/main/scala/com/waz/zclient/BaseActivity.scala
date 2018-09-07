@@ -29,6 +29,7 @@ import com.waz.log.InternalLog
 import com.waz.permissions.PermissionsService
 import com.waz.permissions.PermissionsService.{Permission, PermissionProvider}
 import com.waz.service.{UiLifeCycle, ZMessaging}
+import com.waz.services.websocket.WebSocketService
 import com.waz.utils.returning
 import com.waz.zclient.common.controllers.ThemeController
 import com.waz.zclient.controllers.IControllerFactory
@@ -50,8 +51,6 @@ class BaseActivity extends AppCompatActivity
   lazy val globalTrackingController = inject[GlobalTrackingController]
   lazy val permissions              = inject[PermissionsService]
 
-  private var started: Boolean = false
-
   def injectJava[T](cls: Class[T]) = inject[T](reflect.Manifest.classType(cls), injector)
 
   override def onCreate(savedInstanceState: Bundle) = {
@@ -71,34 +70,20 @@ class BaseActivity extends AppCompatActivity
     permissions.registerProvider(this)
   }
 
-  def onBaseActivityStart() = {
+  def onBaseActivityStart(): Unit = {
     getControllerFactory.setActivity(this)
-    if (!started) {
-      started = true
-      ZMessaging.currentUi.onStart()
-      inject[UiLifeCycle].acquireUi()
-    }
+    ZMessaging.currentUi.onStart()
+    inject[UiLifeCycle].acquireUi()
     if (!this.isInstanceOf[LaunchActivity]) permissions.registerProvider(this)
     Option(ViewUtils.getContentView(getWindow)).foreach(getControllerFactory.setGlobalLayout)
+    WebSocketService(this)
   }
 
   override def onStop() = {
-    if (started) {
-      ZMessaging.currentUi.onPause()
-      inject[UiLifeCycle].releaseUi()
-      started = false
-    }
+    ZMessaging.currentUi.onPause()
+    inject[UiLifeCycle].releaseUi()
     InternalLog.flush()
     super.onStop()
-  }
-
-  override def finish() = {
-    if (started) {
-      ZMessaging.currentUi.onPause()
-      inject[UiLifeCycle].releaseUi()
-      started = false
-    }
-    super.finish()
   }
 
   override def onDestroy() = {

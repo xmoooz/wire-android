@@ -20,7 +20,6 @@ package com.waz.zclient
 import java.io.File
 import java.util.Calendar
 
-import javax.net.ssl.SSLContext
 import android.app.{Activity, ActivityManager, NotificationManager}
 import android.content.{Context, ContextWrapper}
 import android.hardware.SensorManager
@@ -30,14 +29,14 @@ import android.renderscript.RenderScript
 import android.support.multidex.MultiDexApplication
 import android.support.v4.app.{FragmentActivity, FragmentManager}
 import android.telephony.TelephonyManager
-import com.google.android.gms.security.ProviderInstaller
 import com.evernote.android.job.{JobCreator, JobManager}
+import com.google.android.gms.security.ProviderInstaller
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.verbose
 import com.waz.api.NetworkMode
-import com.waz.model.{AccentColor, ConversationData, TeamId, UserId}
 import com.waz.content._
 import com.waz.log.InternalLog
+import com.waz.model.{AccentColor, ConversationData, TeamId, UserId}
 import com.waz.permissions.PermissionsService
 import com.waz.service._
 import com.waz.service.conversation.{ConversationsListStateService, ConversationsService, ConversationsUiService}
@@ -47,7 +46,9 @@ import com.waz.service.push.GlobalNotificationsService
 import com.waz.service.tracking.TrackingService
 import com.waz.services.fcm.FetchJob
 import com.waz.services.gps.GoogleApiImpl
+import com.waz.services.websocket.WebSocketController
 import com.waz.utils.events.{EventContext, Signal}
+import com.waz.utils.wrappers.GoogleApi
 import com.waz.zclient.appentry.controllers.{CreateTeamController, InvitationsController}
 import com.waz.zclient.calling.controllers.{CallController, CallStartController}
 import com.waz.zclient.camera.controllers.{AndroidCameraFactory, GlobalCameraController}
@@ -80,6 +81,7 @@ import com.waz.zclient.preferences.PreferencesController
 import com.waz.zclient.tracking.{CrashController, GlobalTrackingController, UiTrackingController}
 import com.waz.zclient.utils.{BackStackNavigator, BackendPicker, Callback, LocalThumbnailCache, UiStorage}
 import com.waz.zclient.views.DraftMap
+import javax.net.ssl.SSLContext
 import net.hockeyapp.android.Constants
 
 import scala.concurrent.Future
@@ -109,7 +111,7 @@ object WireApplication {
 
     def controllerFactory = APP_INSTANCE.asInstanceOf[ZApplication].getControllerFactory
 
-    bind [NotificationManagerWrapper] to new AndroidNotificationsManager(APP_INSTANCE.getSystemService(Context.NOTIFICATION_SERVICE).asInstanceOf[NotificationManager])
+    bind [NotificationManagerWrapper] to new AndroidNotificationsManager(inject[NotificationManager])
 
     //SE Services
     bind [GlobalModule]                   to ZMessaging.currentGlobal
@@ -119,6 +121,7 @@ object WireApplication {
     bind [TeamsStorage]                   to inject[GlobalModule].teamsStorage
     bind [SSOService]                     to inject[GlobalModule].ssoService
     bind [GlobalNotificationsService]     to inject[GlobalModule].notifications
+    bind [GoogleApi]                      to inject[GlobalModule].googleApi
 
     bind [Signal[Option[AccountManager]]] to ZMessaging.currentAccounts.activeAccountManager
     bind [Signal[AccountManager]]         to inject[Signal[Option[AccountManager]]].collect { case Some(am) => am }
@@ -174,6 +177,7 @@ object WireApplication {
     bind [IConfirmationController]       toProvider controllerFactory.getConfirmationController
 
     // global controllers
+    bind [WebSocketController]     to new WebSocketController
     bind [CrashController]         to new CrashController
     bind [AccentColorController]   to new AccentColorController()
     bind [PasswordController]      to new PasswordController()

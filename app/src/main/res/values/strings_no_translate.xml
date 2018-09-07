@@ -158,9 +158,6 @@
     <string translatable="false" name="pref_dev_websocket_ping_interval_key">PREF_WEBSOCKET_PING_INTERVAL</string>
     <string translatable="false" name="pref_dev_websocket_ping_interval_summary">Change the frequency of checking the connection to the server. Note that increasing the frequency may have a negative impact on battery life.</string>
     <string translatable="false" name="pref_dev_websocket_ping_interval_title">WebSocket Ping Frequency (ms)</string>
-    <string translatable="false" name="pref_dev_ws_foreground_key">@string/zms_ws_foreground_service_enabled</string>
-    <string translatable="false" name="pref_dev_ws_foreground_summary">Enable to see Web Socket connection status in permanent notification</string>
-    <string translatable="false" name="pref_dev_ws_foreground_title">Web Socket foreground service</string>
     <string translatable="false" name="pref_dev_random_last_notification_id_title">Generate a random new value for LastStableNotification</string>
     <string translatable="false" name="pref_dev_random_last_notification_id_summary">Generate a new, random value for the LastStableNotification preference. Use it to test history loss.</string>
     <string translatable="false" name="pref_dev_random_full_sync_title">Perform full sync</string>
