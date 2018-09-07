@@ -54,9 +54,9 @@ import static android.hardware.Camera.getNumberOfCameras;
  */
 public class DeprecationUtils {
 
-    public static int FLAG_TURN_SCREEN_ON = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 ? android.R.attr.turnScreenOn : WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON;
+    public static int FLAG_TURN_SCREEN_ON = WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON;
 
-    public static int FLAG_SHOW_WHEN_LOCKED = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 ? android.R.attr.showWhenLocked : WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED;
+    public static int FLAG_SHOW_WHEN_LOCKED = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED;
 
     public static int PRIORITY_MAX = Notification.PRIORITY_MAX;
 
