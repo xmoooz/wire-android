@@ -131,7 +131,7 @@ class ParticipantHeaderFragment extends FragmentHelper {
           val remaining = ConversationController.MaxParticipants - others - 1
           ViewUtils.showAlertDialog(getContext,
             getString(R.string.max_participants_alert_title),
-            ContextUtils.getString(R.plurals.max_participants_add_alert_message, remaining.toString),
+            ContextUtils.getString(R.string.max_participants_add_alert_message, remaining.toString),
             getString(android.R.string.ok), null, true)
         }
       case _ =>
