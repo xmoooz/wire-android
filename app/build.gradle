@@ -27,7 +27,7 @@ ext {
     // Release version number must be like this X.0(.Y)
     zMessagingReleaseVersion = System.getenv("ZMESSAGING_VERSION") ?: '129.1.489@aar'
 
-    avsVersion = '4.6.155@aar'
+    avsVersion = '4.6.156@aar'
     avsInternalVersion = avsVersion //leave this here in case we want to test specific AVS versions on internal
     avsName = 'avs'
     avsGroup = 'com.wire'
