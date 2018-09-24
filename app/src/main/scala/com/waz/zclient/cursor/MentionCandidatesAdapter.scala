@@ -22,12 +22,13 @@ import android.view.View.OnClickListener
 import android.view.{LayoutInflater, View, ViewGroup}
 import android.widget.{ImageView, TextView}
 import com.waz.model.{Handle, UserId}
-import com.waz.utils.events.{EventStream, SourceStream}
+import com.waz.utils.events.{EventContext, EventStream, SourceStream}
 import com.waz.zclient.R
+import com.waz.zclient.common.controllers.ThemeController
 import com.waz.zclient.common.views.ChatheadView
 import com.waz.zclient.paintcode.GuestIconWithColor
 
-class MentionCandidatesAdapter extends RecyclerView.Adapter[MentionCandidateViewHolder] {
+class MentionCandidatesAdapter(th: ThemeController)(implicit ec: EventContext) extends RecyclerView.Adapter[MentionCandidateViewHolder] {
 
   private var _data = Seq[MentionCandidateInfo]()
 
@@ -44,7 +45,7 @@ class MentionCandidatesAdapter extends RecyclerView.Adapter[MentionCandidateView
 
   override def onCreateViewHolder(parent: ViewGroup, viewType: Int): MentionCandidateViewHolder = {
     val view = LayoutInflater.from(parent.getContext).inflate(R.layout.mention_candidate_view, parent, false)
-    new MentionCandidateViewHolder(view, { onUserClicked ! _ })
+    new MentionCandidateViewHolder(view, { onUserClicked ! _ }, th)
   }
 
   override def onBindViewHolder(holder: MentionCandidateViewHolder, position: Int): Unit = {
@@ -54,7 +55,7 @@ class MentionCandidatesAdapter extends RecyclerView.Adapter[MentionCandidateView
   override def getItemId(position: Int): Long = getItem(position).userId.str.hashCode
 }
 
-class MentionCandidateViewHolder(v: View, onUserClick: MentionCandidateInfo => Unit) extends RecyclerView.ViewHolder(v) {
+class MentionCandidateViewHolder(v: View, onUserClick: MentionCandidateInfo => Unit, th: ThemeController)(implicit ec: EventContext) extends RecyclerView.ViewHolder(v) {
   private val nameTextView = v.findViewById[TextView](R.id.mention_name)
   private val handleTextView = v.findViewById[TextView](R.id.mention_handle)
   private val chathead = v.findViewById[ChatheadView](R.id.mention_chathead)
@@ -70,13 +71,16 @@ class MentionCandidateViewHolder(v: View, onUserClick: MentionCandidateInfo => U
     override def onClick(v: View): Unit = userId.foreach(onUserClick(_))
   })
 
-  def bind(info: MentionCandidateInfo): Unit = {
-    userId = Some(info)
-    nameTextView.setText(info.name)
-    handleTextView.setText(StringUtils.formatHandle(info.handle.string))
-    chathead.setUserId(info.userId)
-    icon.setVisible(info.isGuest)
-    if(info.isGuest)
+  def bind(infoM: MentionCandidateInfo): Unit = {
+    userId = Some(infoM)
+    nameTextView.setText(infoM.name)
+    th.currentTheme.foreach { t =>
+      nameTextView.setTextColor(getStyledColor(R.attr.wirePrimaryTextColor, th.getTheme(t)))
+    }
+    handleTextView.setText(StringUtils.formatHandle(infoM.handle.string))
+    chathead.setUserId(infoM.userId)
+    icon.setVisible(infoM.isGuest)
+    if(infoM.isGuest)
       icon.setImageDrawable(GuestIconWithColor(getStyledColor(R.attr.wireSecondaryTextColor)))
   }
 }

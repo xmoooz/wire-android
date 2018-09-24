@@ -101,6 +101,7 @@ class ConversationFragment extends FragmentHelper {
   private lazy val callStartController    = inject[CallStartController]
   private lazy val accountsController     = inject[UserAccountsController]
   private lazy val globalPrefs            = inject[GlobalPreferences]
+  private lazy val themeController        = inject[ThemeController]
 
   //TODO remove use of old java controllers
   private lazy val globalLayoutController     = inject[IGlobalLayoutController]
@@ -134,7 +135,7 @@ class ConversationFragment extends FragmentHelper {
     }
   }
 
-  private val mentionCandidatesAdapter = new MentionCandidatesAdapter()
+  private lazy val mentionCandidatesAdapter = new MentionCandidatesAdapter(themeController)
 
   private var audioMessageRecordingView: AudioMessageRecordingView = _
   private lazy val extendedCursorContainer = returning(view[ExtendedCursorContainer](R.id.ecc__conversation)) { vh =>
@@ -793,7 +794,7 @@ class ConversationFragment extends FragmentHelper {
             .withConfirmationCallback(callback)
             .withCancelButton()
             .withBackgroundImage(R.drawable.degradation_overlay)
-            .withWireTheme(inject[ThemeController].getThemeDependentOptionsTheme)
+            .withWireTheme(themeController.getThemeDependentOptionsTheme)
             .build
 
         confirmationController.requestConfirmation(request, IConfirmationController.CONVERSATION)
