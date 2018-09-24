@@ -74,9 +74,7 @@ class MentionCandidateViewHolder(v: View, onUserClick: MentionCandidateInfo => U
   def bind(infoM: MentionCandidateInfo): Unit = {
     userId = Some(infoM)
     nameTextView.setText(infoM.name)
-    th.currentTheme.foreach { t =>
-      nameTextView.setTextColor(getStyledColor(R.attr.wirePrimaryTextColor, th.getTheme(t)))
-    }
+    nameTextView.setTextColor(getStyledColor(R.attr.wirePrimaryTextColor))
     handleTextView.setText(StringUtils.formatHandle(infoM.handle.string))
     chathead.setUserId(infoM.userId)
     icon.setVisible(infoM.isGuest)
