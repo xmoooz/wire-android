@@ -22,7 +22,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.MediaStore
 import android.support.annotation.Nullable
-import android.support.v7.widget.{ActionMenuView, Toolbar}
+import android.support.v7.widget.{ActionMenuView, LinearLayoutManager, RecyclerView, Toolbar}
 import android.text.TextUtils
 import android.view._
 import android.view.animation.Animation
@@ -57,7 +57,7 @@ import com.waz.zclient.controllers.userpreferences.IUserPreferencesController
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.conversation.ConversationController.ConversationChange
 import com.waz.zclient.conversation.toolbar.AudioMessageRecordingView
-import com.waz.zclient.cursor.{CursorCallback, CursorController, CursorView, EphemeralLayout}
+import com.waz.zclient.cursor._
 import com.waz.zclient.drawing.DrawingFragment.Sketch
 import com.waz.zclient.messages.{MessagesController, MessagesListView}
 import com.waz.zclient.pages.extendedcursor.ExtendedCursorContainer
@@ -111,6 +111,8 @@ class ConversationFragment extends FragmentHelper {
   private lazy val cameraController           = inject[ICameraController]
   private lazy val confirmationController     = inject[IConfirmationController]
 
+  private var subs = Set.empty[com.waz.utils.events.Subscription]
+
   private val previewShown = Signal(false)
   private lazy val convChange = convController.convChanged.filter { _.to.isDefined }
   private lazy val cancelPreviewOnChange = new EventStreamWithAuxSignal(convChange, previewShown)
@@ -124,7 +126,16 @@ class ConversationFragment extends FragmentHelper {
   }
 
   private var containerPreview: ViewGroup = _
-  private lazy val cursorView = view[CursorView](R.id.cv__cursor)
+  private lazy val cursorView = returning(view[CursorView](R.id.cv__cursor)) { vh =>
+    mentionCandidatesAdapter.onUserClicked.onUi { info =>
+      vh.foreach(v => v.accentColor.head.foreach { ac =>
+        v.createMention(info.id, info.name, v.cursorEditText, v.cursorEditText.getSelectionStart, ac.color)
+      })
+    }
+  }
+
+  private val mentionCandidatesAdapter = new MentionCandidatesAdapter()
+
   private var audioMessageRecordingView: AudioMessageRecordingView = _
   private lazy val extendedCursorContainer = returning(view[ExtendedCursorContainer](R.id.ecc__conversation)) { vh =>
     inject[Signal[AccentColor]].map(_.color).onUi(c => vh.foreach(_.setAccentColor(c)))
@@ -139,6 +150,20 @@ class ConversationFragment extends FragmentHelper {
   private lazy val guestsBannerText = view[TypefaceTextView](R.id.banner_text)
 
   private var isBannerOpen = false
+
+  private lazy val messagesOpacity = view[View](R.id.mentions_opacity)
+  private lazy val mentionsList = view[RecyclerView](R.id.mentions_list)
+
+  private def isUserGuest(user: UserData): Signal[Boolean] =
+    convController.currentConv.map { conv =>
+      if (!conv.isTeamOnly) user.isGuest(conv.team) else false
+    }
+
+  private def showMentionsList(visible: Boolean): Unit = {
+    mentionsList.foreach(_.setVisible(visible))
+    messagesOpacity.foreach(_.setVisible(visible))
+    cursorView.foreach(_.topBorder.setVisible(visible))
+  }
 
   override def onCreateAnimation(transit: Int, enter: Boolean, nextAnim: Int): Animation =
     if (nextAnim == 0 || getParentFragment == null)
@@ -208,7 +233,7 @@ class ConversationFragment extends FragmentHelper {
           convController.getConversation(to).map {
             case Some(toConv) =>
               cursorView.foreach { view =>
-                from.foreach{ id => draftMap.set(id, view.getText.trim) }
+                from.foreach{ id => draftMap.set(id, view.getText) }
                 if (toConv.convType != ConversationType.WaitForConnection) {
                   keyboardController.hideKeyboardIfVisible()
                   loadingIndicatorView.foreach(_.hide())
@@ -361,9 +386,35 @@ class ConversationFragment extends FragmentHelper {
     globalLayoutController.addKeyboardVisibilityObserver(keyboardVisibilityObserver)
     slidingPaneController.addObserver(slidingPaneObserver)
 
-    draftMap.withCurrentDraft { draftText => if (!TextUtils.isEmpty(draftText)) cursorView.foreach(_.setText(draftText)) }
+    draftMap.withCurrentDraft { draftText => if (!TextUtils.isEmpty(draftText.text)) cursorView.foreach(_.setText(draftText)) }
 
     listView
+
+    mentionsList.foreach { v =>
+      v.setAdapter(mentionCandidatesAdapter)
+      v.setLayoutManager(returning(new LinearLayoutManager(getContext)){
+        _.setStackFromEnd(true)
+      })
+    }
+
+    cursorView.foreach { v =>
+
+      subs += Signal(v.mentionSearchResults, accountsController.teamId, inject[ThemeController].currentTheme).onUi {
+        case (data, teamId, theme) =>
+          mentionCandidatesAdapter.setData(data, teamId, theme)
+          mentionsList.foreach(_.scrollToPosition(data.size - 1))
+      }
+      subs += Signal(v.mentionQuery.map(_.nonEmpty), v.mentionSearchResults.map(_.nonEmpty), v.selectionHasMention).map {
+        case (true, true, false) => true
+        case _ => false
+      }.onUi(showMentionsList)
+    }
+  }
+
+  override def onDestroyView(): Unit = {
+    subs.foreach(_.destroy())
+    subs = Set.empty
+    super.onDestroyView()
   }
 
   private def updateTitle(text: String): Unit = if (toolbarTitle != null) toolbarTitle.setText(text)
@@ -399,7 +450,7 @@ class ConversationFragment extends FragmentHelper {
     navigationController.removeNavigationControllerObserver(navigationControllerObserver)
 
     cursorView.foreach { view =>
-      if (!view.isEditingMessage) draftMap.setCurrent(view.getText.trim)
+      if (!view.isEditingMessage) draftMap.setCurrent(view.getText)
     }
     super.onStop()
   }

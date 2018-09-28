@@ -99,8 +99,8 @@ class ParticipantFragment extends ManagerFragment
           case Some(SingleParticipantFragment.TagDevices) => Future.successful((SingleParticipantFragment.newInstance(Some(SingleParticipantFragment.TagDevices)), SingleParticipantFragment.Tag))
           case _ =>
             participantsController.isGroupOrBot.head.map {
-              case true => (GroupParticipantsFragment.newInstance(), GroupParticipantsFragment.Tag)
-              case false => (SingleParticipantFragment.newInstance(), SingleParticipantFragment.Tag)
+              case true if getStringArg(UserToOpenArg).isEmpty => (GroupParticipantsFragment.newInstance(), GroupParticipantsFragment.Tag)
+              case _ => (SingleParticipantFragment.newInstance(), SingleParticipantFragment.Tag)
             }
         }).map {
           case (f, tag) =>
@@ -288,12 +288,18 @@ class ParticipantFragment extends ManagerFragment
 object ParticipantFragment {
   val TAG: String = classOf[ParticipantFragment].getName
   private val PageToOpenArg = "ARG__FIRST__PAGE"
+  private val UserToOpenArg = "ARG__USER"
 
   def newInstance(page: Option[String]): ParticipantFragment =
     returning(new ParticipantFragment) { f =>
       page.foreach { p =>
         f.setArguments(returning(new Bundle)(_.putString(PageToOpenArg, p)))
       }
+    }
+
+  def newInstance(userId: UserId): ParticipantFragment =
+    returning(new ParticipantFragment) { f =>
+      f.setArguments(returning(new Bundle)(_.putString(UserToOpenArg, userId.str)))
     }
 
 }

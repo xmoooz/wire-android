@@ -21,7 +21,6 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.os.Build;
 import android.text.SpannableString;
-import android.text.method.LinkMovementMethod;
 import android.util.AttributeSet;
 
 import com.waz.model.AccentColor;
@@ -30,6 +29,7 @@ import com.waz.zclient.R;
 import com.waz.zclient.ViewHelper;
 import com.waz.zclient.common.controllers.global.AccentColorCallback;
 import com.waz.zclient.common.controllers.global.AccentColorController;
+import com.waz.zclient.common.views.LinkTextView;
 import com.waz.zclient.markdown.spans.GroupSpan;
 import com.waz.zclient.markdown.spans.commonmark.ImageSpan;
 import com.waz.zclient.markdown.spans.commonmark.LinkSpan;
@@ -119,7 +119,7 @@ public class MarkdownTextView extends TypefaceTextView implements ViewHelper {
 
         // to make links clickable
         mStyleSheet.configureLinkHandler(context());
-        setMovementMethod(LinkMovementMethod.getInstance());
+        setMovementMethod(new LinkTextView.MovementMethod(getContext()));
 
         setLineSpacing(0f, 1.1f);
     }

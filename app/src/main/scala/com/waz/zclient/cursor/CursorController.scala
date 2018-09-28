@@ -27,7 +27,7 @@ import com.google.android.gms.common.{ConnectionResult, GoogleApiAvailability}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api.NetworkMode
 import com.waz.content.{GlobalPreferences, UserPreferences}
-import com.waz.model.{ConvExpiry, MessageData}
+import com.waz.model.{ConvExpiry, Mention, MessageData}
 import com.waz.permissions.PermissionsService
 import com.waz.service.{NetworkModeService, ZMessaging}
 import com.waz.threading.{CancellableFuture, Threading}
@@ -65,7 +65,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
   val editingMsg = Signal(Option.empty[MessageData])
 
   val secondaryToolbarVisible = Signal(false)
-  val enteredText = Signal[(String, EnteredTextSource)](("", EnteredTextSource.FromController))
+  val enteredText = Signal[(CursorText, EnteredTextSource)]((CursorText.Empty, EnteredTextSource.FromController))
   val cursorWidth = Signal[Int]()
   val editHasFocus = Signal(false)
   var cursorCallback = Option.empty[CursorCallback]
@@ -101,7 +101,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
 
   val sendButtonEnabled: Signal[Boolean] = zms.map(_.userPrefs).flatMap(_.preference(UserPreferences.SendButtonEnabled).signal)
 
-  val enteredTextEmpty = enteredText.map(_._1.trim.isEmpty).orElse(Signal const true)
+  val enteredTextEmpty = enteredText.map(_._1.isEmpty).orElse(Signal const true)
   val sendButtonVisible = Signal(emojiKeyboardVisible, enteredTextEmpty, sendButtonEnabled, isEditingMessage) map {
     case (emoji, empty, enabled, editing) => enabled && (emoji || !empty) && !editing
   }
@@ -129,12 +129,12 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
   // notify SE about typing state
   private var prevEnteredText = ""
   enteredText {
-    case (text, EnteredTextSource.FromView) if text != prevEnteredText =>
+    case (CursorText(text, _), EnteredTextSource.FromView) if text != prevEnteredText =>
       for {
         typing <- zms.map(_.typing).head
         convId <- conversationController.currentConvId.head
       } {
-        if (text.nonEmpty) typing.selfChangedInput(convId)
+        if (!text.isEmpty) typing.selfChangedInput(convId)
         else typing.selfClearedInput(convId)
       }
       prevEnteredText = text
@@ -184,7 +184,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
     case true =>
       // giphy worked, so no need for the draft text to reappear
       inject[DraftMap].resetCurrent().map { _ =>
-        enteredText ! ("", EnteredTextSource.FromController)
+        enteredText ! (CursorText.Empty, EnteredTextSource.FromController)
       }
     case false =>
   }
@@ -194,14 +194,14 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
     case false => // ignore
   }
 
-  def submit(msg: String): Boolean = {
+  def submit(msg: String, mentions: Seq[Mention] = Nil): Boolean = {
     if (isEditingMessage.currentValue.contains(true)) {
       onApproveEditMessage()
       true
     }
     else if (TextUtils.isEmpty(msg.trim)) false
     else {
-      conversationController.sendMessage(msg).foreach { m =>
+      conversationController.sendMessage(msg, mentions).foreach { m =>
         m.foreach { msg =>
           onMessageSent ! msg
           cursorCallback.foreach(_.onMessageSent(msg))
@@ -217,13 +217,13 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
       cs <- zms.head.map(_.convsUi)
       m <- editingMsg.head if m.isDefined
       msg = m.get
-      (text, _) <- enteredText.head
+      (CursorText(text, mentions), _) <- enteredText.head
     } {
-      if (text.trim().isEmpty) {
+      if (text.isEmpty) {
         cs.recallMessage(cId, msg.id)
         Toast.makeText(ctx, R.string.conversation__message_action__delete__confirmation, Toast.LENGTH_SHORT).show()
       } else {
-        cs.updateMessage(cId, msg.id, text)
+        cs.updateMessage(cId, msg.id, text, mentions)
       }
       editingMsg ! None
       keyboard ! KeyboardState.Hidden
@@ -285,9 +285,9 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
       }
       else showToast(R.string.location_sharing__missing_play_services)
     case Gif =>
-      enteredText.head.foreach { case (text, _) => screenController.showGiphy ! Some(text) }
+      enteredText.head.foreach { case (CursorText(text, _), _) => screenController.showGiphy ! Some(text) }
     case Send =>
-      enteredText.head.foreach { case (text, _) => submit(text) }
+      enteredText.head.foreach { case (CursorText(text, mentions), _) => submit(text, mentions) }
     case _ =>
       // ignore
   }
