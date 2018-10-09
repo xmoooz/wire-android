@@ -75,7 +75,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
     case _       => Signal.const(None)
   }
 
-  private val gcmManager = new GSMManager(currentCallOpt.map(_.isDefined))
+  new GSMManager(currentCallOpt.map(_.isDefined))
 
   val currentCall   = currentCallOpt.collect { case Some(c) => c }
   val callConvIdOpt = currentCallOpt.map(_.map(_.convId))
@@ -138,7 +138,7 @@ class CallController(implicit inj: Injector, cxt: WireContext, eventContext: Eve
           u.getDisplayName,
           u.isGuest(cZms.teamId),
           u.isVerified,
-          videoStates.get(u.id).contains(VideoState.Started),
+          videoStates.get(u.id).exists(Set(VideoState.Started, VideoState.ScreenShare).contains),
           Some(cZms)
         )
       }
