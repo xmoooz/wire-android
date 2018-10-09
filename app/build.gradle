@@ -22,10 +22,10 @@ ext {
     audioVersion = System.getenv("AUDIO_VERSION") ?: '1.209.0@aar'
     stethoVersion = '1.5.0'
 
-    zMessagingDevVersionBase = '130.2163'
+    zMessagingDevVersionBase = '131.2164'
     zMessagingDevVersion = "${zMessagingDevVersionBase}@aar"
     // Release version number must be like this X.0(.Y)
-    zMessagingReleaseVersion = System.getenv("ZMESSAGING_VERSION") ?: '130.0.492@aar'
+    zMessagingReleaseVersion = System.getenv("ZMESSAGING_VERSION") ?: '131.0.494@aar'
 
     avsVersion = '4.6.156@aar'
     avsInternalVersion = avsVersion //leave this here in case we want to test specific AVS versions on internal
