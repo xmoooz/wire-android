@@ -21,9 +21,8 @@ import android.content.Context
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v7.widget.Toolbar
-import android.view.View.{OnClickListener, OnLayoutChangeListener}
+import android.view.View.OnClickListener
 import android.view.{LayoutInflater, View, ViewGroup}
-import android.widget.{FrameLayout, ImageView}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.model.{Liking, MessageId}
 import com.waz.service.ZMessaging
@@ -33,19 +32,14 @@ import com.waz.utils.events.{EventStream, Signal}
 import com.waz.utils.returning
 import com.waz.zclient.collection.controllers.CollectionController
 import com.waz.zclient.common.controllers.ScreenController
-import com.waz.zclient.common.views.ImageAssetDrawable
-import com.waz.zclient.common.views.ImageController.{ImageSource, WireImage}
 import com.waz.zclient.controllers.drawing.IDrawingController
 import com.waz.zclient.controllers.singleimage.ISingleImageController
 import com.waz.zclient.conversation.toolbar._
 import com.waz.zclient.drawing.DrawingFragment.Sketch
 import com.waz.zclient.messages.MessageBottomSheetDialog.MessageAction
 import com.waz.zclient.messages.controllers.MessageActionsController
-import com.waz.zclient.ui.animation.interpolators.penner.{Expo, Quart}
 import com.waz.zclient.ui.cursor.CursorMenuItem
 import com.waz.zclient.ui.text.TypefaceTextView
-import com.waz.zclient.utils.ContextUtils._
-import com.waz.zclient.utils.{Offset, ViewUtils}
 import com.waz.zclient.{FragmentHelper, R}
 import org.threeten.bp.{LocalDateTime, ZoneId}
 
@@ -171,20 +165,12 @@ class ImageFragment extends FragmentHelper {
       .collect { case Some(msg) => LocalDateTime.ofInstant(msg.time.instant, ZoneId.systemDefault()).toLocalDate.toString }
       .onUi(headerTimestamp.setText)
 
-    val layoutChangeListener = new OnLayoutChangeListener {
-      override def onLayoutChange(v: View, left: Int, top: Int, right: Int, bottom: Int, oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int) = {
-        if(v.getWidth > 0 && !animationStarted){
-          animationStarted = true
-          Option(getArguments.getString(ArgMessageId)).foreach { messageId =>
-            zms.head.flatMap(_.messagesStorage.get(MessageId(messageId))).map { _.foreach(msg => collectionController.focusedItem ! Some(msg)) }
-            val imageSignal: Signal[ImageSource] = zms.flatMap(_.messagesStorage.signal(MessageId(messageId))).map(msg => WireImage(msg.assetId))
-            animateOpeningTransition(new ImageAssetDrawable(imageSignal))
-          }
-        }
+
+    Option(getArguments.getString(ArgMessageId)).foreach { messageId =>
+      zms.head.flatMap(_.messagesStorage.get(MessageId(messageId))).map {
+        _.foreach(msg => collectionController.focusedItem ! Some(msg))
       }
     }
-
-    view.addOnLayoutChangeListener(layoutChangeListener)
     view
   }
 
@@ -200,6 +186,8 @@ class ImageFragment extends FragmentHelper {
     super.onDetach()
   }
 
+  //TODO: Salvage this animation?
+/*
   private def animateOpeningTransition(drawable: ImageAssetDrawable): Unit =  {
     val img = singleImageController.getImageContainer
 
@@ -270,4 +258,5 @@ class ImageFragment extends FragmentHelper {
       }
     }
   }
+  */
 }

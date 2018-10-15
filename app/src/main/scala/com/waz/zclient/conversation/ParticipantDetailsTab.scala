@@ -24,7 +24,7 @@ import com.waz.service.ZMessaging
 import com.waz.utils.events.{ClockSignal, Signal}
 import com.waz.utils.returning
 import com.waz.zclient.common.controllers.{ThemeController, UserAccountsController}
-import com.waz.zclient.common.views.ChatheadView
+import com.waz.zclient.common.views.ChatHeadView
 import com.waz.zclient.messages.UsersController
 import com.waz.zclient.paintcode.GuestIcon
 import com.waz.zclient.participants.ParticipantsController
@@ -49,7 +49,7 @@ class ParticipantDetailsTab(val context: Context, callback: FooterMenuCallback) 
   private val userAccountsController = inject[UserAccountsController]
   private val themeController        = inject[ThemeController]
 
-  private val imageView = findById[ChatheadView](R.id.chathead)
+  private val imageView = findById[ChatHeadView](R.id.chathead)
 
   private val footerMenu = returning(findById[FooterMenu](R.id.fm__footer)) {
     _.setCallback(callback)
@@ -83,7 +83,7 @@ class ParticipantDetailsTab(val context: Context, callback: FooterMenuCallback) 
     icon.setImageDrawable(GuestIcon(color))
   }
 
-  participantsController.otherParticipant.map(_.id){ imageView.setUserId }
+  participantsController.otherParticipant.map(_.id){ imageView.loadUser }
 
   (for {
     expires <- participantsController.otherParticipant.map(_.expiresAt)
