@@ -8,9 +8,9 @@ buildscript {
         maven {
             url "https://dl.bintray.com/wire-android/third-party"
         }
+        google()
         jcenter()
         mavenCentral()
-        google()
     }
 
     dependencies {
