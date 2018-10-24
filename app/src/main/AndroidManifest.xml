@@ -232,7 +232,6 @@
         </provider>
 
         <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version"/>
-        <meta-data android:name="net.hockeyapp.android.appIdentifier" android:value="${hockeyAppKey}" />
         <!-- Internal features from SE -->
         <meta-data android:name="INTERNAL" android:value="${internal_features}"/>
 
@@ -242,9 +241,6 @@
 
         <meta-data android:name="com.mixpanel.android.MPConfig.MinimumSessionDuration" android:value="2000" />
 
-        <service android:name="com.waz.services.calling.CallWakeService"
-                 android:exported="true"/>
-
         <service
             android:name="com.waz.services.fcm.FCMHandlerService">
             <intent-filter>
@@ -252,12 +248,11 @@
             </intent-filter>
         </service>
 
-        <receiver android:name="com.waz.services.websocket.WebSocketBroadcastReceiver">
+        <receiver android:name="com.waz.services.websocket.OnBootAndUpdateBroadcastReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
-                <action android:name="android.intent.action.PACKAGE_DATA_CLEARED" />
             </intent-filter>
         </receiver>
 

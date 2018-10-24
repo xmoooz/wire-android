@@ -35,6 +35,7 @@ import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.verbose
 import com.waz.api.NetworkMode
 import com.waz.content._
+import com.waz.jobs.PushTokenCheckJob
 import com.waz.log.InternalLog
 import com.waz.model.{AccentColor, ConversationData, TeamId, UserId}
 import com.waz.permissions.PermissionsService
@@ -84,7 +85,6 @@ import com.waz.zclient.tracking.{CrashController, GlobalTrackingController, UiTr
 import com.waz.zclient.utils.{BackStackNavigator, BackendPicker, Callback, ExternalFileSharing, LocalThumbnailCache, UiStorage}
 import com.waz.zclient.views.DraftMap
 import javax.net.ssl.SSLContext
-import net.hockeyapp.android.Constants
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -323,16 +323,15 @@ class WireApplication extends MultiDexApplication with WireContext with Injectab
     new BackendPicker(this).withBackend(new Callback[BackendConfig]() {
       def callback(be: BackendConfig) = ensureInitialized(be)
     })
-
-    Constants.loadFromContext(getApplicationContext)
   }
 
   def ensureInitialized(backend: BackendConfig) = {
 
     JobManager.create(this).addJobCreator(new JobCreator {
       override def create(tag: String) =
-        if (tag.contains(FetchJob.Tag)) new FetchJob
-        else null
+        if      (tag.contains(FetchJob.Tag))          new FetchJob
+        else if (tag.contains(PushTokenCheckJob.Tag)) new PushTokenCheckJob
+        else    null
     })
 
     val prefs = GlobalPreferences(this)
