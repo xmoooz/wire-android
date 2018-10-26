@@ -51,40 +51,46 @@ import org.threeten.bp.Duration
 class RawAssetStorageTest extends GeneralStorageTest(RawAssetDao)(
   entities = Set(
     RawAsset(
-      id = AssetId(),
+      id = RawAssetId(),
       sha = Sha256("ad34da34"),
       encryption = NoEncryption,
       source = URI.create("https://github.com/wireapp/wire-android-sync-engine/pull/437"),
       mime = Mime.Default,
+      uploaded = 50,
       size = 1000,
       retention = Retention.Eternal,
       public = true,
       convId = None,
-      details = ImageDetails(Dim2(1,2), Medium)
+      details = ImageDetails(Dim2(1,2), Medium),
+      assetId = None
     ),
     RawAsset(
-      id = AssetId(),
+      id = RawAssetId(),
       sha = Sha256("ad34da34"),
       encryption = NoEncryption,
       source = URI.create("https://github.com/wireapp/wire-android-sync-engine/pull/437"),
       mime = Mime.Default,
+      uploaded = 50,
       size = 1000,
       retention = Retention.Eternal,
       public = false,
       convId = None,
-      details = AudioDetails(Duration.ofDays(1), Loudness(Vector(0.4f, 0.5f, 0.6f)))
+      details = AudioDetails(Duration.ofDays(1), Loudness(Vector(0.4f, 0.5f, 0.6f))),
+      assetId = Some(AssetId())
     ),
     RawAsset(
-      id = AssetId(),
+      id = RawAssetId(),
       sha = Sha256("ad34da34"),
       encryption = AES_CBC_Encryption(AESKey()),
       source = URI.create("https://github.com/wireapp/wire-android-sync-engine/pull/437"),
       mime = Mime.Default,
+      uploaded = 50,
       size = 1000,
       retention = Retention.Eternal,
       public = true,
       convId = None,
-      details = VideoDetails(Dim2(1,2), Duration.ofDays(1))
+      details = VideoDetails(Dim2(1,2), Duration.ofDays(1)),
+      assetId = None
     )
   ),
   idExtractor = _.id
