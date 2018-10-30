@@ -21,12 +21,23 @@ import java.io.InputStream
 
 import android.content.Context
 import com.bumptech.glide.load.model.{ModelLoader, ModelLoaderFactory, MultiModelLoaderFactory}
-import com.waz.zclient.WireContext
-import com.waz.zclient.glide.AssetRequest
+import com.waz.service.assets2.AssetService
+import com.waz.zclient.{Injectable, Injector, WireContext}
+import com.waz.zclient.glide.{Asset2Request, AssetRequest}
 
 class AssetRequestModelLoaderFactory(context: Context) extends ModelLoaderFactory[AssetRequest, InputStream] {
   override def build(multiFactory: MultiModelLoaderFactory): ModelLoader[AssetRequest, InputStream] = {
     new AssetRequestModelLoader()(context, context.asInstanceOf[WireContext].injector)
+  }
+
+  override def teardown(): Unit = {}
+}
+
+class Asset2RequestModelLoaderFactory(context: Context) extends ModelLoaderFactory[Asset2Request, InputStream] with Injectable {
+  private implicit val injector: Injector = context.asInstanceOf[WireContext].injector
+
+  override def build(multiFactory: MultiModelLoaderFactory): ModelLoader[Asset2Request, InputStream] = {
+    new Asset2RequestModelLoader(inject[AssetService])
   }
 
   override def teardown(): Unit = {}

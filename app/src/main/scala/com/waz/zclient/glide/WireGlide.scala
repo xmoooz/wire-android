@@ -30,6 +30,7 @@ object WireGlide {
 
 object GlideBuilder {
   def apply(drawable: Drawable)(implicit context: Context): RequestBuilder[Drawable] = WireGlide().load(drawable)
+  def forAsset(assetId: AssetId)(implicit context: Context): RequestBuilder[Drawable] = WireGlide().load(AssetIdRequest(assetId))
   def apply(assetId: AssetId)(implicit context: Context): RequestBuilder[Drawable] = WireGlide().load(AssetIdRequest(assetId))
   def apply(assetData: AssetData)(implicit context: Context): RequestBuilder[Drawable] = WireGlide().load(AssetDataRequest(assetData))
   def apply(assetRequest: AssetRequest)(implicit context: Context): RequestBuilder[Drawable] = WireGlide().load(assetRequest)

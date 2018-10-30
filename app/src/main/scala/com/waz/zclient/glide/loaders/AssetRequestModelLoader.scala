@@ -24,11 +24,12 @@ import android.content.Context
 import com.bumptech.glide.load.{Key, Options}
 import com.bumptech.glide.load.model.ModelLoader
 import com.bumptech.glide.load.model.ModelLoader.LoadData
-import com.waz.ZLog
+import com.waz.ZLog._
 import com.waz.ZLog.ImplicitTag.implicitLogTag
 import com.waz.model.AssetId
+import com.waz.service.assets2.AssetService
 import com.waz.zclient.Injector
-import com.waz.zclient.glide.{AssetDataFetcher, AssetDataRequest, AssetIdRequest, AssetRequest}
+import com.waz.zclient.glide._
 
 class AssetRequestModelLoader(implicit context: Context, inj: Injector) extends ModelLoader[AssetRequest, InputStream] {
   override def buildLoadData(model: AssetRequest, width: Int, height: Int, options: Options): ModelLoader.LoadData[InputStream] = {
@@ -38,11 +39,21 @@ class AssetRequestModelLoader(implicit context: Context, inj: Injector) extends 
     }
     val key = AssetKey(aId, width, height, options)
 
-    ZLog.verbose(s"key: $key")
+    verbose(s"key: $key")
     new LoadData[InputStream](key, new AssetDataFetcher(model, width))
   }
 
   override def handles(model: AssetRequest): Boolean = true
+}
+
+class Asset2RequestModelLoader(assetService: AssetService) extends ModelLoader[Asset2Request, InputStream] {
+  override def buildLoadData(model: Asset2Request, width: Int, height: Int, options: Options): ModelLoader.LoadData[InputStream] = {
+    val key = AssetKey(model.assetId, width, height, options)
+    verbose(s"key: $key")
+    new LoadData[InputStream](key, new Asset2DataFetcher(model, assetService))
+  }
+
+  override def handles(model: Asset2Request): Boolean = true
 }
 
 case class AssetKey(assetId: AssetId, width: Int, height: Int, options: Options) extends Key {

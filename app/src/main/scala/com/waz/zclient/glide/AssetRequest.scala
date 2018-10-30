@@ -22,3 +22,5 @@ import com.waz.model.{AssetData, AssetId}
 sealed trait AssetRequest
 case class AssetIdRequest(assetId: AssetId) extends AssetRequest
 case class AssetDataRequest(assetData: AssetData) extends AssetRequest
+
+case class Asset2Request(assetId: AssetId)
