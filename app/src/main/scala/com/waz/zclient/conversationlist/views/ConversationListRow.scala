@@ -57,6 +57,7 @@ import scala.collection.Set
 
 trait ConversationListRow extends FrameLayout
 
+//TODO: Reduce all the logic in this view
 class NormalConversationListRow(context: Context, attrs: AttributeSet, style: Int) extends FrameLayout(context, attrs, style)
     with ConversationListRow
     with ViewHelper
@@ -148,13 +149,14 @@ class NormalConversationListRow(context: Context, attrs: AttributeSet, style: In
     conv <- conversation
     memberIds <- members
     memberSeq <- Signal.sequence(memberIds.map(uid => UserSignal(uid)):_*)
+    isGroup <- Signal.future(z.conversations.isGroupConversation(conv.id))
   } yield {
     val opacity =
       if ((memberIds.isEmpty && conv.convType == ConversationType.Group) || conv.convType == ConversationType.WaitForConnection || !conv.isActive)
         getResourceFloat(R.dimen.conversation_avatar_alpha_inactive)
       else
         getResourceFloat(R.dimen.conversation_avatar_alpha_active)
-    (conv.id, conv.convType, memberSeq.filter(_.id != z.selfUserId), opacity)
+    (conv.id, isGroup, memberSeq.filter(_.id != z.selfUserId), opacity, z.teamId)
   }
 
   def setSubtitle(text: String): Unit = {
@@ -191,22 +193,9 @@ class NormalConversationListRow(context: Context, attrs: AttributeSet, style: In
       verbose("Outdated badge status")
   }
 
-  avatarInfo.on(Threading.Background){
-    case (convId, convType, members, alpha) if conversationData.forall(_.id == convId) =>
-      val cType =
-      if (convType == ConversationType.Group && members.size == 1 && conversationData.exists(_.team.nonEmpty))
-        ConversationType.OneToOne
-      else
-        convType
-      avatar.setMembers(members.map(_.id), convId, cType)
-    case _ =>
-      verbose("Outdated avatar info")
-  }
   avatarInfo.on(Threading.Ui){
-    case (convId, convType, members, alpha) if conversationData.forall(_.id == convId) =>
-      if (convType == ConversationType.Group && members.size == 1 && conversationData.exists(_.team.nonEmpty)) {
-        avatar.setConversationType(ConversationType.OneToOne)
-      }
+    case (convId, isGroup, membersSeq, alpha, selfTeam) if conversationData.forall(_.id == convId) =>
+      avatar.setMembers(membersSeq, convId, isGroup, selfTeam)
       avatar.setAlpha(alpha)
     case _ =>
       verbose("Outdated avatar info")
@@ -239,7 +228,6 @@ class NormalConversationListRow(context: Context, attrs: AttributeSet, style: In
 
     badge.setStatus(ConversationBadge.Empty)
     subtitle.setText("")
-    avatar.setConversationType(conversationData.convType)
     avatar.clearImages()
     avatar.setAlpha(getResourceFloat(R.dimen.conversation_avatar_alpha_active))
     conversationId.publish(Some(conversationData.id), Threading.Background)
@@ -528,7 +516,7 @@ class IncomingConversationListRow(context: Context, attrs: AttributeSet, style: 
 
   def setIncomingUsers(users: Seq[UserId]): Unit = {
     avatar.setAlpha(getResourceFloat(R.dimen.conversation_avatar_alpha_inactive))
-    avatar.setMembers(users, ConvId(), ConversationType.Group)
+    //avatar.setMembers(users, ConversationType.Group)
     title.setText(getInboxName(users.size))
     badge.setStatus(ConversationBadge.WaitingConnection)
   }
