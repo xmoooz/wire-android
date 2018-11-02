@@ -217,7 +217,7 @@ object WireApplication {
     bind [Signal[ConversationData]] to inject[ConversationController].currentConv
 
     // selected conversation id
-    bind [Signal[Option[ConvId]]] to inject[SelectedConversationService].selectedConversationId
+    bind [Signal[Option[ConvId]]] to inject[Signal[SelectedConversationService]].flatMap(_.selectedConversationId)
 
     // accent color
     bind [Signal[AccentColor]] to inject[AccentColorController].accentColor
