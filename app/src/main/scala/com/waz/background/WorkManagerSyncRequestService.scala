@@ -46,7 +46,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.util.control.{NoStackTrace, NonFatal}
 
-class WorkManagerSyncRequestService (implicit inj: Injector, cxt: Context, eventContext: EventContext) extends SyncRequestService with Injectable {
+class WorkManagerSyncRequestService(implicit inj: Injector, cxt: Context, eventContext: EventContext) extends SyncRequestService with Injectable {
 
   import WorkManagerSyncRequestService._
   import com.waz.threading.Threading.Implicits.Background
@@ -55,10 +55,10 @@ class WorkManagerSyncRequestService (implicit inj: Injector, cxt: Context, event
 
   override def addRequest(account:    UserId,
                           req:        SyncRequest,
-                          priority:   Int            = Priority.Normal,
-                          dependsOn:  Seq[SyncId]    = Nil,
-                          forceRetry: Boolean        = false,
-                          delay:      FiniteDuration = Duration.Zero) = {
+                          priority:   Int              = Priority.Normal,
+                          dependsOn:  Seq[SyncId]      = Nil,
+                          forceRetry: Boolean          = false,
+                          delay:      FiniteDuration   = Duration.Zero) = {
 
     val work = new OneTimeWorkRequest.Builder(classOf[SyncJobWorker])
       .setConstraints(
@@ -85,13 +85,18 @@ class WorkManagerSyncRequestService (implicit inj: Injector, cxt: Context, event
       case _ => None
     }
 
+    val uniqueWorkPolicy = req match {
+      case _: SyncNotifications => ExistingWorkPolicy.REPLACE
+      case _                    => ExistingWorkPolicy.APPEND
+    }
+
     implicit val logTag: LogTag = jobLogTag(account)
     val commandTag = commandId(req.cmd, work.getId)
     verbose(s"$commandTag scheduling...")
 
     Future {
       (uniqueGroupName.map(n => s"${account.str}--$n") match {
-        case Some(n) => wm.enqueueUniqueWork(n, ExistingWorkPolicy.APPEND, work)
+        case Some(n) => wm.enqueueUniqueWork(n, uniqueWorkPolicy, work)
         case None    => wm.enqueue(work)
       }).getResult.get()
       verbose(s"$commandTag scheduled successfully")

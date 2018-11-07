@@ -24,7 +24,6 @@ import com.waz.ZLog.{error, verbose}
 import com.waz.ZLog.ImplicitTag.implicitLogTag
 import com.waz.model.UserId
 import com.waz.service.ZMessaging
-import com.waz.services.fcm.FetchJob
 import com.waz.threading.Threading
 import com.waz.utils.returning
 
@@ -49,7 +48,8 @@ class PushTokenCheckJob extends Job {
                 //TODO, this is a bit rigid - we should chain the work with WorkManager and provide and interface so that
                 //TODO the SE can decide this for itself
                 if (performFetch)
-                  FetchJob(acc, nId = None)
+//                  FetchJob(acc, nId = None)
+                  {}
 
                 Result.SUCCESS
               case Left(err) => if (err.isFatal) Result.FAILURE else Result.RESCHEDULE

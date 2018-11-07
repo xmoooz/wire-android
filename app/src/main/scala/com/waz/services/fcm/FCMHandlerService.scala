@@ -23,12 +23,13 @@ import com.waz.ZLog.{info, verbose, warn}
 import com.waz.model.{Uid, UserId}
 import com.waz.service.AccountsService.InForeground
 import com.waz.service.ZMessaging.clock
-import com.waz.service.push.PushService.FetchFromIdle
-import com.waz.service.push.{PushService, ReceivedPushData, ReceivedPushStorage}
+import com.waz.service.push.{PushNotificationService, ReceivedPushData, ReceivedPushStorage}
 import com.waz.service.{AccountsService, NetworkModeService, ZMessaging}
 import com.waz.services.ZMessagingService
+import com.waz.sync.SyncServiceHandle
 import com.waz.threading.Threading
-import com.waz.utils.{JsonDecoder, RichInstant, Serialized}
+import com.waz.utils.{JsonDecoder, RichInstant}
+import com.waz.zclient.ServiceHelper
 import org.json
 import org.threeten.bp.Instant
 
@@ -39,7 +40,7 @@ import scala.util.Try
 /**
   * For more information, see: https://firebase.google.com/docs/cloud-messaging/android/receive
   */
-class FCMHandlerService extends FirebaseMessagingService with ZMessagingService {
+class FCMHandlerService extends FirebaseMessagingService with ZMessagingService with ServiceHelper {
   import com.waz.threading.Threading.Implicits.Background
 
   lazy val pushSenderId = ZMessaging.currentGlobal.backend.pushSenderId
@@ -71,7 +72,8 @@ class FCMHandlerService extends FirebaseMessagingService with ZMessagingService 
                 accs.find(_ == target) match {
                   case Some(acc) =>
                     accounts.getZms(acc).flatMap {
-                      case Some(zms) => FCMHandler(zms, data, Instant.ofEpochMilli(remoteMessage.getSentTime))
+                      case Some(zms) =>
+                        FCMHandler(zms, data, Instant.ofEpochMilli(remoteMessage.getSentTime))
                       case _ =>
                         warn("Couldn't instantiate zms instance")
                         Future.successful({})
@@ -111,7 +113,8 @@ object FCMHandlerService {
 
   class FCMHandler(userId:         UserId,
                    accounts:       AccountsService,
-                   push:           PushService,
+                   push:           PushNotificationService,
+                   sync:           SyncServiceHandle,
                    network:        NetworkModeService,
                    receivedPushes: ReceivedPushStorage,
                    sentTime:       Instant) {
@@ -147,23 +150,13 @@ object FCMHandlerService {
               idle
             )).map(_ => {})
         }
-
-        /**
-          * Warning: Here we want to trigger a direct fetch if we are in doze mode - when we get an FCM in doze mode, it is
-          * unlikely that we are competing with other apps for CPU time, and we need to do the request ASAP while we have
-          * network connectivity. TODO There is still the chance we can miss messages though
-          *
-          * When not in doze mode, we want to handle the case where the device might be overwhelmed by lots of apps coming
-          * online at once. For that reason, we start a job which can run for as long as we need to avoid the app from being
-          * killed mid-processing messages.
-          */
-        _ <- if (idle) push.syncHistory(FetchFromIdle(nId)) else Serialized.future("fetch")(Future(FetchJob(userId, nId)))
+        _ <- sync.syncNotifications(nId)
       } yield {}
   }
 
   object FCMHandler {
     def apply(zms: ZMessaging, data: Map[String, String], sentTime: Instant): Future[Unit] =
-      new FCMHandler(zms.selfUserId, zms.accounts, zms.push, zms.network, zms.receivedPushStorage, sentTime).handleMessage(data)
+      new FCMHandler(zms.selfUserId, zms.accounts, zms.push, zms.sync, zms.network, zms.receivedPushStorage, sentTime).handleMessage(data)
   }
 
   val DataKey = "data"

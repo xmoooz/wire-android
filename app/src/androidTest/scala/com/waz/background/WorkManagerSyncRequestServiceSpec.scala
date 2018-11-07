@@ -133,16 +133,16 @@ class WorkManagerSyncRequestServiceSpec {
     val jobFinishedPromise = Promise[SyncResult]()
     Mockito.when(syncHandler.apply(any(), any())(any())).thenReturn(jobFinishedPromise.future)
 
-    val id  = service.addRequest(account, SyncRequest.SyncSelf)
     val state = service.syncState(account, Seq(SyncSelf.cmd))
 
     val passed = for {
-      id <- id
-      _ <- state.filter(_ == SyncState.WAITING).head
-      _ = setConstraintsMet(id)
-      _ <- state.filter(_ == SyncState.SYNCING).head
-      _ = jobFinishedPromise.trySuccess(SyncResult.Success)
-      _ <- state.filter(_ == SyncState.COMPLETED).head
+      _  <- state.filter(_ == SyncState.COMPLETED).head
+      id <- service.addRequest(account, SyncRequest.SyncSelf)
+      _  <- state.filter(_ == SyncState.WAITING).head
+      _  = setConstraintsMet(id)
+      _  <- state.filter(_ == SyncState.SYNCING).head
+      _  = jobFinishedPromise.trySuccess(SyncResult.Success)
+      _  <- state.filter(_ == SyncState.COMPLETED).head
     } yield true
 
     assert(Await.result(passed, 5.seconds))
