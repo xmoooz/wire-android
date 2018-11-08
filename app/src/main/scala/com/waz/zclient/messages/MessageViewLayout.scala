@@ -60,7 +60,7 @@ abstract class MessageViewLayout(context: Context, attrs: AttributeSet, style: I
       view.setVisibility(View.VISIBLE)
       view.set(msg, content, opts)
       (view, msg.quote) match {
-        case (v: ReplyPartView, Some(quote)) if quote.quoteValidity =>
+        case (v: ReplyPartView, Some(quote)) if msg.message.quoteValidity =>
           v.setQuote(quote)
           v.onClicked.onUi { _ =>
             adapter.positionForMessage(quote).foreach { pos =>

@@ -90,10 +90,10 @@ class MessageView(context: Context, attrs: AttributeSet, style: Int)
           (if (canHaveLink) Seq(PartDesc(WirelessLink)) else Seq.empty)
       }
       else {
-        val quotePart = (mAndL.message.quote, mAndL.quote) match {
-          case (Some(_), Some(quote)) if quote.quoteValidity => Seq(PartDesc(Reply(quote.msgType)))
-          case (Some(_), _) => Seq(PartDesc(Reply(Unknown)))
-          case _ => Seq[PartDesc]()
+        val quotePart = (mAndL.quote, mAndL.message.quoteValidity) match {
+          case (Some(quote), true)  => Seq(PartDesc(Reply(quote.msgType)))
+          case (Some(quote), false) => Seq(PartDesc(Reply(Unknown)))
+          case _                    => Seq[PartDesc]()
         }
         quotePart ++
           (if (msg.msgType == Message.Type.RICH_MEDIA) {
