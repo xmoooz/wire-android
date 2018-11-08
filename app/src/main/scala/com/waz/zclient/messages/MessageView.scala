@@ -91,8 +91,8 @@ class MessageView(context: Context, attrs: AttributeSet, style: Int)
       }
       else {
         val quotePart = (mAndL.message.quote, mAndL.quote) match {
-          case (Some(_), Some(quote)) => Seq(PartDesc(Reply(quote.msgType)))
-          case (Some(_), None) => Seq(PartDesc(Reply(Unknown)))
+          case (Some(_), Some(quote)) if quote.quoteValidity => Seq(PartDesc(Reply(quote.msgType)))
+          case (Some(_), _) => Seq(PartDesc(Reply(Unknown)))
           case _ => Seq[PartDesc]()
         }
         quotePart ++
