@@ -59,11 +59,11 @@ abstract class MessageViewLayout(context: Context, attrs: AttributeSet, style: I
       val view = factory.get(tpe, this)
       view.setVisibility(View.VISIBLE)
       view.set(msg, content, opts)
-      view match {
-        case v: ReplyPartView if msg.quote.nonEmpty =>
-          v.setQuote(msg.quote.get)
+      (view, msg.quote) match {
+        case (v: ReplyPartView, Some(quote)) if quote.quoteValidity =>
+          v.setQuote(quote)
           v.onClicked.onUi { _ =>
-            adapter.positionForMessage(msg.quote.get).foreach { pos =>
+            adapter.positionForMessage(quote).foreach { pos =>
               if (pos >= 0) adapter.scrollController.scrollToPositionRequested ! pos
             } (Threading.Ui)
           }
