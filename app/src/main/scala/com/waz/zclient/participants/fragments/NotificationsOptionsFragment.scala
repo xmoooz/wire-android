@@ -19,11 +19,8 @@ package com.waz.zclient.participants.fragments
 
 import android.os.Bundle
 import android.view.{LayoutInflater, View, ViewGroup}
-import android.widget.{LinearLayout, RelativeLayout, TextView}
+import android.widget.{LinearLayout, TextView}
 import com.waz.ZLog.ImplicitTag._
-import com.waz.model.MuteSet
-import com.waz.service.ZMessaging
-import com.waz.utils.events.Signal
 import com.waz.utils.returning
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.participants.NotificationsOptionsMenuController
@@ -40,34 +37,34 @@ class NotificationsOptionsFragment extends FragmentHelper {
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle) =
     inflater.inflate(R.layout.notifications_options_fragment, container, false)
 
-  private lazy val optionsListLayout = returning(view[LinearLayout](R.id.list_view)) { _ =>
-    convController.currentConv.map(_.muted).onUi(setValue)
-  }
+  private lazy val optionsListLayout = returning(view[LinearLayout](R.id.list_view)) { vh =>
+    convController.currentConv.map(_.muted).onUi { e =>
+      vh.foreach { layout =>
+        layout.removeAllViews()
+        ConversationController.MuteSets.zipWithIndex.foreach { case (muteSet, index) =>
+          val view = getLayoutInflater.inflate(R.layout.conversation_option_item, layout, false)
+          val separatorVisible = index != ConversationController.MuteSets.size - 1
 
-  private def setValue(e: MuteSet): Unit = optionsListLayout.foreach { layout =>
-    layout.removeAllViews()
-    ConversationController.MuteSets.zipWithIndex.map { case (muteSet, index) =>
-      getLayoutInflater.inflate(R.layout.conversation_option_item, layout, true)
-      (muteSet, layout.getChildAt(index).asInstanceOf[RelativeLayout], index != ConversationController.MuteSets.size - 1)
-    }.foreach { case (muteSet, r, separatorVisible) =>
-      findById[TextView](r, R.id.text).setText(getString(NotificationsOptionsMenuController.menuItem(muteSet).titleId))
-      findById[GlyphTextView](r, R.id.glyph).setVisible(e.equals(muteSet))
-      findById[View](r, R.id.separator).setVisible(separatorVisible)
+          findById[TextView](view, R.id.text).setText(getString(NotificationsOptionsMenuController.menuItem(muteSet).titleId))
+          findById[GlyphTextView](view, R.id.glyph).setVisible(e.equals(muteSet))
+          findById[View](view, R.id.separator).setVisible(separatorVisible)
 
-      r.onClick {
-        if (e != muteSet) {
-          val spinner = inject[SpinnerController]
-          spinner.showSpinner(true)
+          view.onClick {
+            if (e != muteSet) {
+              val spinner = inject[SpinnerController]
+              spinner.showSpinner(true)
 
-          (for {
-            z      <- inject[Signal[ZMessaging]].head
-            convId <- convController.currentConvId.head
-            _      <- convController.setMuted(convId, muteSet)
-          } yield {}).onComplete { res =>
-            if (res.isFailure) showToast(getString(R.string.generic_error_message))
-            spinner.showSpinner(false)
-            this.getFragmentManager.popBackStack()
+              (for {
+                convId <- convController.currentConvId.head
+                _      <- convController.setMuted(convId, muteSet)
+              } yield {}).onComplete { res =>
+                if (res.isFailure) showToast(getString(R.string.generic_error_message))
+                spinner.showSpinner(false)
+                this.getFragmentManager.popBackStack()
+              }
+            }
           }
+          layout.addView(view)
         }
       }
     }
