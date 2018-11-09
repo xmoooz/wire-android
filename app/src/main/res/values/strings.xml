@@ -1016,6 +1016,10 @@
     <string name="conversation_list__removed_you">[[%1$s]] removed you</string>
     <string name="conversation_list__header__title">CONVERSATIONS</string>
     <string name="conversation_list__header__archive_title">ARCHIVE</string>
+    <string name="conversation_list__single_with_quote">[[Reply]]: %1$s</string>
+    <string name="conversation_list__group_with_quote">[[Reply from %1$s]]: %2$s</string>
+    <string name="conversation_list__single_without_quote">%1$s</string>
+    <string name="conversation_list__group_without_quote">[[%1$s]]: %2$s</string>
     <string name="guest_indicator">GUEST</string>
     <string name="participant_tab_guest_indicator_label">Guest</string>
 

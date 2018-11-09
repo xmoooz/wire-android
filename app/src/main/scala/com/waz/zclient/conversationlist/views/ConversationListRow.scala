@@ -340,13 +340,13 @@ class NormalConversationListRow(context: Context, attrs: AttributeSet, style: In
 
 object ConversationListRow {
 
-  def formatSubtitle(content: String, user: String, group: Boolean, isEphemeral: Boolean = false): String = {
-    val groupSubtitle =  "[[%s]]: %s"
-    val singleSubtitle =  "%s"
+  def formatSubtitle(content: String, user: String, group: Boolean, isEphemeral: Boolean = false, replyPrefix: Boolean = false, quotePrefix: Boolean = false)(implicit context: Context): String = {
+    val groupSubtitle = if(quotePrefix) R.string.conversation_list__group_with_quote else R.string.conversation_list__group_without_quote
+    val singleSubtitle = if(quotePrefix) R.string.conversation_list__single_with_quote else R.string.conversation_list__single_without_quote
     if (group && !isEphemeral) {
-      String.format(groupSubtitle, user, content)
+      getString(groupSubtitle, user, content)
     } else {
-      String.format(singleSubtitle, content)
+      getString(singleSubtitle, content)
     }
   }
 
@@ -409,21 +409,21 @@ object ConversationListRow {
     } else {
       messageData.msgType match {
         case Message.Type.TEXT | Message.Type.TEXT_EMOJI_ONLY | Message.Type.RICH_MEDIA =>
-          formatSubtitle(messageData.contentString, senderName, isGroup)
+          formatSubtitle(messageData.contentString, senderName, isGroup, quotePrefix = isQuote)
         case Message.Type.ASSET =>
-          formatSubtitle(getString(R.string.conversation_list__shared__image), senderName, isGroup)
+          formatSubtitle(getString(R.string.conversation_list__shared__image), senderName, isGroup, quotePrefix = isQuote)
         case Message.Type.ANY_ASSET =>
-          formatSubtitle(getString(R.string.conversation_list__shared__file), senderName, isGroup)
+          formatSubtitle(getString(R.string.conversation_list__shared__file), senderName, isGroup, quotePrefix = isQuote)
         case Message.Type.VIDEO_ASSET =>
-          formatSubtitle(getString(R.string.conversation_list__shared__video), senderName, isGroup)
+          formatSubtitle(getString(R.string.conversation_list__shared__video), senderName, isGroup, quotePrefix = isQuote)
         case Message.Type.AUDIO_ASSET =>
-          formatSubtitle(getString(R.string.conversation_list__shared__audio), senderName, isGroup)
+          formatSubtitle(getString(R.string.conversation_list__shared__audio), senderName, isGroup, quotePrefix = isQuote)
         case Message.Type.LOCATION =>
-          formatSubtitle(getString(R.string.conversation_list__shared__location), senderName, isGroup)
+          formatSubtitle(getString(R.string.conversation_list__shared__location), senderName, isGroup, quotePrefix = isQuote)
         case Message.Type.MISSED_CALL =>
-          formatSubtitle(getString(R.string.conversation_list__missed_call), senderName, isGroup)
+          formatSubtitle(getString(R.string.conversation_list__missed_call), senderName, isGroup, quotePrefix = isQuote)
         case Message.Type.KNOCK =>
-          formatSubtitle(getString(R.string.conversation_list__pinged), senderName, isGroup)
+          formatSubtitle(getString(R.string.conversation_list__pinged), senderName, isGroup, quotePrefix = isQuote)
         case Message.Type.CONNECT_ACCEPTED | Message.Type.MEMBER_JOIN if !isGroup =>
           members.headOption.flatMap(_.handle).map(_.string).fold("")(StringUtils.formatHandle)
         case Message.Type.MEMBER_JOIN if members.exists(_.id == selfId) =>
