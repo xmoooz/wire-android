@@ -230,9 +230,3 @@ class UnknownReplyPartView(context: Context, attrs: AttributeSet, style: Int) ex
   timestamp.setVisibility(View.GONE)
   textView.setTypeface(TypefaceUtils.getTypeface(getString(R.string.wire__typeface__regular)), Typeface.ITALIC)
 }
-
-
-
-trait QuoteView {
-  val message = Signal[MessageData]()
-}
