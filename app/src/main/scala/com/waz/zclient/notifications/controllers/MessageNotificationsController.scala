@@ -427,6 +427,8 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
             R.string.notification__message_with_quote__name__prefix__text
           else
             R.string.notification__message__name__prefix__text
+        else if (singleConversationInBatch && !n.isGroupConv && n.isQuote)
+            R.string.notification__message_with_quote__name__prefix__text_one2one
         else 0
       if (prefixId > 0) {
         val userName = n.userName.getOrElse("")
