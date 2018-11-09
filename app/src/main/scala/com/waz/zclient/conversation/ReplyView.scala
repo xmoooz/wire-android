@@ -65,17 +65,17 @@ class ReplyView(context: Context, attrs: AttributeSet, defStyle: Int) extends Fr
 
     messageData.msgType match {
       case Type.TEXT | Type.TEXT_EMOJI_ONLY | Type.RICH_MEDIA =>
-        setTextMessage(messageData.contentString)
+        set(messageData.contentString, bold = false, None, None)
       case Type.LOCATION =>
-        setLocation(messageData.location.map(_.getName).getOrElse(getString(R.string.reply_message_type_location)))
+        set(messageData.location.map(_.getName).getOrElse(getString(R.string.reply_message_type_location)), bold = true, Some(WireStyleKit.drawLocation), None)
       case Type.VIDEO_ASSET =>
-        setVideoMessage(messageData.assetId)
+        set(getString(R.string.reply_message_type_video), bold = true, Some(WireStyleKit.drawVideocall), Some(messageData.assetId))
       case Type.ASSET =>
-        setImageMessage(messageData.assetId)
+        set(getString(R.string.reply_message_type_image), bold = true, Some(WireStyleKit.drawImage), Some(messageData.assetId))
       case Type.AUDIO_ASSET =>
-        setAudioMessage()
+        set(getString(R.string.reply_message_type_audio), bold = true, Some(WireStyleKit.drawVoiceMemo), None)
       case Type.ANY_ASSET =>
-        setAsset(assetData.flatMap(_.name).getOrElse(getString(R.string.reply_message_type_asset)))
+        set(assetData.flatMap(_.name).getOrElse(getString(R.string.reply_message_type_asset)), bold = true, Some(WireStyleKit.drawFile), None)
       case _ =>
       // Other types shouldn't be able to be replied to
     }
@@ -86,68 +86,30 @@ class ReplyView(context: Context, attrs: AttributeSet, defStyle: Int) extends Fr
     senderText.setEndCompoundDrawable(if (edited) Some(WireStyleKit.drawEdit) else None, getStyledColor(R.attr.wirePrimaryTextColor))
   }
 
-  private def setImageMessage(assetId: AssetId): Unit = {
-    image.setVisibility(View.VISIBLE)
-    contentText.setText(R.string.reply_message_type_image)
-    setBoldContent()
-    setStartIcon(Some(WireStyleKit.drawImage))
-    val imageDrawable = new RoundedImageAssetDrawable(Signal.const(WireImage(assetId)), scaleType = ScaleType.CenterCrop, request = RequestBuilder.Single, cornerRadius = 10)
-    image.setImageDrawable(imageDrawable)
-  }
-
-  private def setVideoMessage(assetId: AssetId): Unit = {
-    image.setVisibility(View.VISIBLE)
-    contentText.setText(R.string.reply_message_type_video)
-    setBoldContent()
-    setStartIcon(Some(WireStyleKit.drawVideocall))
-    val imageDrawable = new RoundedImageAssetDrawable(Signal.const(WireImage(assetId)), scaleType = ScaleType.CenterCrop, request = RequestBuilder.Single, cornerRadius = 10)
-    image.setImageDrawable(imageDrawable)
-  }
-
-  private def setTextMessage(content: String): Unit = {
-    image.setVisibility(View.GONE)
-    setStartIcon(None)
-    contentText.setText(content)
-    setRegularContent()
-  }
-
-  private def setLocation(addressText: String): Unit = {
-    image.setVisibility(View.GONE)
-    setStartIcon(Some(WireStyleKit.drawLocation))
-    contentText.setText(addressText)
-    setBoldContent()
-  }
-
-  private def setAsset(fileDescription: String): Unit = {
-    image.setVisibility(View.GONE)
-    setStartIcon(Some(WireStyleKit.drawFile))
-    contentText.setText(fileDescription)
-    setBoldContent()
-  }
-
-  private def setAudioMessage(): Unit = {
-    image.setVisibility(View.GONE)
-    setStartIcon(Some(WireStyleKit.drawVoiceMemo))
-    contentText.setText(R.string.reply_message_type_audio)
-    setBoldContent()
+  private def set(text: String, bold: Boolean, drawMethod: Option[(Canvas, RectF, ResizingBehavior, Int) => Unit], imageAsset: Option[AssetId]): Unit = {
+    contentText.setText(text)
+    if (bold){
+      contentText.setTypeface(TypefaceUtils.getTypeface(getString(R.string.wire__typeface__medium)))
+      contentText.setAllCaps(true)
+      contentText.setTextSize(TypedValue.COMPLEX_UNIT_PX, getDimenPx(R.dimen.wire__text_size__smaller))
+    }  else {
+      contentText.setTypeface(TypefaceUtils.getTypeface(getString(R.string.wire__typeface__regular)))
+      contentText.setAllCaps(false)
+      contentText.setTextSize(TypedValue.COMPLEX_UNIT_PX, getDimenPx(R.dimen.wire__text_size__small))
+      contentText.markdownQuotes()
+    }
+    setStartIcon(drawMethod)
+    imageAsset.fold {
+      image.setVisibility(View.GONE)
+    } { assetId =>
+      val imageDrawable = new RoundedImageAssetDrawable(Signal.const(WireImage(assetId)), scaleType = ScaleType.CenterCrop, request = RequestBuilder.Single, cornerRadius = 10)
+      image.setVisibility(View.VISIBLE)
+      image.setImageDrawable(imageDrawable)
+    }
   }
 
   private def setStartIcon(drawMethod: Option[(Canvas, RectF, ResizingBehavior, Int) => Unit]): Unit = {
     contentText.setStartCompoundDrawable(drawMethod, getStyledColor(R.attr.wirePrimaryTextColor))
-  }
-
-  private def setBoldContent(): Unit = {
-    contentText.setTypeface(TypefaceUtils.getTypeface(getString(R.string.wire__typeface__medium)))
-    contentText.setAllCaps(true)
-    contentText.setTextSize(TypedValue.COMPLEX_UNIT_PX, getDimenPx(R.dimen.wire__text_size__smaller))
-  }
-
-
-  private def setRegularContent(): Unit = {
-    contentText.setTypeface(TypefaceUtils.getTypeface(getString(R.string.wire__typeface__regular)))
-    contentText.setAllCaps(false)
-    contentText.setTextSize(TypedValue.COMPLEX_UNIT_PX, getDimenPx(R.dimen.wire__text_size__small))
-    contentText.markdownQuotes()
   }
 }
 
