@@ -24,6 +24,8 @@ import com.waz.zclient.common.controllers.AssetsController
 import com.waz.zclient.messages.{MessagesController, UsersController}
 import com.waz.zclient.{Injectable, Injector}
 import com.waz.ZLog.ImplicitTag.implicitLogTag
+import com.waz.service.messages.MessagesService
+
 import scala.concurrent.Future
 
 class ReplyController(implicit injector: Injector, context: Context, ec: EventContext) extends Injectable {
@@ -34,6 +36,15 @@ class ReplyController(implicit injector: Injector, context: Context, ec: EventCo
   private val messagesController = inject[MessagesController]
   private val usersController = inject[UsersController]
   private val assetsController = inject[AssetsController]
+  private val messagesService = inject[Signal[MessagesService]]
+
+  messagesService.onChanged.flatMap(_.msgEdited) { case (from, to) =>
+    replyData.mutate { data =>
+      data.find(_._2 == from).map(_._1).fold(data) { conv =>
+        data + (conv -> to)
+      }
+    }
+  }
 
   val replyData: SourceSignal[Map[ConvId, MessageId]] = Signal(Map())
 
