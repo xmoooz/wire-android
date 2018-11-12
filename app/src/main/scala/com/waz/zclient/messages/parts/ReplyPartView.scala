@@ -25,7 +25,7 @@ import android.widget.{LinearLayout, TextView}
 import com.waz.ZLog
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api.Message
-import com.waz.model.{AssetData, MessageData}
+import com.waz.model.{AssetData, MessageData, Name}
 import com.waz.utils.events._
 import com.waz.zclient.common.controllers.AssetsController
 import com.waz.zclient.common.views.ImageAssetDrawable
@@ -92,9 +92,9 @@ abstract class ReplyPartView(context: Context, attrs: AttributeSet, style: Int) 
   quoteComposer
     .map { _
       .map(u => if (u.isWireBot) u.name else u.getDisplayName)
-      .getOrElse("")
+      .getOrElse(Name.Empty)
     }
-    .onUi(name.setText)
+    .onUi(name.setText(_))
 
   quotedMessage
     .map(_.time.instant)

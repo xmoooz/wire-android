@@ -213,7 +213,7 @@ class CollectionFragment extends BaseFragment[CollectionFragment.Container] with
       }
     })
 
-    controller.conversationName.on(Threading.Ui){ name.setText }
+    controller.conversationName.onUi(name.setText(_))
 
     Signal(collectionAdapter.adapterState, controller.focusedItem, controller.contentSearchQuery).on(Threading.Ui) {
       case (AdapterState(_, _, _), Some(messageData), _) if messageData.msgType == Message.Type.ASSET =>

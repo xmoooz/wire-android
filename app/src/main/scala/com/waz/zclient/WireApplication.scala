@@ -37,7 +37,7 @@ import com.waz.api.NetworkMode
 import com.waz.background.WorkManagerSyncRequestService
 import com.waz.content._
 import com.waz.jobs.PushTokenCheckJob
-import com.waz.log.InternalLog
+import com.waz.log.{AndroidLogOutput, BufferedLogOutput, InternalLog}
 import com.waz.model._
 import com.waz.permissions.PermissionsService
 import com.waz.service._
@@ -84,7 +84,7 @@ import com.waz.zclient.pages.main.pickuser.controller.IPickUserController
 import com.waz.zclient.participants.ParticipantsController
 import com.waz.zclient.preferences.PreferencesController
 import com.waz.zclient.tracking.{CrashController, GlobalTrackingController, UiTrackingController}
-import com.waz.zclient.utils.{BackStackNavigator, BackendPicker, Callback, ExternalFileSharing, LocalThumbnailCache, UiStorage, AndroidBase64}
+import com.waz.zclient.utils.{BackStackNavigator, BackendPicker, Callback, ExternalFileSharing, LocalThumbnailCache, SafeLoggingEnabled, UiStorage, AndroidBase64}
 import com.waz.zclient.views.DraftMap
 import javax.net.ssl.SSLContext
 import org.threeten.bp.Clock
@@ -331,10 +331,13 @@ class WireApplication extends MultiDexApplication with WireContext with Injectab
 
   override def onCreate(): Unit = {
     super.onCreate()
-    enableTLS12OnOldDevices()
-    InternalLog.init(getApplicationContext.getApplicationInfo.dataDir)
 
+    InternalLog.add(new AndroidLogOutput(showSafeOnly = SafeLoggingEnabled))
+    InternalLog.add(new BufferedLogOutput(baseDir = getApplicationContext.getApplicationInfo.dataDir, showSafeOnly = SafeLoggingEnabled))
     verbose("onCreate")
+
+    enableTLS12OnOldDevices()
+
     controllerFactory = new ControllerFactory(getApplicationContext)
 
     new BackendPicker(this).withBackend(new Callback[BackendConfig]() {

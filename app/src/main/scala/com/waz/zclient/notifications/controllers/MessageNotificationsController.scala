@@ -168,7 +168,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
       }
     }
 
-  private def createSummaryNotificationProps(userId: UserId, silent: Boolean, nots: Seq[NotificationInfo], teamName: Option[String]) =
+  private def createSummaryNotificationProps(userId: UserId, silent: Boolean, nots: Seq[NotificationInfo], teamName: Option[Name]) =
     NotificationProps (userId,
       when                     = Some(nots.minBy(_.time.instant).time.instant.toEpochMilli),
       showWhen                 = Some(true),
@@ -179,11 +179,11 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
       group                    = Some(userId),
       openAccountIntent        = Some(userId),
       clearNotificationsIntent = Some((userId, None)),
-      contentInfo              = teamName,
+      contentInfo              = teamName.map(_.str),
       color                    = notificationColor(userId)
     )
 
-  private def createConvNotifications(userId: UserId, silent: Boolean, nots: Seq[NotificationInfo], teamName: Option[String]): Unit = {
+  private def createConvNotifications(userId: UserId, silent: Boolean, nots: Seq[NotificationInfo], teamName: Option[Name]): Unit = {
       if (bundleEnabled) {
         val summary = createSummaryNotificationProps(userId, silent, nots, teamName)
         notificationToBuild ! (toNotificationGroupId(userId), summary)
@@ -228,11 +228,11 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
       } (Threading.Ui)
     }
 
-  private def singleNotificationProperties(props: NotificationProps, userId: UserId, n: NotificationInfo, teamName: Option[String]): NotificationProps = {
+  private def singleNotificationProperties(props: NotificationProps, userId: UserId, n: NotificationInfo, teamName: Option[Name]): NotificationProps = {
     val title        = SpannableWrapper(getMessageTitle(n, None), List(Span(Span.StyleSpanBold, Span.HeaderRange)))
     val body         = getMessage(n, singleConversationInBatch = true)
     val requestBase  = System.currentTimeMillis.toInt
-    val bigTextStyle = StyleBuilder(StyleBuilder.BigText, title = title, summaryText = teamName, bigText = Some(body))
+    val bigTextStyle = StyleBuilder(StyleBuilder.BigText, title = title, summaryText = teamName.map(_.str), bigText = Some(body))
 
     val specProps = props.copy(
       contentTitle             = Some(title),
@@ -250,7 +250,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
     else specProps
   }
 
-  private def multipleNotificationProperties(props: NotificationProps, userId: UserId, ns: Seq[NotificationInfo], teamName: Option[String]): NotificationProps = {
+  private def multipleNotificationProperties(props: NotificationProps, userId: UserId, ns: Seq[NotificationInfo], teamName: Option[Name]): NotificationProps = {
     val convIds = ns.map(_.convId).toSet
     val isSingleConv = convIds.size == 1
 
@@ -259,9 +259,9 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
         if (ns.exists(_.isEphemeral))
           ResString(R.string.notification__message__ephemeral_someone)
         else if (ns.head.isGroupConv)
-          ns.head.convName.map(ResString(_)).getOrElse(ResString.Empty)
+          ns.head.convName.map(_.str).map(ResString(_)).getOrElse(ResString.Empty)
         else
-          ns.head.convName.orElse(ns.head.userName).map(ResString(_)).getOrElse(ResString.Empty)
+          ns.head.convName.orElse(ns.head.userName).map(_.str).map(ResString(_)).getOrElse(ResString.Empty)
       }
       else
         ResString(R.plurals.notification__new_messages__multiple, convIds.size, ns.size)
@@ -288,7 +288,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
 
     val requestBase = System.currentTimeMillis.toInt
     val messages    = ns.sortBy(_.time.instant).map(n => getMessage(n, singleConversationInBatch = isSingleConv)).takeRight(5).toList
-    val inboxStyle  = StyleBuilder(StyleBuilder.Inbox, title = title, summaryText = if (bundleEnabled) teamName else None, lines = messages)
+    val inboxStyle  = StyleBuilder(StyleBuilder.Inbox, title = title, summaryText = (if (bundleEnabled) teamName else None).map(_.str), lines = messages)
 
     val specProps = props.copy(
       contentTitle = Some(title),
@@ -369,7 +369,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
       case VIDEO_ASSET        => ResString(R.string.notification__message__one_to_one__shared_video)
       case AUDIO_ASSET        => ResString(R.string.notification__message__one_to_one__shared_audio)
       case LOCATION           => ResString(R.string.notification__message__one_to_one__shared_location)
-      case RENAME             => ResString(R.string.notification__message__group__renamed_conversation, n.convName.getOrElse(""))
+      case RENAME             => ResString(R.string.notification__message__group__renamed_conversation, n.convName.getOrElse(Name.Empty))
       case MEMBER_LEAVE       => ResString(R.string.notification__message__group__remove)
       case MEMBER_JOIN        => ResString(R.string.notification__message__group__add)
       case LIKE if n.likedContent.nonEmpty =>
@@ -379,8 +379,8 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
           case LikedContent.TEXT_OR_URL =>
             ResString(R.string.notification__message__liked, n.message)
         }.getOrElse(ResString(R.string.notification__message__liked_message))
-      case CONNECT_ACCEPTED       => ResString(R.string.notification__message__single__accept_request, n.userName.getOrElse(""))
-      case CONNECT_REQUEST        => ResString(R.string.people_picker__invite__share_text__header, n.userName.getOrElse(""))
+      case CONNECT_ACCEPTED       => ResString(R.string.notification__message__single__accept_request, n.userName.getOrElse(Name.Empty))
+      case CONNECT_REQUEST        => ResString(R.string.people_picker__invite__share_text__header, n.userName.getOrElse(Name.Empty))
       case MESSAGE_SENDING_FAILED => ResString(R.string.notification__message__send_failed)
       case _ => ResString.Empty
     }
@@ -392,7 +392,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
     if (n.isEphemeral)
       ResString(R.string.notification__message__ephemeral_someone)
     else {
-      val convName = n.convName.orElse(n.userName).getOrElse("")
+      val convName = n.convName.orElse(n.userName).getOrElse(Name.Empty)
       teamName match {
         case Some(name) =>
           ResString(R.string.notification__message__group__prefix__other, convName, name)
@@ -431,7 +431,7 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
             R.string.notification__message_with_quote__name__prefix__text_one2one
         else 0
       if (prefixId > 0) {
-        val userName = n.userName.getOrElse("")
+        val userName = n.userName.getOrElse(Name.Empty)
         n.convName match {
           case Some(convName) => ResString(prefixId, userName, convName)
           case None           => ResString(prefixId, List(ResString(userName), ResString(R.string.notification__message__group__default_conversation_name)))

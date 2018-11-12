@@ -284,7 +284,7 @@ public class LocationFragment extends BaseFragment<LocationFragment.Container> i
                 inject(ConversationController.class).withConvLoaded(change.toConvId(), new Callback<ConversationData>() {
                     @Override
                     public void callback(ConversationData conversationData) {
-                        toolbarTitle.setText(conversationData.displayName());
+                        toolbarTitle.setText(conversationData.displayName().str());
                     }
                 });
             }
