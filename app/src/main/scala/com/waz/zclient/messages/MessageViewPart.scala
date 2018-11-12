@@ -221,7 +221,7 @@ class UserPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
 
   userId(chathead.setUserId)
 
-  user.map(u => if (u.isWireBot) u.name else u.getDisplayName).onUi(tvName.setTransformedText)
+  user.map(u => if (u.isWireBot) u.name else u.getDisplayName).onUi(tvName.setTransformedText(_))
   user.map(_.isWireBot).on(Threading.Ui) { isBot.setVisible }
 
   user.map(_.accent).on(Threading.Ui) { a =>

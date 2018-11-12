@@ -222,7 +222,7 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
 
   def createGuestRoom(): Future[ConversationData] = createGroupConversation(Some(context.getString(R.string.guest_room_name)), Set(), false)
 
-  def createGroupConversation(name: Option[String], users: Set[UserId], teamOnly: Boolean): Future[ConversationData] =
+  def createGroupConversation(name: Option[Name], users: Set[UserId], teamOnly: Boolean): Future[ConversationData] =
     convsUi.head.flatMap(_.createGroupConversation(name, users, teamOnly)).map(_._1)
 
   def withCurrentConvName(callback: Callback[String]): Unit = currentConvName.head.foreach(callback.callback)(Threading.Ui)

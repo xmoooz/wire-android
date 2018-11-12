@@ -41,7 +41,7 @@ class CallingHeader(val context: Context, val attrs: AttributeSet, val defStyleA
   inflate(R.layout.calling_header, this)
 
   controller.subtitleText.onUi(subtitleView.setText)
-  controller.conversationName.onUi(nameView.setText)
+  controller.conversationName.onUi(nameView.setText(_))
 
   controller.cbrEnabled.map {
     case true  => getString(R.string.audio_message__constant_bit_rate)

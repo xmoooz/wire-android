@@ -23,6 +23,7 @@ import android.util.AttributeSet
 import android.view.{LayoutInflater, View, ViewGroup}
 import android.widget.{FrameLayout, ImageView, TextView}
 import com.waz.ZLog.ImplicitTag.implicitLogTag
+import com.waz.model.Name
 import com.waz.service.assets.AssetService.RawAssetInput
 import com.waz.service.assets.AssetService.RawAssetInput.{ByteInput, UriInput}
 import com.waz.utils.events.{EventStream, Signal}
@@ -76,8 +77,8 @@ class ImagePreviewLayout(context: Context, attrs: AttributeSet, style: Int) exte
   private lazy val titleTextView = returning(findViewById[TextView](R.id.ttv__image_preview__title)) { view =>
     (for {
       visible <- titleShouldBeVisible
-      name    <- if (visible) convName else Signal.const("")
-    } yield name).onUi(view.setText)
+      name    <- if (visible) convName else Signal.const(Name.Empty)
+    } yield name).onUi(view.setText(_))
   }
 
   private lazy val sketchMenuContainer = returning(findViewById[View](R.id.ll__preview__sketch)) { container =>

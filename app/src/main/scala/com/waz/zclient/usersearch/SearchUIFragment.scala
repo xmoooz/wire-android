@@ -114,7 +114,7 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
     userAccountsController.isTeam.flatMap {
       case false => userAccountsController.currentUser.map(_.map(_.name))
       case _     => userAccountsController.teamData.map(_.map(_.name))
-    }.map(_.getOrElse(""))
+    }.map(_.getOrElse(Name.Empty))
      .onUi(t => vh.foreach(_.setText(t)))
   }
 

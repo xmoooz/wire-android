@@ -139,8 +139,8 @@ class NormalConversationListRow(context: Context, attrs: AttributeSet, style: In
     otherUser <- userData(ms.headOption)
     isGroupConv <- z.conversations.groupConversation(conv.id)
     missedCallerId <- controller.lastMessage(conv.id).map(_.lastMissedCall.map(_.userId))
-    user <- missedCallerId.fold2(Signal.const(Option.empty[String]), u => z.usersStorage.signal(u).map(d => Some(d.getDisplayName)))
-  } yield (conv.id, subtitleStringForLastMessages(conv, otherUser, ms.toSet, lastMessage, lastUnreadMessage, lastUnreadMessageUser, lastUnreadMessageMembers, typingUser, z.selfUserId, isGroupConv, user))
+    userName <- missedCallerId.fold2(Signal.const(Option.empty[Name]), u => z.usersStorage.signal(u).map(d => Some(d.getDisplayName)))
+  } yield (conv.id, subtitleStringForLastMessages(conv, otherUser, ms.toSet, lastMessage, lastUnreadMessage, lastUnreadMessageUser, lastUnreadMessageMembers, typingUser, z.selfUserId, isGroupConv, userName))
 
   private def userData(id: Option[UserId]) = id.fold2(Signal.const(Option.empty[UserData]), uid => UserSignal(uid).map(Option(_)))
 
@@ -394,8 +394,8 @@ object ConversationListRow {
                                   )
                                   (implicit context: Context): String = {
 
-    lazy val senderName = user.fold(getString(R.string.conversation_list__someone))(_.getDisplayName)
-    lazy val memberName = members.headOption.fold2(getString(R.string.conversation_list__someone), _.getDisplayName)
+    lazy val senderName = user.map(_.getDisplayName).getOrElse(Name(getString(R.string.conversation_list__someone)))
+    lazy val memberName = members.headOption.map(_.getDisplayName).getOrElse(Name(getString(R.string.conversation_list__someone)))
 
     if (messageData.isEphemeral) {
       if (messageData.hasMentionOf(selfId)) {
@@ -452,7 +452,7 @@ object ConversationListRow {
                                     typingUser:               Option[UserData],
                                     selfId:                   UserId,
                                     isGroupConv:              Boolean,
-                                    user:                     Option[String])
+                                    userName:                 Option[Name])
                                    (implicit context: Context): String = {
     if (conv.convType == ConversationType.WaitForConnection || (lastMessage.exists(_.msgType == Message.Type.MEMBER_JOIN) && !isGroupConv)) {
       otherMember.flatMap(_.handle.map(_.string)).fold("")(StringUtils.formatHandle)
@@ -498,7 +498,7 @@ object ConversationListRow {
             if (conv.unreadCount.total > 1 || conv.isAllMuted || conv.onlyMentionsAllowed)
               getQuantityString(R.plurals.conversation_list__missed_calls_plural, missedCallCount, missedCallCount.toString)
             else
-              getString(R.string.conversation_list__missed_calls_count_group, user.get)
+              getString(R.string.conversation_list__missed_calls_count_group, userName.get)
           } else {
             if (conv.unreadCount.total > 1 || conv.isAllMuted || conv.onlyMentionsAllowed)
               getQuantityString(R.plurals.conversation_list__missed_calls_plural, missedCallCount, missedCallCount.toString)

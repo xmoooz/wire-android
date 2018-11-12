@@ -110,7 +110,7 @@ class SearchUIAdapter(adapterCallback: SearchUIAdapter.Callback)
   private def updateMergedResults(): Unit = {
     mergedResult = Seq()
 
-    val teamName = team.map(_.name).getOrElse("")
+    val teamName = team.map(_.name).getOrElse(Name.Empty)
 
     def addTopPeople(): Unit = {
       if (topUsers.nonEmpty) {
@@ -130,7 +130,7 @@ class SearchUIAdapter(adapterCallback: SearchUIAdapter.Callback)
 
         val shouldCollapse = filter.currentValue.exists(_.nonEmpty) && collapsedContacts && contactsSection.size > CollapsedContacts
 
-        contactsSection = contactsSection.sortBy(_.name).take(if (shouldCollapse) CollapsedContacts else contactsSection.size)
+        contactsSection = contactsSection.sortBy(_.name.str).take(if (shouldCollapse) CollapsedContacts else contactsSection.size)
 
         mergedResult = mergedResult ++ contactsSection
         if (shouldCollapse) {
@@ -326,12 +326,12 @@ object SearchUIAdapter {
     def onManageServicesClicked(): Unit
   }
 
-  case class SearchResult(itemType: Int, section: Int, index: Int, id: Long, name: String)
+  case class SearchResult(itemType: Int, section: Int, index: Int, id: Long, name: Name)
 
   object SearchResult{
-    def apply(itemType: Int, section: Int, index: Int, id: Long): SearchResult = new SearchResult(itemType, section, index, id, "")
-    def apply(itemType: Int, section: Int, index: Int, name: String): SearchResult = new SearchResult(itemType, section, index, itemType + section + index, name)
-    def apply(itemType: Int, section: Int, index: Int): SearchResult = SearchResult(itemType, section, index, "")
+    def apply(itemType: Int, section: Int, index: Int, id: Long): SearchResult = new SearchResult(itemType, section, index, id, Name.Empty)
+    def apply(itemType: Int, section: Int, index: Int, name: Name): SearchResult = new SearchResult(itemType, section, index, itemType + section + index, name)
+    def apply(itemType: Int, section: Int, index: Int): SearchResult = SearchResult(itemType, section, index, Name.Empty)
   }
 
   class CreateConversationButtonViewHolder(view: View, callback: SearchUIAdapter.Callback) extends RecyclerView.ViewHolder(view) {
@@ -463,7 +463,7 @@ object SearchUIAdapter {
     private val sectionHeaderView: TextView = ViewUtils.getView(view, R.id.ttv_startui_section_header)
     private implicit val context = sectionHeaderView.getContext
 
-    def bind(section: Int, teamName: String): Unit = {
+    def bind(section: Int, teamName: Name): Unit = {
       val title = section match {
         case TopUsersSection                                => getString(R.string.people_picker__top_users_header_title)
         case GroupConversationsSection if teamName.isEmpty  => getString(R.string.people_picker__search_result_conversations_header_title)
