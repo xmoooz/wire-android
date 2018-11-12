@@ -60,13 +60,9 @@ class MessagesListView(context: Context, attrs: AttributeSet, style: Int) extend
 
   messageActionsController.messageToReveal {
     case Some(messageData) =>
-      adapter.positionForMessage(messageData).foreach { pos =>
-        if (pos >= 0) {
-          scrollController.targetPosition = Some(pos)
-          scrollController.scrollToPositionRequested ! pos
-          messageActionsController.messageToReveal ! None
-        }
-      } (Threading.Ui)
+      adapter
+        .scrollToMessage(messageData)
+        .foreach( _ => messageActionsController.messageToReveal ! None)(Threading.Ui)
     case None =>
   }
 
