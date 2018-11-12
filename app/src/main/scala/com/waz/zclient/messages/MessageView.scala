@@ -90,11 +90,13 @@ class MessageView(context: Context, attrs: AttributeSet, style: Int)
           (if (canHaveLink) Seq(PartDesc(WirelessLink)) else Seq.empty)
       }
       else {
-        val quotePart = (mAndL.quote, mAndL.message.quoteValidity) match {
-          case (Some(quote), true)  => Seq(PartDesc(Reply(quote.msgType)))
-          case (Some(quote), false) => Seq(PartDesc(Reply(Unknown)))
-          case _                    => Seq[PartDesc]()
+        val quotePart = (mAndL.quote, mAndL.message.quote, mAndL.message.quoteValidity) match {
+          case (Some(quote), _, true) => Seq(PartDesc(Reply(quote.msgType)))
+          case (Some(_), _, false)    => Seq(PartDesc(Reply(Unknown))) // the quote is invalid
+          case (None, Some(_), _)     => Seq(PartDesc(Reply(Unknown))) // the quote was deleted
+          case _                      => Seq[PartDesc]()
         }
+
         quotePart ++
           (if (msg.msgType == Message.Type.RICH_MEDIA) {
             val contentWithOG = msg.content.filter(_.openGraph.isDefined)
