@@ -28,7 +28,6 @@ import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
 import com.waz.model.MessageContent
 import com.waz.service.messages.MessageAndLikes
-import com.waz.threading.Threading
 import com.waz.utils.events.EventContext
 import com.waz.zclient.messages.MessageView.MsgBindOptions
 import com.waz.zclient.messages.MessageViewLayout.PartDesc
@@ -63,9 +62,7 @@ abstract class MessageViewLayout(context: Context, attrs: AttributeSet, style: I
         case (v: ReplyPartView, Some(quote)) if msg.message.quoteValidity =>
           v.setQuote(quote)
           v.onClicked.onUi { _ =>
-            adapter.positionForMessage(quote).foreach { pos =>
-              if (pos >= 0) adapter.scrollController.scrollToPositionRequested ! pos
-            } (Threading.Ui)
+            adapter.scrollToMessage(quote)
           }
         case _ =>
       }

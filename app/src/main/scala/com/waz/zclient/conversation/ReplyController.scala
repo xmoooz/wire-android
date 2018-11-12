@@ -34,15 +34,23 @@ class ReplyController(implicit injector: Injector, context: Context, ec: EventCo
   import com.waz.threading.Threading.Implicits.Background
 
   private val conversationController = inject[ConversationController]
-  private val messagesController = inject[MessagesController]
-  private val usersController = inject[UsersController]
-  private val assetsController = inject[AssetsController]
-  private val messagesService = inject[Signal[MessagesService]]
-  private val messagesStorage = inject[Signal[MessagesStorage]]
+  private val messagesController     = inject[MessagesController]
+  private val usersController        = inject[UsersController]
+  private val assetsController       = inject[AssetsController]
+  private val messagesService        = inject[Signal[MessagesService]]
+  private val messagesStorage        = inject[Signal[MessagesStorage]]
 
-  val replyData: SourceSignal[Map[ConvId, MessageId]] = Signal(Map())
+  private val replyData: SourceSignal[Map[ConvId, MessageId]] = Signal(Map())
 
-  messagesService.flatMap(ms => Signal.wrap(ms.msgEdited)).onUi { case (from, to) =>
+  val currentReplyContent: Signal[Option[ReplyContent]] = (for {
+    replies     <- replyData
+    Some(msgId) <- conversationController.currentConvId.map(replies.get)
+    Some(msg)   <- messagesController.getMessage(msgId)
+    sender      <- usersController.displayNameStringIncludingSelf(msg.userId)
+    asset       <- assetsController.assetSignal(msg.assetId).map(a => Option(a._1)).orElse(Signal.const(Option.empty[AssetData]))
+  } yield Option(ReplyContent(msg, asset, sender))).orElse(Signal.const(None))
+
+  messagesService.flatMap(ms => Signal.wrap(ms.msgEdited)) { case (from, to) =>
     replyData.mutate { data =>
       data.find(_._2 == from).map(_._1).fold(data) { conv =>
         data + (conv -> to)
@@ -50,23 +58,13 @@ class ReplyController(implicit injector: Injector, context: Context, ec: EventCo
     }
   }
 
-  messagesStorage.flatMap(ms => Signal.wrap(ms.onDeleted)).onUi { deletedIds =>
+  messagesStorage.flatMap(ms => Signal.wrap(ms.onDeleted)) { deletedIds =>
     replyData.mutate(_.filterNot(c => deletedIds.contains(c._2)))
   }
-
-  def replyContent(convId: ConvId): Signal[Option[ReplyContent]] = (for {
-    Some(msgId) <- replyData.map(_.get(convId))
-    Some(msg) <- messagesController.getMessage(msgId)
-    sender <- usersController.displayNameStringIncludingSelf(msg.userId)
-    asset <- assetsController.assetSignal(msg.assetId).map(a => Option(a._1)).orElse(Signal.const(Option.empty[AssetData]))
-  } yield Option(ReplyContent(msg, asset, sender))).orElse(Signal.const(None))
-
-  val currentReplyContent: Signal[Option[ReplyContent]] = conversationController.currentConvId.flatMap(replyContent)
 
   def replyToMessage(msg: MessageId, convId: ConvId): Boolean = replyData.mutate { _ + (convId -> msg) }
   def clearMessage(convId: ConvId): Boolean = replyData.mutate { _ - convId }
 
-  def replyInCurrentConversation(msg: MessageId): Future[Boolean] = conversationController.currentConvId.head.map(replyToMessage(msg, _))
   def clearMessageInCurrentConversation(): Future[Boolean] = conversationController.currentConvId.head.map(clearMessage)
 }
 
