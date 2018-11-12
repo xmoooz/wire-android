@@ -38,7 +38,7 @@ class ReplyController(implicit injector: Injector, context: Context, ec: EventCo
   private val assetsController = inject[AssetsController]
   private val messagesService = inject[Signal[MessagesService]]
 
-  messagesService.onChanged.flatMap(_.msgEdited) { case (from, to) =>
+  messagesService.flatMap(ms => Signal.wrap(ms.msgEdited)).onUi { case (from, to) =>
     replyData.mutate { data =>
       data.find(_._2 == from).map(_._1).fold(data) { conv =>
         data + (conv -> to)
