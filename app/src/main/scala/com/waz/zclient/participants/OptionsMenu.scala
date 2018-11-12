@@ -83,7 +83,7 @@ case class OptionsMenu(context: Context, controller: OptionsMenuController) exte
             controller.onMenuItemClicked ! item
             dismiss()
           }
-          itemView.setId(item.titleId)
+          item.iconId.foreach(itemView.setId)
 
           returning(getView[View](itemView, R.id.tick)) { v =>
             v.setVisible(selected.contains(item))
