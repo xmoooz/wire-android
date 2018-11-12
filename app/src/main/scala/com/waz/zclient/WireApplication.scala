@@ -159,6 +159,7 @@ object WireApplication {
     bind [Signal[MembersStorage]]                to inject[Signal[ZMessaging]].map(_.membersStorage)
     bind [Signal[OtrClientsStorage]]             to inject[Signal[ZMessaging]].map(_.otrClientsStorage)
     bind [Signal[AssetsStorage]]                 to inject[Signal[ZMessaging]].map(_.assetsStorage)
+    bind [Signal[MessagesStorage]]               to inject[Signal[ZMessaging]].map(_.messagesStorage)
     bind [Signal[ImageLoader]]                   to inject[Signal[ZMessaging]].map(_.imageLoader)
     bind [Signal[MessagesService]]               to inject[Signal[ZMessaging]].map(_.messages)
     bind [Signal[IntegrationsService]]           to inject[Signal[ZMessaging]].map(_.integrations)
