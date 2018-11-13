@@ -99,10 +99,14 @@ public class ZTimeFormatter {
     }
 
     public static String getSingleMessageTime(Context context, Date date) {
+        return getSingleMessageTime(context, DateConvertUtils.asLocalDateTime(date), false);
+    }
+
+    public static String getSingleMessageTime(Context context, LocalDateTime date) {
         return getSingleMessageTime(context, date, false);
     }
 
-    private static String getSingleMessageTime(Context context, Date date, boolean defaultLocale) {
+    private static String getSingleMessageTime(Context context, LocalDateTime date, boolean defaultLocale) {
         boolean is24HourFormat = DateFormat.is24HourFormat(context);
         Resources resources = defaultLocale ? getEnglishResources(context) : context.getResources();
 
@@ -110,7 +114,7 @@ public class ZTimeFormatter {
                                resources.getString(R.string.timestamp_pattern__12h_format);
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
-            return formatter.format(DateConvertUtils.asLocalDateTime(date).atZone(ZoneId.systemDefault()));
+            return formatter.format(date.atZone(ZoneId.systemDefault()));
         } catch (Exception e) {
             Timber.e(e);
 
@@ -121,6 +125,7 @@ public class ZTimeFormatter {
             }
         }
     }
+
     public static String getCurrentWeek(Context context) {
         return getCurrentWeek(context, false);
     }

@@ -19,7 +19,6 @@ package com.waz.zclient.messages.parts
 
 import android.content.Context
 import android.graphics.Typeface
-import android.text.format.DateFormat
 import android.util.{AttributeSet, TypedValue}
 import android.view.{View, ViewGroup}
 import android.widget.{LinearLayout, TextView}
@@ -41,7 +40,6 @@ import com.waz.zclient.ui.utils.TypefaceUtils
 import com.waz.zclient.utils.ContextUtils.{getString, getStyledColor}
 import com.waz.zclient.utils.{DateConvertUtils, RichTextView, ZTimeFormatter}
 import com.waz.zclient.{R, ViewHelper}
-import org.threeten.bp.{LocalDateTime, ZoneId}
 
 abstract class ReplyPartView(context: Context, attrs: AttributeSet, style: Int) extends LinearLayout(context, attrs, style) with ClickableViewPart with ViewHelper with EphemeralPartView {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
@@ -98,7 +96,7 @@ abstract class ReplyPartView(context: Context, attrs: AttributeSet, style: Int) 
   quotedMessage
     .map(_.time.instant)
     .map(DateConvertUtils.asLocalDateTime)
-    .map(t => ZTimeFormatter.getSeparatorTime(getContext, LocalDateTime.now, t, DateFormat.is24HourFormat(getContext), ZoneId.systemDefault, false, false))
+    .map(t => ZTimeFormatter.getSingleMessageTime(getContext, t))
     .map(getString(R.string.quote_timestamp_message, _))
     .onUi(timestamp.setText)
 
