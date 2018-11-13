@@ -35,7 +35,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 @MediumTest
 class MetadataServiceTest {
 
-  val metadataService = new MetadataServiceImpl(
+  val metadataService = new AssetDetailsServiceImpl(
     getContext,
     new AndroidUriHelper(getContext)
   )
