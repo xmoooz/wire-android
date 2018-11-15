@@ -70,7 +70,7 @@ class WifiWarningPartView(context: Context, attrs: AttributeSet, style: Int) ext
 
   //A little bit hacky - but we can safely rely on the fact there should be an ImagePartView for each WifiWarningPartView
   //def to ensure we only get the ImagePartView after the view is attached to the window (the parent will be null otherwise)
-  def imagePart = Option(getParent).map(_.asInstanceOf[ViewGroup]).flatMap { p =>
+  def imagePart: Option[ImagePartView] = Option(getParent).map(_.asInstanceOf[ViewGroup]).flatMap { p =>
     (0 until p.getChildCount).map(p.getChildAt).collectFirst {
       case v: ImagePartView => v
     }

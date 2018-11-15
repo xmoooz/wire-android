@@ -69,6 +69,7 @@ class ImageFragment extends FragmentHelper {
   lazy val messageActionsController = inject[MessageActionsController]
   lazy val screenController         = inject[ScreenController]
   lazy val singleImageController    = inject[ISingleImageController]
+  lazy val replyController          = inject[ReplyController]
 
   lazy val likedBySelf = collectionController.focusedItem flatMap {
     case Some(m) => zms.flatMap { z =>
@@ -158,12 +159,14 @@ class ImageFragment extends FragmentHelper {
       case _ =>
     }
 
-    messageActionsController.onDeleteConfirmed.onUi { case (msg, _) =>
-      if (collectionController.focusedItem.currentValue.flatten.contains(msg)) {
-        getFragmentManager.popBackStack()
-        singleImageController.hideSingleImage()
+    messageActionsController.onDeleteConfirmed.onUi { case (msg, _) => closeSingleImageView(msg.id)}
+
+    replyController.currentReplyContent.onUi( _.foreach { replyContent =>
+      (Option(getArguments.getString(ArgMessageId)).map(MessageId(_)), Option(replyContent.message.id)) match {
+        case (Some(m1), Some(m2)) if m1 == m2 => closeSingleImageView(m1)
+        case _ =>
       }
-    }
+    })
 
     convController.currentConvName.onUi(headerTitle.setText)
 
@@ -187,6 +190,12 @@ class ImageFragment extends FragmentHelper {
     view.addOnLayoutChangeListener(layoutChangeListener)
     view
   }
+
+  private def closeSingleImageView(id: MessageId): Unit =
+    if (collectionController.focusedItem.map(_.map(_.id)).currentValue.flatten.contains(id)) {
+      getFragmentManager.popBackStack()
+      singleImageController.hideSingleImage()
+    }
 
   override def onDestroyView() = {
     collectionController.focusedItem ! None
