@@ -830,7 +830,7 @@ class ConversationFragment extends FragmentHelper {
     override def onPanelClosed(panel: View): Unit = {}
   }
 
-  private def showImagePreview(setImage: (ImagePreviewLayout) => Any): Unit = {
+  private def showImagePreview(setImage: ImagePreviewLayout => Any): Unit = {
     val imagePreviewLayout = ImagePreviewLayout.newInstance(getContext, containerPreview, imagePreviewCallback)
     setImage(imagePreviewLayout)
     containerPreview.addView(imagePreviewLayout)
