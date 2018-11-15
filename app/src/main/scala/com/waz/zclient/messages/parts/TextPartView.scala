@@ -19,8 +19,6 @@ package com.waz.zclient.messages.parts
 
 import java.util.UUID
 
-import android.animation.ValueAnimator
-import android.animation.ValueAnimator.AnimatorUpdateListener
 import android.content.Context
 import android.graphics.Color
 import android.text.{Spannable, SpannableString, SpannableStringBuilder}
@@ -38,13 +36,17 @@ import com.waz.utils.events.Signal
 import com.waz.zclient.collection.controllers.{CollectionController, CollectionUtils}
 import com.waz.zclient.common.controllers.global.AccentColorController
 import com.waz.zclient.messages.MessageView.MsgBindOptions
-import com.waz.zclient.messages.{ClickableViewPart, MsgPart}
+import com.waz.zclient.messages.{ClickableViewPart, HighlightViewPart, MsgPart}
 import com.waz.zclient.ui.text.LinkTextView
 import com.waz.zclient.ui.utils.ColorUtils
 import com.waz.zclient.ui.views.OnDoubleClickListener
 import com.waz.zclient.{BuildConfig, R, ViewHelper}
 
-class TextPartView(context: Context, attrs: AttributeSet, style: Int) extends LinearLayout(context, attrs, style) with ViewHelper with ClickableViewPart with EphemeralPartView with EphemeralIndicatorPartView with MentionsViewPart {
+class TextPartView(context: Context, attrs: AttributeSet, style: Int)
+  extends LinearLayout(context, attrs, style)
+    with ViewHelper with ClickableViewPart with EphemeralPartView
+    with EphemeralIndicatorPartView with MentionsViewPart with HighlightViewPart {
+
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null, 0)
 
@@ -76,25 +78,6 @@ class TextPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
 
   var messagePart = Signal[Option[MessageContent]]()
 
-  val animAlpha = Signal(0f)
-  val animator = ValueAnimator.ofFloat(1, 0).setDuration(1500)
-  animator.addUpdateListener(new AnimatorUpdateListener {
-    override def onAnimationUpdate(animation: ValueAnimator): Unit =
-      animAlpha ! Math.min(animation.getAnimatedValue.asInstanceOf[Float], 0.5f)
-  })
-
-  val bgColor = for {
-    accent <- accentColorController.accentColor
-    alpha <- animAlpha
-  } yield
-    if (alpha <= 0) Color.TRANSPARENT
-    else ColorUtils.injectAlpha(alpha, accent.color)
-
-  val isHighlighted = for {
-    msg <- message
-    focused <- collectionController.focusedItem
-  } yield focused.exists(_.id == msg.id)
-
   val searchResultText = for {
     color         <- accentColorController.accentColor
     query         <- collectionController.contentSearchQuery if !query.isEmpty
@@ -106,13 +89,6 @@ class TextPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
     CollectionUtils.getHighlightedSpannableString(content, ContentSearchQuery.transliterated(content), query.elements, ColorUtils.injectAlpha(0.5f, color.color))._1
 
   searchResultText.on(Threading.Ui) { textView.setText }
-
-  bgColor.on(Threading.Ui) { setBackgroundColor }
-
-  isHighlighted.on(Threading.Ui) {
-    case true => animator.start()
-    case false => animator.end()
-  }
 
   private def setText(text: String): Unit = { // TODO: remove try/catch blocks when the bug is fixed
     try {
@@ -133,7 +109,8 @@ class TextPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
   }
 
   override def set(msg: MessageAndLikes, part: Option[MessageContent], opts: Option[MsgBindOptions]): Unit = {
-    animator.end()
+    //animator.end()
+    stopHighlight()
     super.set(msg, part, opts)
 
     textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, if (isEmojiOnly(msg.message, part)) textSizeEmoji else textSizeRegular)

@@ -23,12 +23,13 @@ import android.widget.SeekBar.OnSeekBarChangeListener
 import android.widget.{FrameLayout, SeekBar}
 import com.waz.threading.Threading
 import com.waz.zclient.R
-import com.waz.zclient.messages.MsgPart
+import com.waz.zclient.messages.{HighlightViewPart, MsgPart}
 import com.waz.zclient.utils.RichSeekBar
 import org.threeten.bp.Duration
 import com.waz.ZLog.ImplicitTag._
 
-class AudioAssetPartView(context: Context, attrs: AttributeSet, style: Int) extends FrameLayout(context, attrs, style) with PlayableAsset with FileLayoutAssetPart {
+class AudioAssetPartView(context: Context, attrs: AttributeSet, style: Int)
+  extends FrameLayout(context, attrs, style) with PlayableAsset with FileLayoutAssetPart with HighlightViewPart {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
 
   def this(context: Context) = this(context, null, 0)
