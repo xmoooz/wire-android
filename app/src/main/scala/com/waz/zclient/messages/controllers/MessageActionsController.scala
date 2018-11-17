@@ -36,9 +36,11 @@ import com.waz.utils.events.{EventContext, EventStream, Signal}
 import com.waz.utils.wrappers.{AndroidURIUtil, URI}
 import com.waz.zclient.common.controllers.global.KeyboardController
 import com.waz.zclient.controllers.userpreferences.IUserPreferencesController
+import com.waz.zclient.conversation.ReplyController
 import com.waz.zclient.messages.MessageBottomSheetDialog
 import com.waz.zclient.messages.MessageBottomSheetDialog.{MessageAction, Params}
 import com.waz.zclient.notifications.controllers.ImageNotificationsController
+import com.waz.zclient.participants.OptionsMenu
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.{ClipboardUtils, Injectable, Injector, R}
 
@@ -57,6 +59,7 @@ class MessageActionsController(implicit injector: Injector, ctx: Context, ec: Ev
   private lazy val clipboard            = inject[ClipboardUtils]
   private lazy val permissions          = inject[PermissionsService]
   private lazy val imageNotifications   = inject[ImageNotificationsController]
+  private lazy val replyController      = inject[ReplyController]
 
   private val zms = inject[Signal[ZMessaging]]
 
@@ -67,7 +70,7 @@ class MessageActionsController(implicit injector: Injector, ctx: Context, ec: Ev
 
   val messageToReveal = Signal[Option[MessageData]]()
 
-  private var dialog = Option.empty[MessageBottomSheetDialog]
+  private var dialog = Option.empty[OptionsMenu]
 
   onMessageAction {
     case (MessageAction.Copy, message)             => copyMessage(message)
@@ -83,6 +86,7 @@ class MessageActionsController(implicit injector: Injector, ctx: Context, ec: Ev
       }
     case (MessageAction.Unlike, msg) =>
       zms.head.flatMap(_.reactions.unlike(msg.convId, msg.id))
+    case (MessageAction.Reply, message)             => replyMessage(message)
     case _ => // should be handled somewhere else
   }
 
@@ -95,7 +99,7 @@ class MessageActionsController(implicit injector: Injector, ctx: Context, ec: Ev
     (if (keyboardController.hideKeyboardIfVisible()) CancellableFuture.delayed(HideDelay){}.future else Future.successful({})).map { _ =>
       dialog.foreach(_.dismiss())
       dialog = Some(
-        returning(new MessageBottomSheetDialog(context, R.style.message__bottom_sheet__base, data.message, Params(collection = fromCollection))) { d =>
+        returning(OptionsMenu(context, new MessageBottomSheetDialog(data.message, Params(collection = fromCollection)))) { d =>
           d.setOnDismissListener(onDismissed)
           d.show()
         }
@@ -105,11 +109,10 @@ class MessageActionsController(implicit injector: Injector, ctx: Context, ec: Ev
   }
 
   def showDeleteDialog(message: MessageData): Unit = {
-    new MessageBottomSheetDialog(context,
-                                 R.style.message__bottom_sheet__base, message,
+    OptionsMenu(context, new MessageBottomSheetDialog(message,
                                  Params(collection = true, delCollapsed = false),
-                                 Seq(MessageAction.DeleteLocal, MessageAction.DeleteGlobal))
-      .show()
+                                 Seq(MessageAction.DeleteLocal, MessageAction.DeleteGlobal))).show()
+
   }
 
   private def copyMessage(message: MessageData) =
@@ -141,6 +144,8 @@ class MessageActionsController(implicit injector: Injector, ctx: Context, ec: Ev
       case user if user == message.userId => showDeleteDialog(message)
       case _ => deleteMessage(message)
     }
+
+  private def replyMessage(data: MessageData): Unit = replyController.replyToMessage(data.id, data.convId)
 
   private def showDeleteDialog(title: Int)(onSuccess: => Unit) =
     new AlertDialog.Builder(context)

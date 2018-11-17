@@ -29,7 +29,7 @@ import com.waz.model._
 import com.waz.model.otr.Client
 import com.waz.service.assets.AssetService
 import com.waz.service.assets.AssetService.RawAssetInput.UriInput
-import com.waz.service.conversation.{ConversationsListStateService, ConversationsService, ConversationsUiService}
+import com.waz.service.conversation.{ConversationsService, ConversationsUiService, SelectedConversationService}
 import com.waz.threading.{CancellableFuture, SerialDispatchQueue, Threading}
 import com.waz.utils.events.{EventContext, EventStream, Signal, SourceStream}
 import com.waz.utils.wrappers.URI
@@ -48,7 +48,7 @@ import scala.concurrent.duration._
 class ConversationController(implicit injector: Injector, context: Context, ec: EventContext) extends Injectable {
   private implicit val dispatcher = new SerialDispatchQueue(name = "ConversationController")
 
-  private lazy val convsStats        = inject[Signal[ConversationsListStateService]]
+  private lazy val selectedConv      = inject[Signal[SelectedConversationService]]
   private lazy val convsUi           = inject[Signal[ConversationsUiService]]
   private lazy val conversations     = inject[Signal[ConversationsService]]
   private lazy val convsStorage      = inject[Signal[ConversationStorage]]
@@ -60,11 +60,12 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
 
   private var lastConvId = Option.empty[ConvId]
 
-  val currentConvId: Signal[ConvId] =
-    convsStats.flatMap(_.selectedConversationId).collect { case Some(convId) => convId }
+  val currentConvIdOpt: Signal[Option[ConvId]] = selectedConv.flatMap(_.selectedConversationId)
+
+  val currentConvId: Signal[ConvId] = currentConvIdOpt.collect { case Some(convId) => convId }
 
   val currentConvOpt: Signal[Option[ConversationData]] =
-    currentConvId.flatMap(conversationData) // updates on every change of the conversation data, not only on switching
+    currentConvIdOpt.flatMap(_.fold(Signal.const(Option.empty[ConversationData]))(conversationData)) // updates on every change of the conversation data, not only on switching
 
   val currentConv: Signal[ConversationData] =
     currentConvOpt.collect { case Some(conv) => conv }
@@ -113,12 +114,12 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
       val oldId = lastConvId
       lastConvId = convId
       for {
-        convsStats   <- convsStats.head
+        selectedConv <- selectedConv.head
         convsUi      <- convsUi.head
         conv         <- getConversation(id)
         _            <- if (conv.exists(_.archived)) convsUi.setConversationArchived(id, archived = false) else Future.successful(Option.empty[ConversationData])
         _            <- convsUi.setConversationArchived(id, archived = false)
-        _            <- convsStats.selectConversation(convId)
+        _            <- selectedConv.selectConversation(convId)
       } yield { // catches changes coming from UI
         verbose(s"changing conversation from $oldId to $convId, requester: $requester")
         convChanged ! ConversationChange(from = oldId, to = convId, requester = requester)
@@ -149,8 +150,11 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
   def loadClients(userId: UserId): Future[Seq[Client]] =
     otrClientsStorage.head.flatMap(_.getClients(userId)) // TODO: move to SE maybe?
 
-  def sendMessage(text: String, mentions: Seq[Mention] = Nil): Future[Option[MessageData]] =
-    convsUiwithCurrentConv((ui, id) => ui.sendTextMessage(id, text, mentions))
+    def sendMessage(text: String, mentions: Seq[Mention] = Nil, quote: Option[MessageId] = None): Future[Option[MessageData]] = {
+      convsUiwithCurrentConv({(ui, id) =>
+        quote.fold2(ui.sendTextMessage(id, text, mentions), ui.sendReplyMessage(_, text, mentions))
+      })
+    }
 
   def sendMessage(input: AssetService.RawAssetInput): Future[Option[MessageData]] =
     convsUiwithCurrentConv((ui, id) => ui.sendAssetMessage(id, input))
@@ -321,4 +325,11 @@ object ConversationController {
     }
   }
 
+  lazy val MuteSets = Seq(MuteSet.AllAllowed, MuteSet.OnlyMentionsAllowed, MuteSet.AllMuted)
+
+  def muteSetDisplayStringId(muteSet: MuteSet): Int = muteSet match {
+    case MuteSet.AllMuted            => R.string.conversation__action__notifications_nothing
+    case MuteSet.OnlyMentionsAllowed => R.string.conversation__action__notifications_mentions_and_replies
+    case _                           => R.string.conversation__action__notifications_everything
+  }
 }

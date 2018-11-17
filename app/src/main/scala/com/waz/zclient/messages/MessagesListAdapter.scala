@@ -26,19 +26,25 @@ import com.waz.model._
 import com.waz.service.ZMessaging
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, Signal}
+import com.waz.zclient.collection.controllers.CollectionController
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.messages.MessageView.MsgBindOptions
 import com.waz.zclient.messages.MessagesListView.UnreadIndex
 import com.waz.zclient.messages.RecyclerCursor.RecyclerNotifier
 import com.waz.zclient.{Injectable, Injector}
 
-class MessagesListAdapter(listDim: Signal[Dim2])(implicit inj: Injector, ec: EventContext)
+import scala.concurrent.Future
+
+class MessagesListAdapter(listDim: Signal[Dim2], realViewHeight: Signal[Int])(implicit inj: Injector, ec: EventContext)
   extends MessagesListView.Adapter() with Injectable { adapter =>
 
   lazy val zms = inject[Signal[ZMessaging]]
   lazy val listController = inject[MessagesController]
   lazy val conversationController = inject[ConversationController]
   val ephemeralCount = Signal(Set.empty[MessageId])
+  val scrollController = new ScrollController(this, realViewHeight)
+
+  private lazy val collectionController = inject[CollectionController]
 
   var unreadIndex = UnreadIndex(0)
 
@@ -98,6 +104,7 @@ class MessagesListAdapter(listDim: Signal[Dim2])(implicit inj: Injector, ec: Eve
 
     val prev = if (pos == 0) None else Some(message(pos - 1).message)
     val next = if (isLast) None else Some(message(pos + 1).message)
+
     holder.bind(data, prev, next, opts)
     if (data.message.isEphemeral) {
       ephemeralCount.mutate(_ + data.message.id)
@@ -114,8 +121,16 @@ class MessagesListAdapter(listDim: Signal[Dim2])(implicit inj: Injector, ec: Eve
   override def onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder =
     MessageViewHolder(MessageView(parent, viewType), adapter)
 
-  def positionForMessage(messageData: MessageData) =
+  def positionForMessage(messageData: MessageData): Future[Int] =
     cursor.head.flatMap { _._1.positionForMessage(messageData) } (Threading.Background)
+
+  def scrollToMessage(messageData: MessageData): Future[Unit] =
+    positionForMessage(messageData).map { pos =>
+      if (pos >= 0) {
+        collectionController.focusedItem ! Some(messageData)
+        scrollController.scrollToPositionRequested ! pos
+      }
+    }(Threading.Background)
 
   lazy val notifier = new RecyclerNotifier {
     // view depends on two message entries,

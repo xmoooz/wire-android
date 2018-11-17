@@ -37,11 +37,11 @@ import com.waz.api.NetworkMode
 import com.waz.content._
 import com.waz.jobs.PushTokenCheckJob
 import com.waz.log.InternalLog
-import com.waz.model.{AccentColor, ConversationData, TeamId, UserId}
+import com.waz.model._
 import com.waz.permissions.PermissionsService
 import com.waz.service._
 import com.waz.service.call.GlobalCallingService
-import com.waz.service.conversation.{ConversationsListStateService, ConversationsService, ConversationsUiService}
+import com.waz.service.conversation.{ConversationsService, ConversationsUiService, SelectedConversationService}
 import com.waz.service.images.ImageLoader
 import com.waz.service.messages.MessagesService
 import com.waz.service.push.GlobalNotificationsService
@@ -68,7 +68,7 @@ import com.waz.zclient.controllers.location.ILocationController
 import com.waz.zclient.controllers.navigation.INavigationController
 import com.waz.zclient.controllers.singleimage.ISingleImageController
 import com.waz.zclient.controllers.userpreferences.IUserPreferencesController
-import com.waz.zclient.conversation.ConversationController
+import com.waz.zclient.conversation.{ConversationController, ReplyController}
 import com.waz.zclient.conversation.creation.CreateConversationController
 import com.waz.zclient.conversationlist.ConversationListController
 import com.waz.zclient.cursor.CursorController
@@ -82,7 +82,7 @@ import com.waz.zclient.pages.main.pickuser.controller.IPickUserController
 import com.waz.zclient.participants.ParticipantsController
 import com.waz.zclient.preferences.PreferencesController
 import com.waz.zclient.tracking.{CrashController, GlobalTrackingController, UiTrackingController}
-import com.waz.zclient.utils.{BackStackNavigator, BackendPicker, Callback, ExternalFileSharing, LocalThumbnailCache, UiStorage}
+import com.waz.zclient.utils.{BackStackNavigator, BackendPicker, Callback, ExternalFileSharing, LocalThumbnailCache, UiStorage, AndroidBase64}
 import com.waz.zclient.views.DraftMap
 import javax.net.ssl.SSLContext
 
@@ -149,7 +149,7 @@ object WireApplication {
 
     // services  and storages of the current zms
     bind [Signal[ConversationsService]]          to inject[Signal[ZMessaging]].map(_.conversations)
-    bind [Signal[ConversationsListStateService]] to inject[Signal[ZMessaging]].map(_.convsStats)
+    bind [Signal[SelectedConversationService]]   to inject[Signal[ZMessaging]].map(_.selectedConv)
     bind [Signal[ConversationsUiService]]        to inject[Signal[ZMessaging]].map(_.convsUi)
     bind [Signal[UserService]]                   to inject[Signal[ZMessaging]].map(_.users)
     bind [Signal[UserSearchService]]             to inject[Signal[ZMessaging]].map(_.userSearch)
@@ -159,6 +159,7 @@ object WireApplication {
     bind [Signal[MembersStorage]]                to inject[Signal[ZMessaging]].map(_.membersStorage)
     bind [Signal[OtrClientsStorage]]             to inject[Signal[ZMessaging]].map(_.otrClientsStorage)
     bind [Signal[AssetsStorage]]                 to inject[Signal[ZMessaging]].map(_.assetsStorage)
+    bind [Signal[MessagesStorage]]               to inject[Signal[ZMessaging]].map(_.messagesStorage)
     bind [Signal[ImageLoader]]                   to inject[Signal[ZMessaging]].map(_.imageLoader)
     bind [Signal[MessagesService]]               to inject[Signal[ZMessaging]].map(_.messages)
     bind [Signal[IntegrationsService]]           to inject[Signal[ZMessaging]].map(_.integrations)
@@ -216,6 +217,9 @@ object WireApplication {
     // current conversation data
     bind [Signal[ConversationData]] to inject[ConversationController].currentConv
 
+    // selected conversation id
+    bind [Signal[Option[ConvId]]] to inject[Signal[SelectedConversationService]].flatMap(_.selectedConversationId)
+
     // accent color
     bind [Signal[AccentColor]] to inject[AccentColorController].accentColor
 
@@ -246,6 +250,7 @@ object WireApplication {
     bind [AssetsController]          to new AssetsController()
     bind [BrowserController]         to new BrowserController()
     bind [MessageViewFactory]        to new MessageViewFactory()
+    bind [ReplyController]           to new ReplyController()
 
     bind [ScreenController]          to new ScreenController()
     bind [MessageActionsController]  to new MessageActionsController()
@@ -336,8 +341,9 @@ class WireApplication extends MultiDexApplication with WireContext with Injectab
 
     val prefs = GlobalPreferences(this)
     val googleApi = GoogleApiImpl(this, backend, prefs)
+    val base64 = new AndroidBase64()
 
-    ZMessaging.onCreate(this, backend, prefs, googleApi)
+    ZMessaging.onCreate(this, backend, prefs, googleApi, base64)
 
     inject[NotificationManagerWrapper]
     inject[ImageNotificationsController]

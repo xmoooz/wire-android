@@ -17,8 +17,10 @@
   */
 package com.waz.zclient.messages
 
+import android.animation.ValueAnimator
+import android.animation.ValueAnimator.AnimatorUpdateListener
 import android.content.Context
-import android.graphics.{Canvas, Paint}
+import android.graphics.{Canvas, Color, Paint}
 import android.text.format.DateFormat
 import android.util.AttributeSet
 import android.view.View
@@ -31,6 +33,7 @@ import com.waz.service.messages.MessageAndLikes
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventStream, Signal}
 import com.waz.utils.returning
+import com.waz.zclient.collection.controllers.CollectionController
 import com.waz.zclient.common.controllers.global.AccentColorController
 import com.waz.zclient.common.views.ChatheadView
 import com.waz.zclient.messages.MessageView.MsgBindOptions
@@ -45,7 +48,7 @@ import com.waz.zclient.{R, ViewHelper}
 import org.threeten.bp.{LocalDateTime, ZoneId}
 
 trait MessageViewPart extends View {
-  val tpe: MsgPart
+  def tpe: MsgPart
   protected val messageAndLikes = Signal[MessageAndLikes]()
   protected val message = messageAndLikes.map(_.message)
   message.disableAutowiring() //important to ensure the signal keeps updating itself in the absence of any listeners
@@ -91,6 +94,40 @@ trait ClickableViewPart extends MessageViewPart with ViewHelper {
   this.onClick ({ onSingleClick }, { onDoubleClick })
 
   this.onLongClick(getParent.asInstanceOf[View].performLongClick())
+}
+
+trait HighlightViewPart extends MessageViewPart with ViewHelper {
+  private lazy val accentColorController = inject[AccentColorController]
+  private lazy val collectionController = inject[CollectionController]
+  private val animAlpha = Signal(0f)
+
+  private val animator = ValueAnimator.ofFloat(1, 0).setDuration(1500)
+
+  animator.addUpdateListener(new AnimatorUpdateListener {
+    override def onAnimationUpdate(animation: ValueAnimator): Unit =
+      animAlpha ! Math.min(animation.getAnimatedValue.asInstanceOf[Float], 0.5f)
+  })
+
+  private val bgColor = for {
+    accent <- accentColorController.accentColor
+    alpha <- animAlpha
+  } yield
+    if (alpha <= 0) Color.TRANSPARENT
+    else ColorUtils.injectAlpha(alpha, accent.color)
+
+  private val isHighlighted = for {
+    msg <- message
+    focused <- collectionController.focusedItem
+  } yield focused.exists(_.id == msg.id)
+
+  bgColor.on(Threading.Ui) { setBackgroundColor }
+
+  isHighlighted.on(Threading.Ui) {
+    case true => animator.start()
+    case false => animator.end()
+  }
+
+  def stopHighlight(): Unit = animator.end()
 }
 
 // Marker for view parts that should be laid out as in FrameLayout (instead of LinearLayout)

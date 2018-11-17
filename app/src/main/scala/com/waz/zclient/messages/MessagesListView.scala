@@ -50,8 +50,8 @@ class MessagesListView(context: Context, attrs: AttributeSet, style: Int) extend
   val viewDim = Signal[Dim2]()
   val realViewHeight = Signal[Int]()
   val layoutManager = new MessagesListLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-  val adapter = new MessagesListAdapter(viewDim)
-  val scrollController = new ScrollController(adapter, realViewHeight)
+  val adapter = new MessagesListAdapter(viewDim, realViewHeight)
+  val scrollController: ScrollController = adapter.scrollController
 
   val messagesController = inject[MessagesController]
   val messageActionsController = inject[MessageActionsController]
@@ -60,13 +60,9 @@ class MessagesListView(context: Context, attrs: AttributeSet, style: Int) extend
 
   messageActionsController.messageToReveal {
     case Some(messageData) =>
-      adapter.positionForMessage(messageData).foreach { pos =>
-        if (pos >= 0) {
-          scrollController.targetPosition = Some(pos)
-          scrollController.scrollToPositionRequested ! pos
-          messageActionsController.messageToReveal ! None
-        }
-      } (Threading.Ui)
+      adapter
+        .scrollToMessage(messageData)
+        .foreach( _ => messageActionsController.messageToReveal ! None)(Threading.Ui)
     case None =>
   }
 
@@ -86,7 +82,7 @@ class MessagesListView(context: Context, attrs: AttributeSet, style: Int) extend
           case 0 => a.getWindow.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
           case _ => a.getWindow.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
-      case _ => // not attahced, ignore
+      case _ => // not attached, ignore
     }
   }
 
@@ -140,11 +136,10 @@ class MessagesListView(context: Context, attrs: AttributeSet, style: Int) extend
         } else {
           scrollController.onScrolledInvisible()
         }
-      case RecyclerView.SCROLL_STATE_DRAGGING => {
+      case RecyclerView.SCROLL_STATE_DRAGGING =>
         scrollController.onDragging()
         messagesController.scrolledToBottom ! false
         Option(getContext).map(_.asInstanceOf[Activity]).foreach(a => KeyboardUtils.hideKeyboard(a))
-      }
       case _ =>
     }
   })
@@ -223,7 +218,7 @@ case class MessageViewHolder(view: MessageView, adapter: MessagesListAdapter)(im
   }(msgsController.onMessageRead)
 
   def bind(msg: MessageAndLikes, prev: Option[MessageData], next: Option[MessageData], opts: MsgBindOptions): Unit = {
-    view.set(msg, prev, next, opts)
+    view.set(msg,prev, next, opts, adapter)
     message ! msg.message
     this.opts = Some(opts)
     _isFocused = selection.isFocused(msg.message.id)
