@@ -132,12 +132,9 @@ android {
             manifestPlaceholders = [applicationLabel       : "Wire Dev",
                                     applicationIcon        : "@drawable/ic_launcher_wire_dev",
                                     sharedUserId           : "",
-                                    internal_features      : "true",
-                                    hockeyAppKey           : getApiKey("hockeyAppKey")]
+                                    internal_features      : "true"]
 
-            buildConfigField 'boolean', 'USE_HOCKEY_UPDATE',             'true'
             buildConfigField 'boolean', 'DEVELOPER_FEATURES_ENABLED',    'true'
-            buildConfigField 'String',  'MIXPANEL_APP_TOKEN',            "\"${getApiKey("mixpanelAppTokenInternal")}\""
         }
 
         candidate {
@@ -146,12 +143,9 @@ android {
             manifestPlaceholders = [applicationLabel       : "Wire Candidate",
                                     applicationIcon        : "@drawable/ic_launcher_wire_candidate",
                                     sharedUserId           : "",
-                                    internal_features      : "false",
-                                    hockeyAppKey           : getApiKey("hockeyAppKeyCand")]
+                                    internal_features      : "false"]
 
-            buildConfigField 'boolean', 'USE_HOCKEY_UPDATE',             'true'
             buildConfigField 'boolean', 'DEVELOPER_FEATURES_ENABLED',    'true'
-            buildConfigField 'String',  'MIXPANEL_APP_TOKEN',            "\"${getApiKey("mixpanelAppTokenInternal")}\""
         }
 
         prod {
@@ -159,12 +153,9 @@ android {
             manifestPlaceholders = [applicationLabel       : "@string/app_name",
                                     applicationIcon        : "@drawable/ic_launcher_wire",
                                     sharedUserId           : "com.waz.userid",
-                                    internal_features      : "false",
-                                    hockeyAppKey           : getApiKey("hockeyAppKeyProd")]
+                                    internal_features      : "false"]
 
-            buildConfigField 'boolean', 'USE_HOCKEY_UPDATE',             'false'
             buildConfigField 'boolean', 'DEVELOPER_FEATURES_ENABLED',    'false'
-            buildConfigField 'String',  'MIXPANEL_APP_TOKEN',            "\"${getApiKey("mixpanelAppTokenProd")}\""
         }
 
         internal {
@@ -173,12 +164,9 @@ android {
             manifestPlaceholders = [applicationLabel : "Wire Internal",
                                     applicationIcon  : "@drawable/ic_launcher_wire_internal",
                                     sharedUserId     : "",
-                                    internal_features: "true",
-                                    hockeyAppKey     : getApiKey("hockeyAppKeyInternal")]
+                                    internal_features: "true"]
 
-            buildConfigField 'boolean', 'USE_HOCKEY_UPDATE',             'false'
             buildConfigField 'boolean', 'DEVELOPER_FEATURES_ENABLED',    'true'
-            buildConfigField 'String',  'MIXPANEL_APP_TOKEN',            "\"${getApiKey("mixpanelAppTokenInternal")}\""
         }
 
         experimental {
@@ -187,12 +175,9 @@ android {
             manifestPlaceholders = [applicationLabel       : "Wire Exp",
                                     applicationIcon        : "@drawable/ic_launcher_wire_playground",
                                     sharedUserId           : "",
-                                    internal_features      : "true",
-                                    hockeyAppKey           : getApiKey("hockeyAppKeyExperimental")]
+                                    internal_features      : "true"]
 
-            buildConfigField 'boolean', 'USE_HOCKEY_UPDATE',             'true'
             buildConfigField 'boolean', 'DEVELOPER_FEATURES_ENABLED',    'true'
-            buildConfigField 'String',  'MIXPANEL_APP_TOKEN',            'null'
         }
     }
 
@@ -286,9 +271,7 @@ dependencies {
     //third party libraries
     implementation 'com.evernote:android-job:1.2.6'
     implementation 'com.jakewharton.timber:timber:4.7.0'
-    implementation 'net.hockeyapp.android:HockeySDK:4.1.4'
     implementation 'com.jakewharton.threetenabp:threetenabp:1.1.0'
-    implementation 'com.mixpanel.android:mixpanel-android:5.4.1'
     implementation 'com.facebook.rebound:rebound:0.3.8'
     implementation 'com.atlassian.commonmark:commonmark:0.11.0'
     implementation 'net.java.dev.jna:jna:4.4.0@aar'
@@ -335,8 +318,6 @@ def getApiKey(String property) {
         Properties properties = new Properties()
         properties.load(new FileInputStream("$projectDir/api-keys.properties"))
         return properties.getProperty(property)
-    } else if (property.startsWith("mixpanel")) {
-        return ""
     } else {
         return UUID.randomUUID().toString().replaceAll("-", "")
     }
