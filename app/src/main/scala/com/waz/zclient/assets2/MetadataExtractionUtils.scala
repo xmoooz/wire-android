@@ -17,46 +17,24 @@
  */
 package com.waz.zclient.assets2
 
-import java.io.{ByteArrayInputStream, InputStream}
+import java.io.{File, FileInputStream}
 import java.net.URI
 
 import android.content.Context
-import android.media.{MediaDataSource, MediaExtractor, MediaMetadataRetriever}
+import android.media.{MediaExtractor, MediaMetadataRetriever}
 import android.net.Uri
+import com.waz.service.assets2.{CanExtractMetadata, Content}
 import com.waz.utils._
 
 import scala.util.Try
 
 object MetadataExtractionUtils {
 
-  type Source = Either[URI, MediaDataSource]
+  type Source = Either[URI, File]
 
-  class BytesMediaDataSource(bytes: Array[Byte]) extends MediaDataSource {
-    private val is: ByteArrayInputStream = new ByteArrayInputStream(bytes)
-
-    override def readAt(position: Long, buffer: Array[Byte], offset: Int, size: Int): Int = {
-      is.skip(position)
-      is.read(buffer, offset, size)
-    }
-
-    override def getSize: Long =
-      bytes.length
-
-    override def close(): Unit =
-      is.close()
-  }
-
-  class InputStreamMediaDataSource(is: InputStream) extends MediaDataSource {
-
-    override def readAt(position: Long, buffer: Array[Byte], offset: Int, size: Int): Int = {
-      is.skip(position)
-      is.read(buffer, offset, size)
-    }
-
-    override def getSize: Long = -1
-
-    override def close(): Unit =
-      is.close()
+  def asSource(content: CanExtractMetadata): Source = content match {
+    case Content.File(_, file) => Right(file)
+    case Content.Uri(uri) => Left(uri)
   }
 
   implicit val RetrieverCleanup: Cleanup[MediaMetadataRetriever] =
@@ -73,7 +51,7 @@ object MetadataExtractionUtils {
     Managed(new MediaMetadataRetriever).map { retriever =>
       source match {
         case Left(uri) => retriever.setDataSource(c, Uri.parse(uri.toString))
-        case Right(mediaDataSource) => retriever.setDataSource(mediaDataSource)
+        case Right(file) => retriever.setDataSource(new FileInputStream(file).getFD)
       }
       retriever
     }
@@ -82,7 +60,7 @@ object MetadataExtractionUtils {
     Managed(new MediaExtractor).map { extractor =>
       source match {
         case Left(uri) => extractor.setDataSource(c, Uri.parse(uri.toString), null)
-        case Right(mediaDataSource) => extractor.setDataSource(mediaDataSource)
+        case Right(file) => extractor.setDataSource(new FileInputStream(file).getFD)
       }
       extractor
     }

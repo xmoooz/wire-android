@@ -17,7 +17,6 @@
  */
 package com.waz.zclient.assets2
 
-import java.io.ByteArrayInputStream
 import java.nio.ByteOrder
 import java.util.Locale
 
@@ -45,19 +44,16 @@ class AssetDetailsServiceImpl(uriHelper: UriHelper)
                              (implicit context: Context, ec: ExecutionContext) extends AssetDetailsService {
   import AssetDetailsServiceImpl._
 
-  override def extract(content: ContentForUpload): Future[AssetDetails] = {
-    if (Mime.Image.supported.contains(content.mime)) extractForImage(content, Medium)
-    else if (Mime.Video.supported.contains(content.mime)) extractForVideo(createSource(content))
-    else if (Mime.Audio.supported.contains(content.mime)) extractForAudio(createSource(content))
+  override def extract(mime: Mime, content: CanExtractMetadata): Future[AssetDetails] = {
+    if (Mime.Image.supported.contains(mime)) extractForImage(content, Medium)
+    else if (Mime.Video.supported.contains(mime)) extractForVideo(asSource(content))
+    else if (Mime.Audio.supported.contains(mime)) extractForAudio(asSource(content))
     else Future.successful(BlobDetails)
   }
 
-  def extractForImage(content: ContentForUpload, tag: ImageTag): Future[ImageDetails] =
+  private def extractForImage(content: Content, tag: ImageTag): Future[ImageDetails] =
     for {
-      is <- content match {
-        case ContentForUpload.Uri(_, _, uri) => Future.fromTry(uriHelper.openInputStream(uri))
-        case ContentForUpload.Bytes(_, _, bytes) => Future.successful(new ByteArrayInputStream(bytes))
-      }
+      is <- Future.fromTry(content.openInputStream(uriHelper))
       details <- IoUtils.withResource(is) { _ =>
         val opts = new BitmapFactory.Options
         opts.inJustDecodeBounds = true
@@ -72,7 +68,7 @@ class AssetDetailsServiceImpl(uriHelper: UriHelper)
       }
     } yield details
 
-  def extractForVideo(source: Source): Future[VideoDetails] =
+  private def extractForVideo(source: Source): Future[VideoDetails] =
     Future {
       createMetadataRetriever(source).acquire { implicit retriever =>
         for {
@@ -93,7 +89,7 @@ class AssetDetailsServiceImpl(uriHelper: UriHelper)
       case Left(msg) => Future.failed(new IllegalArgumentException(msg))
     }
 
-  def extractForAudio(source: Source, bars: Int = 100): Future[AudioDetails] =
+  private def extractForAudio(source: Source, bars: Int = 100): Future[AudioDetails] =
     Future {
       createMetadataRetriever(source).acquire { implicit retriever =>
         for {
@@ -166,11 +162,6 @@ class AssetDetailsServiceImpl(uriHelper: UriHelper)
 }
 
 object AssetDetailsServiceImpl {
-
-  def createSource(content: ContentForUpload): Source = content match {
-    case ContentForUpload.Bytes(_, _, bytes) => Right(new BytesMediaDataSource(bytes))
-    case ContentForUpload.Uri(_, _, uri) => Left(uri)
-  }
 
   def createAudioDecoder(info: TrackInfo): MediaCodec =
     returning(MediaCodec.createDecoderByType(info.mime)) { mc =>

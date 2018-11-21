@@ -31,7 +31,6 @@ import com.waz.api.Message
 import com.waz.content.UserPreferences.DownloadImagesAlways
 import com.waz.model.{AssetData, AssetId, MessageData, Mime}
 import com.waz.service.ZMessaging
-import com.waz.service.assets.AssetService.RawAssetInput.WireAssetInput
 import com.waz.service.assets.GlobalRecordAndPlayService
 import com.waz.service.assets.GlobalRecordAndPlayService.{AssetMediaKey, Content, UnauthenticatedContent}
 import com.waz.threading.Threading
@@ -111,7 +110,7 @@ class AssetsController(implicit context: Context, inj: Injector, ec: EventContex
 
   //FIXME: don't use java api
   def openDrawingFragment(msg: MessageData, drawingMethod: DrawingMethod) =
-    screenController.showSketch ! Sketch.singleImage(WireAssetInput(msg.assetId), drawingMethod)
+    screenController.showSketch ! Sketch.asset(msg.assetId, drawingMethod)
 
   def openFile(asset: AssetData) =
     assets.head.flatMap(_.getContentUri(asset.id)) foreach {
