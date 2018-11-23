@@ -15,9 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.waz.zclient.collection
+package com.waz.zclient.collection.controllers
 
-import android.content.Context
 import com.waz.ZLog.ImplicitTag.implicitLogTag
 import com.waz.model.MessageData.MessageDataDao
 import com.waz.model.{ConvId, MessageId}
@@ -26,15 +25,15 @@ import com.waz.service.messages.MessageAndLikes
 import com.waz.threading.Threading.Implicits.Background
 import com.waz.utils.events._
 import com.waz.utils.wrappers.DBCursor
-import com.waz.zclient.collection.CollectionPagedListController._
 import com.waz.zclient.collection.controllers.CollectionController.{CollectionSection, ContentType, _}
+import com.waz.zclient.collection.controllers.CollectionPagedListController.CollectionPagedListData
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.messages.PagedListWrapper
 import com.waz.zclient.{Injectable, Injector, MessageAndLikesSourceFactory}
 
 import scala.concurrent.Future
 
-class CollectionPagedListController()(implicit inj: Injector, ec: EventContext, cxt: Context) extends Injectable {
+class CollectionPagedListController()(implicit inj: Injector, ec: EventContext) extends Injectable {
 
   private val zms = inject[Signal[ZMessaging]]
   private val convController = inject[ConversationController]

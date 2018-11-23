@@ -57,8 +57,7 @@ import com.waz.utils.wrappers.GoogleApi
 import com.waz.zclient.appentry.controllers.{CreateTeamController, InvitationsController}
 import com.waz.zclient.calling.controllers.{CallController, CallStartController}
 import com.waz.zclient.camera.controllers.{AndroidCameraFactory, GlobalCameraController}
-import com.waz.zclient.collection.CollectionPagedListController
-import com.waz.zclient.collection.controllers.CollectionController
+import com.waz.zclient.collection.controllers.{CollectionController, CollectionPagedListController, TextSearchController}
 import com.waz.zclient.common.controllers._
 import com.waz.zclient.common.controllers.global.{AccentColorController, ClientsController, KeyboardController, PasswordController}
 import com.waz.zclient.common.views.ImageController
@@ -287,6 +286,7 @@ object WireApplication {
     bind[MessagePagedListController] to new MessagePagedListController()
     bind[CollectionPagedListController] to new CollectionPagedListController()
     bind[QuickReplyFragmentController] to new QuickReplyFragmentController()
+    bind[TextSearchController] to new TextSearchController()
   }
 
   protected def clearOldVideoFiles(context: Context): Unit = {

@@ -22,7 +22,7 @@ import java.lang.Math.min
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
 import com.waz.ZLog._
-import com.waz.api.{ContentSearchQuery, IConversation, Message, TypeFilter}
+import com.waz.api.{IConversation, Message, TypeFilter}
 import com.waz.model._
 import com.waz.service.ZMessaging
 import com.waz.utils.events._
@@ -45,17 +45,8 @@ class CollectionController(implicit injector: Injector) extends Injectable {
   }
   val focusedItem: SourceSignal[Option[MessageData]] = Signal(None)
   val openedCollection: SourceSignal[Option[CollectionInfo]] = Signal[Option[CollectionInfo]]()
-  val contentSearchQuery: SourceSignal[ContentSearchQuery] = Signal[ContentSearchQuery](ContentSearchQuery.empty)
   val onCollectionOpen: SourceStream[Unit] = EventStream[Unit]
   val onCollectionClosed: SourceStream[Unit] = EventStream[Unit]
-
-  val matchingTextSearchMessages: Signal[Set[MessageId]] = for {
-    z <- zms
-    convId <- convController.currentConvId
-    query <- contentSearchQuery
-    res <- if (query.isEmpty) Signal.const(Set.empty[MessageId])
-           else Signal future z.messagesIndexStorage.matchingMessages(query, Some(convId))
-  } yield res
 
   def openCollection(): Unit = onCollectionOpen ! {()}
 
@@ -63,7 +54,7 @@ class CollectionController(implicit injector: Injector) extends Injectable {
 
   def clearSearch(): Unit = {
     focusedItem ! None
-    contentSearchQuery ! ContentSearchQuery.empty
+    //contentSearchQuery ! ContentSearchQuery.empty
   }
 }
 

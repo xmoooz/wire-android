@@ -22,8 +22,9 @@ import android.text.format.DateFormat
 import android.util.AttributeSet
 import android.view.{View, ViewGroup}
 import android.widget.LinearLayout
-import com.waz.ZLog._
+import com.waz.ZLog.ImplicitTag.implicitLogTag
 import com.waz.api.ContentSearchQuery
+import com.waz.model.MessageData
 import com.waz.service.ZMessaging
 import com.waz.threading.Threading
 import com.waz.utils.events.Signal
@@ -31,9 +32,8 @@ import com.waz.zclient.collection.controllers.{CollectionController, CollectionU
 import com.waz.zclient.common.controllers.global.AccentColorController
 import com.waz.zclient.common.views.ChatheadView
 import com.waz.zclient.messages.MessageBottomSheetDialog.MessageAction
-import com.waz.zclient.messages.MsgPart.Text
+import com.waz.zclient.messages.UsersController
 import com.waz.zclient.messages.controllers.MessageActionsController
-import com.waz.zclient.messages.{MessageViewPart, MsgPart, UsersController}
 import com.waz.zclient.ui.text.TypefaceTextView
 import com.waz.zclient.ui.utils.{ColorUtils, TextViewUtils}
 import com.waz.zclient.utils.ZTimeFormatter._
@@ -41,18 +41,12 @@ import com.waz.zclient.utils._
 import com.waz.zclient.{R, ViewHelper}
 import org.threeten.bp.{LocalDateTime, ZoneId}
 
-trait SearchResultRowView extends MessageViewPart with ViewHelper {
-  val searchedQuery = Signal[ContentSearchQuery]()
-}
 
-class TextSearchResultRowView(context: Context, attrs: AttributeSet, style: Int) extends LinearLayout(context, attrs, style) with SearchResultRowView{
+class TextSearchResultRowView(context: Context, attrs: AttributeSet, style: Int) extends LinearLayout(context, attrs, style) with ViewHelper {
   import TextSearchResultRowView._
   import Threading.Implicits.Ui
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null, 0)
-
-  private implicit val tag: LogTag = logTagFor[TextSearchResultRowView]
-  override val tpe: MsgPart = Text
 
   inflate(R.layout.search_text_result_row)
   setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, getResources.getDimensionPixelSize(R.dimen.search__result__height)))
@@ -64,17 +58,24 @@ class TextSearchResultRowView(context: Context, attrs: AttributeSet, style: Int)
   val messageActionsController = inject[MessageActionsController]
   val collectionController = inject[CollectionController]
 
+  private val message = Signal[MessageData]()
+  private var searchedQuery = ContentSearchQuery.empty
+
   lazy val contentTextView = ViewUtils.getView(this, R.id.message_content).asInstanceOf[TypefaceTextView]
   lazy val infoTextView = ViewUtils.getView(this, R.id.message_info).asInstanceOf[TypefaceTextView]
   lazy val chatheadView = ViewUtils.getView(this, R.id.chathead).asInstanceOf[ChatheadView]
   lazy val resultsCount = ViewUtils.getView(this, R.id.search_result_count).asInstanceOf[TypefaceTextView]
 
-  val contentSignal = for{
+  def set(messageData: MessageData, query: ContentSearchQuery): Unit = {
+    searchedQuery = query
+    message ! messageData
+  }
+
+  private val contentSignal = for{
     m <- message
-    q <- searchedQuery if q.toString().nonEmpty
     color <- accentColorController.accentColor
     nContent <- zms.flatMap(z => Signal.future(z.messagesIndexStorage.getNormalizedContentForMessage(m.id)))
-  } yield (m, q, color, nContent)
+  } yield (m, searchedQuery, color, nContent)
 
   contentSignal.on(Threading.Ui){
     case (msg, query, color, Some(normalizedContent)) =>
@@ -86,7 +87,7 @@ class TextSearchResultRowView(context: Context, attrs: AttributeSet, style: Int)
       } else {
         resultsCount.setVisibility(View.VISIBLE)
       }
-    case (msg, query, color, None) =>
+    case (msg, _, _, None) =>
       contentTextView.setText(msg.contentString)
       resultsCount.setVisibility(View.INVISIBLE)
     case _ =>

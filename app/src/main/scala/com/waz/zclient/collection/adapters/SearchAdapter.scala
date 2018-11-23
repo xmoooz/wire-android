@@ -17,110 +17,39 @@
  */
 package com.waz.zclient.collection.adapters
 
+import android.arch.paging.PagedListAdapter
 import android.content.Context
+import android.support.v7.util.DiffUtil
 import android.support.v7.widget.RecyclerView
-import android.support.v7.widget.RecyclerView.ViewHolder
 import android.view.ViewGroup
-import com.waz.ZLog.ImplicitTag._
-import com.waz.ZLog._
-import com.waz.api.{ContentSearchQuery, MessageFilter}
-import com.waz.model.ConvId
-import com.waz.service.ZMessaging
-import com.waz.service.messages.MessageAndLikes
-import com.waz.threading.Threading
-import com.waz.utils.events.{EventContext, Signal}
-import com.waz.utils.returning
-import com.waz.zclient.collection.controllers.CollectionController
-import com.waz.zclient.conversation.ConversationController
-import com.waz.zclient.messages.RecyclerCursor
-import com.waz.zclient.messages.RecyclerCursor.RecyclerNotifier
-import com.waz.zclient.usersearch.views.{SearchResultRowView, TextSearchResultRowView}
+import com.waz.api.ContentSearchQuery
+import com.waz.model.MessageData
+import com.waz.utils.events.EventContext
+import com.waz.zclient.collection.adapters.SearchAdapter._
+import com.waz.zclient.usersearch.views.TextSearchResultRowView
 import com.waz.zclient.{Injectable, Injector}
 
-/*
-TODO: some of this stuff is duplicated from MessagesListAdapter. Maybe there's a possibility of some refactoring and create a 'base adapter' for messageCursors
- */
-class SearchAdapter()(implicit context: Context, injector: Injector, eventContext: EventContext) extends RecyclerView.Adapter[ViewHolder] with Injectable { adapter =>
+class SearchAdapter()(implicit context: Context, injector: Injector, eventContext: EventContext) extends PagedListAdapter[MessageData, SearchResultRowViewHolder](MessageDataDiffCallback) with Injectable { adapter =>
 
-  val zms = inject[Signal[ZMessaging]]
-  val contentSearchQuery = inject[CollectionController].contentSearchQuery
+  var contentSearchQuery = ContentSearchQuery.empty
 
-  val cursor = for {
-    zs <- zms
-    convId <- inject[ConversationController].currentConvId
-    query <- contentSearchQuery
-  } yield
-    new RecyclerCursor(convId, zs, notifier, messageFilter = Some(MessageFilter(None, Some(query))))
-
-  private var messages = Option.empty[RecyclerCursor]
-  private var convId = ConvId()
-
-  val cursorLoader = for{
-    c <- cursor
-    true <- c.cursorLoaded
-  } yield c
-
-  cursorLoader.on(Threading.Ui) { c =>
-    if (!messages.contains(c)) {
-      verbose(s"cursor changed: ${c.count}")
-      messages.foreach(_.close())
-      messages = Some(c)
-      convId = c.conv
-      notifier.notifyDataSetChanged()
-    }
+  override def onBindViewHolder(holder: SearchResultRowViewHolder, position: Int): Unit = {
+    Option(getItem(position)).foreach(m => holder.set(m, contentSearchQuery))
   }
 
-  setHasStableIds(true)
-
-  def message(position: Int) = messages.get.apply(position)
-
-  override def getItemCount: Int = {
-    messages.fold(0)(_.count)
-  }
-
-  override def onBindViewHolder(holder: ViewHolder, position: Int): Unit = {
-    holder.asInstanceOf[SearchResultRowViewHolder].set(message(position))
-  }
-
-  override def onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = {
-    returning(new SearchResultRowViewHolder(new TextSearchResultRowView(context))) {
-      _.setSearchQuerySignal(contentSearchQuery)
-    }
-  }
-
-  override def getItemId(position: Int): Long = message(position).message.id.str.hashCode
-
-  lazy val notifier = new RecyclerNotifier {
-
-    private def notifyChangedIfExists(position: Int) =
-      if (position >= 0 && position < getItemCount)
-        adapter.notifyItemChanged(position)
-
-    override def notifyItemRangeInserted(index: Int, length: Int) = {
-      adapter.notifyItemRangeInserted(index, length)
-      notifyChangedIfExists(index + length + 1)
-    }
-
-    override def notifyItemRangeChanged(index: Int, length: Int) =
-      adapter.notifyItemRangeChanged(index, length)
-
-    override def notifyItemRangeRemoved(pos: Int, count: Int) = {
-      adapter.notifyItemRangeRemoved(pos, count)
-      notifyChangedIfExists(pos)
-    }
-
-    override def notifyDataSetChanged() = {
-      adapter.notifyDataSetChanged()
-    }
+  override def onCreateViewHolder(parent: ViewGroup, viewType: Int): SearchResultRowViewHolder = {
+    new SearchResultRowViewHolder(new TextSearchResultRowView(context))
   }
 }
 
-class SearchResultRowViewHolder(view: SearchResultRowView)(implicit eventContext: EventContext) extends RecyclerView.ViewHolder(view){
-
-  def setSearchQuerySignal(contentSearchQuery: Signal[ContentSearchQuery]): Unit = {
-    contentSearchQuery{view.searchedQuery ! _}
+object SearchAdapter {
+  val MessageDataDiffCallback: DiffUtil.ItemCallback[MessageData] = new DiffUtil.ItemCallback[MessageData] {
+    override def areItemsTheSame(o: MessageData, n: MessageData): Boolean = n.id == o.id
+    override def areContentsTheSame(o: MessageData, n: MessageData): Boolean = areItemsTheSame(o, n)
   }
+}
 
-  def set(message: MessageAndLikes): Unit =
-    view.set(message, None)
+class SearchResultRowViewHolder(view: TextSearchResultRowView)(implicit eventContext: EventContext) extends RecyclerView.ViewHolder(view){
+
+  def set(message: MessageData, contentSearchQuery: ContentSearchQuery): Unit = view.set(message, contentSearchQuery)
 }

@@ -44,7 +44,7 @@ import com.waz.utils.{returning, returningF}
 import com.waz.zclient.Intents.ShowDevicesIntent
 import com.waz.zclient.calling.controllers.{CallController, CallStartController}
 import com.waz.zclient.camera.controllers.GlobalCameraController
-import com.waz.zclient.collection.controllers.CollectionController
+import com.waz.zclient.collection.controllers.{CollectionController, TextSearchController}
 import com.waz.zclient.common.controllers.global.KeyboardController
 import com.waz.zclient.common.controllers.{ScreenController, ThemeController, UserAccountsController}
 import com.waz.zclient.controllers.camera.ICameraController
@@ -102,6 +102,7 @@ class ConversationFragment extends FragmentHelper {
   private lazy val accountsController     = inject[UserAccountsController]
   private lazy val globalPrefs            = inject[GlobalPreferences]
   private lazy val replyController        = inject[ReplyController]
+  private lazy val textSearchController   = inject[TextSearchController]
 
   //TODO remove use of old java controllers
   private lazy val globalLayoutController     = inject[IGlobalLayoutController]
@@ -470,7 +471,7 @@ class ConversationFragment extends FragmentHelper {
   private def inflateCollectionIcon(): Unit = {
     leftMenu.getMenu.clear()
 
-    val searchInProgress = collectionController.contentSearchQuery.currentValue("").get.originalString.nonEmpty
+    val searchInProgress = textSearchController.searchQuery.currentValue("").get.originalString.nonEmpty
 
     getActivity.getMenuInflater.inflate(
       if (searchInProgress) R.menu.conversation_header_menu_collection_searching

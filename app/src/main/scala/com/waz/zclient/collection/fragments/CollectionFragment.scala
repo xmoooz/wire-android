@@ -33,13 +33,13 @@ import com.waz.model.Dim2
 import com.waz.threading.Threading
 import com.waz.utils.events.{Signal, SourceSignal}
 import com.waz.utils.returning
-import com.waz.zclient.collection.CollectionPagedListController.CollectionPagedListData
 import com.waz.zclient.collection.adapters.{CollectionAdapter, SearchAdapter}
 import com.waz.zclient.collection.adapters.CollectionAdapter._
-import com.waz.zclient.collection.controllers.CollectionController
+import com.waz.zclient.collection.controllers.{CollectionController, CollectionPagedListController, TextSearchController}
 import com.waz.zclient.collection.controllers.CollectionController._
+import com.waz.zclient.collection.controllers.CollectionPagedListController.CollectionPagedListData
 import com.waz.zclient.collection.views.CollectionRecyclerView
-import com.waz.zclient.collection.{CollectionItemDecorator, CollectionPagedListController, CollectionSpanSizeLookup}
+import com.waz.zclient.collection.{CollectionItemDecorator, CollectionSpanSizeLookup}
 import com.waz.zclient.common.controllers.global.AccentColorController
 import com.waz.zclient.messages.MessageBottomSheetDialog.MessageAction
 import com.waz.zclient.messages.PagedListWrapper
@@ -62,6 +62,7 @@ class CollectionFragment extends BaseFragment[CollectionFragment.Container] with
   private lazy val messageActionsController = inject[MessageActionsController]
   private lazy val accentColorController = inject[AccentColorController]
   private lazy val collectionPagedListController = inject[CollectionPagedListController]
+  private lazy val textSearchController = inject[TextSearchController]
   private lazy val viewDim: SourceSignal[Dim2] = Signal[Dim2](Dim2(0, 0))
 
   private lazy val layoutChangeListener = new OnLayoutChangeListener {
@@ -74,12 +75,12 @@ class CollectionFragment extends BaseFragment[CollectionFragment.Container] with
   private lazy val collectionItemDecorator = new CollectionItemDecorator(collectionAdapter, CollectionController.GridColumns)
   private lazy val collectionSpanSizeLookup = new CollectionSpanSizeLookup(CollectionController.GridColumns, collectionAdapter)
 
-  private var searchAdapter: SearchAdapter = null
+  private lazy val searchAdapter: SearchAdapter = new SearchAdapter()
 
   private lazy val collectionState = Signal(
     collectionPagedListController.pagedListData,
     collectionController.focusedItem,
-    collectionController.contentSearchQuery)
+    textSearchController.searchQuery)
 
   private lazy val name = returning(view[TextView](R.id.tv__collection_toolbar__name)) { vh =>
     collectionController.conversationName.onUi { text =>
@@ -146,7 +147,7 @@ class CollectionFragment extends BaseFragment[CollectionFragment.Container] with
     }.onUi(visible => vh.foreach(_.setVisible(visible)))
   }
   private lazy val searchRecyclerView = returning(view[RecyclerView](R.id.search_results_list)) { vh =>
-    collectionController.contentSearchQuery.map(_.originalString.nonEmpty)
+    textSearchController.searchQuery.map(_.originalString.nonEmpty)
       .onUi(visible => vh.foreach(_.setVisible(visible)))
   }
 
@@ -161,8 +162,13 @@ class CollectionFragment extends BaseFragment[CollectionFragment.Container] with
         collectionAdapter.setData(dim, section, pl)
     }
     collectionPagedListController.pagedListData.map(_.section).onChanged.onUi { _ =>
-      //collectionRecyclerView.foreach(_.scrollToPosition(0))
       collectionRecyclerView.foreach(_.smoothScrollToPosition(0))
+    }
+
+    textSearchController.pagedListData.onUi {
+      case (PagedListWrapper(pl), query) =>
+        searchAdapter.contentSearchQuery = query
+        searchAdapter.submitList(pl)
     }
   }
 
@@ -252,8 +258,6 @@ class CollectionFragment extends BaseFragment[CollectionFragment.Container] with
 
     searchRecyclerView.foreach { searchRecyclerView =>
 
-      searchAdapter = new SearchAdapter()
-
       //TODO: do we need this?
       searchRecyclerView.addOnLayoutChangeListener(new OnLayoutChangeListener {
         override def onLayoutChange(v: View, left: Int, top: Int, right: Int, bottom: Int, oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int): Unit = {
@@ -273,7 +277,7 @@ class CollectionFragment extends BaseFragment[CollectionFragment.Container] with
       searchRecyclerView.setAdapter(searchAdapter)
     }
 
-    collectionController.contentSearchQuery.currentValue.foreach{ q =>
+    textSearchController.searchQuery.currentValue.foreach{ q =>
       if (q.originalString.nonEmpty) {
         searchBoxView.foreach(_.setText(q.originalString))
         searchBoxView.foreach(_.setVisibility(View.GONE))
@@ -284,9 +288,9 @@ class CollectionFragment extends BaseFragment[CollectionFragment.Container] with
     searchBoxView.foreach { searchBoxView =>
       searchBoxView.addTextListener { text =>
         if (text.trim.length() <= 1) {
-          collectionController.contentSearchQuery ! ContentSearchQuery.empty
+          textSearchController.searchQuery ! ContentSearchQuery.empty
         } else {
-          collectionController.contentSearchQuery ! ContentSearchQuery(text)
+          textSearchController.searchQuery ! ContentSearchQuery(text)
         }
         searchBoxClose.foreach(_.setVisible(text.nonEmpty))
       }
@@ -316,15 +320,12 @@ class CollectionFragment extends BaseFragment[CollectionFragment.Container] with
       })
     }
 
-
-    //TODO: rewrite this ------------
-    Signal(searchAdapter.cursor.flatMap(_.countSignal).orElse(Signal(-1)), collectionController.contentSearchQuery).on(Threading.Ui) {
-      case (0, query) if query.originalString.nonEmpty =>
+    textSearchController.pagedListData.on(Threading.Ui) {
+      case (PagedListWrapper(pl), query) if query.originalString.nonEmpty && pl.size() == 0 =>
         noSearchResultsText.foreach(_.setVisibility(View.VISIBLE))
       case _ =>
         noSearchResultsText.foreach(_.setVisibility(View.GONE))
     }
-    //TODO: rewrite this ^^^^^^^^^^^^
 
     toolbar.foreach { toolbar =>
 
@@ -341,7 +342,7 @@ class CollectionFragment extends BaseFragment[CollectionFragment.Container] with
           item.getItemId match {
             case R.id.close =>
               collectionController.focusedItem ! None
-              collectionController.contentSearchQuery ! ContentSearchQuery.empty
+              textSearchController.searchQuery ! ContentSearchQuery.empty
               collectionController.closeCollection()
               true
             case _ => false
@@ -376,7 +377,7 @@ class CollectionFragment extends BaseFragment[CollectionFragment.Container] with
       case _ =>
         collectionPagedListController.contentType.currentValue.foreach {
           case None =>
-            collectionController.contentSearchQuery ! ContentSearchQuery.empty
+            textSearchController.searchQuery ! ContentSearchQuery.empty
             collectionController.closeCollection()
           case _ =>
             collectionPagedListController.contentType ! None
