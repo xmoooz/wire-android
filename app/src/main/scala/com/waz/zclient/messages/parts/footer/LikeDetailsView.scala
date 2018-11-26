@@ -57,7 +57,7 @@ class LikeDetailsView(context: Context, attrs: AttributeSet, style: Int) extends
     }
 
     def showLikers() = controller.message.map(_.id).head.foreach { mId =>
-      inject[ScreenController].showLikesForMessage ! Some(mId)
+      inject[ScreenController].showMessageDetails ! Some(mId)
     }(Threading.Ui)
 
     likedBy.on(Threading.Ui) { ids =>
