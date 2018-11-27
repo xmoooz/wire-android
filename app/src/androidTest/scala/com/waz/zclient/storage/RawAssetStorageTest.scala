@@ -52,6 +52,7 @@ class RawAssetStorageTest extends GeneralStorageTest(RawAssetDao)(
       id = RawAssetId(),
       sha = Sha256("ad34da34"),
       encryption = NoEncryption,
+      encryptionSalt = None,
       localSource = Some(LocalSource(URI.create("https://github.com/wireapp/wire-android-sync-engine/pull/437"), Sha256.Empty)),
       mime = Mime.Default,
       name = "test",

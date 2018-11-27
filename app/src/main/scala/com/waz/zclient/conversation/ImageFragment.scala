@@ -24,7 +24,7 @@ import android.support.v7.widget.Toolbar
 import android.view.View.OnClickListener
 import android.view.{LayoutInflater, View, ViewGroup}
 import com.waz.ZLog.ImplicitTag._
-import com.waz.model.{Liking, MessageId}
+import com.waz.model.{AssetId, Liking, MessageId}
 import com.waz.service.ZMessaging
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventStream, Signal}
@@ -141,8 +141,8 @@ class ImageFragment extends FragmentHelper {
 
         method.foreach { m =>
           getFragmentManager.popBackStack()
-          imageInput.head.foreach { asset =>
-            screenController.showSketch ! Sketch.asset(asset, m)
+          imageInput.head.collect { case Some(id: AssetId) => id }.foreach { assetId =>
+            screenController.showSketch ! Sketch.asset(assetId, m)
           }
         }
       case item: MessageActionToolbarItem =>

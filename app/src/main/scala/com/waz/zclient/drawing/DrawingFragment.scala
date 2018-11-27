@@ -600,7 +600,6 @@ class DrawingFragment extends FragmentHelper
   }
 
   def setBackgroundBitmap(showHint: Boolean): Unit = {
-
     drawingViewTip.foreach { v =>
       if (showHint) v.setText(getString(R.string.drawing__tip__picture__message))
       else hideTip()
