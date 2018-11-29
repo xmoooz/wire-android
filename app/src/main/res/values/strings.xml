@@ -897,10 +897,10 @@
 
     <string name="message_details_title">MESSAGE DETAILS</string>
     <string name="message_likes_title">LIKES</string>
-    <string name="message_details_sent">SENT</string>
-    <string name="message_details_last_edited">LAST EDITED</string>
-    <string name="tab_title_seen">Seen</string>
-    <string name="tab_title_likes">Likes</string>
+    <string name="message_details_sent">Sent</string>
+    <string name="message_details_last_edited">Edited</string>
+    <string name="tab_title_read">READ</string>
+    <string name="tab_title_likes">LIKES</string>
 
     <string name="message_footer__tap_to_like">Tap to like</string>
     <plurals name="message_footer__number_of_likes">
