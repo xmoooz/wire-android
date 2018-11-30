@@ -84,7 +84,8 @@
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:background="?wireBackgroundColor"
         android:layout_marginTop="@dimen/wire__padding__8"
         >
@@ -99,15 +100,43 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             />
+
+        <RelativeLayout
+            android:id="@+id/empty_list_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal|center_vertical"
+            android:gravity="center"
+            android:visibility="gone"
+            >
+            <com.waz.zclient.paintcode.GenericStyleKitView
+                android:id="@+id/empty_list_icon"
+                android:layout_width="@dimen/profile__image__width"
+                android:layout_height="@dimen/profile__image__height"
+                android:gravity="center"
+                android:layout_alignParentTop="true"
+                android:layout_centerHorizontal="true"
+                android:layout_centerVertical="true"
+                />
+            <com.waz.zclient.ui.text.TypefaceTextView
+                android:id="@+id/empty_list_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textSize="@dimen/wire__text_size__regular_small"
+                android:maxLines="2"
+                android:textColor="?wireSecondaryTextColor"
+                android:layout_below="@id/empty_list_icon"
+                />
+        </RelativeLayout>
     </FrameLayout>
 
     <com.waz.zclient.ui.text.TypefaceTextView
         android:id="@+id/message_timestamp"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
         android:gravity="bottom|center_horizontal"
         android:layout_marginBottom="@dimen/wire__padding__8"
-        android:layout_weight="1"
         android:maxLines="2"
         android:textColor="?wireSecondaryTextColor"
         android:textSize="@dimen/wire__text_size__regular_small"

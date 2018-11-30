@@ -34,8 +34,10 @@ import com.waz.utils.events.{RefreshingSignal, Signal}
 import com.waz.utils.returning
 import com.waz.zclient.common.controllers.ScreenController
 import com.waz.zclient.pages.main.conversation.ConversationManagerFragment
+import com.waz.zclient.paintcode.{GenericStyleKitView, WireStyleKit}
 import com.waz.zclient.participants.ParticipantsAdapter
 import com.waz.zclient.ui.text.{GlyphTextView, TypefaceTextView}
+import com.waz.zclient.utils.ContextUtils.getStyledColor
 import com.waz.zclient.utils.{DateConvertUtils, RichView, ZTimeFormatter}
 import com.waz.zclient.{FragmentHelper, R}
 import org.threeten.bp.{LocalDateTime, ZoneId}
@@ -48,9 +50,74 @@ class LikesAndReadsFragment extends FragmentHelper {
 
   private lazy val zms              = inject[Signal[ZMessaging]]
   private lazy val screenController = inject[ScreenController]
-  private lazy val closeButton      = view[GlyphTextView](R.id.likes_close_button)
-  private lazy val readsView        = view[RecyclerView](R.id.reads_recycler_view)
-  private lazy val likesView        = view[RecyclerView](R.id.likes_recycler_view)
+
+  private val visibleTab = Signal[Tab](ReadsTab)
+
+  private lazy val likes: Signal[Seq[UserId]] = Signal(zms, screenController.showMessageDetails).flatMap {
+    case (z, Some(msgId)) =>
+      new RefreshingSignal[Seq[UserId], Seq[Liking]](
+        CancellableFuture.lift(z.reactionsStorage.getLikes(msgId).map(_.likers.keys.toSeq)),
+        z.reactionsStorage.onChanged.map(_.filter(_.message == msgId))
+      )
+    case _ => Signal.const(Seq.empty[UserId])
+  }
+
+  private lazy val reads: Signal[Seq[UserId]] = Signal(zms, screenController.showMessageDetails).flatMap {
+    case (z, Some(msgId)) =>
+      zms.flatMap(_.readReceiptsStorage.receipts(msgId).map(_.map(_.user)))
+    case _ => Signal.const(Seq.empty[UserId])
+  }
+
+  private lazy val viewToDisplay = for {
+    tab       <- visibleTab
+    listEmpty <- if (tab == LikesTab) likes.map(_.isEmpty) else reads.map(_.isEmpty)
+  } yield (tab, listEmpty)
+
+  private lazy val message = for {
+    z           <- zms
+    Some(msgId) <- screenController.showMessageDetails
+    msg         <- z.messagesStorage.signal(msgId)
+  } yield msg
+
+  private lazy val isOwnMessage = for {
+    selfUserId  <- inject[Signal[UserId]]
+    msg         <- message
+  } yield selfUserId == msg.userId
+
+  private lazy val closeButton = view[GlyphTextView](R.id.likes_close_button)
+
+  private lazy val readsView = returning(view[RecyclerView](R.id.reads_recycler_view)) { vh =>
+    viewToDisplay.onUi {
+      case (ReadsTab, false) => vh.foreach(_.setVisible(true))
+      case _ => vh.foreach(_.setVisible(false))
+    }
+  }
+
+  private lazy val likesView = returning(view[RecyclerView](R.id.likes_recycler_view)) { vh =>
+    viewToDisplay.onUi {
+      case (LikesTab, false) => vh.foreach(_.setVisible(true))
+      case _ => vh.foreach(_.setVisible(false))
+    }
+  }
+
+  private lazy val emptyListView = returning(view[View](R.id.empty_list_view)) { vh =>
+    val emptyListIcon = findById[GenericStyleKitView](R.id.empty_list_icon)
+    emptyListIcon.setColor(getStyledColor(R.attr.wireSecondaryTextColor))
+    val emptyListText = findById[TypefaceTextView](R.id.empty_list_text)
+
+    viewToDisplay.onUi {
+      case (_, false) =>
+        vh.foreach(_.setVisible(false))
+      case (ReadsTab, true) =>
+        vh.foreach(_.setVisible(true))
+        emptyListIcon.setOnDraw(WireStyleKit.drawView)
+        emptyListText.setText(R.string.messages_no_reads)
+      case (LikesTab, true) =>
+        vh.foreach(_.setVisible(true))
+        emptyListIcon.setOnDraw(WireStyleKit.drawLike)
+        emptyListText.setText(R.string.messages_no_likes)
+    }
+  }
 
   private lazy val title = returning(view[TypefaceTextView](R.id.message_details_title)) { vh =>
     isOwnMessage.map {
@@ -72,21 +139,16 @@ class LikesAndReadsFragment extends FragmentHelper {
 
   private lazy val tabs = returning(view[TabLayout](R.id.likes_and_reads_tabs)) { vh =>
     Signal(reads.map(_.size), likes.map(_.size)).onUi { case (r, l) =>
-      val readsLabel = s"${getString(R.string.tab_title_read)} ($r)"
-      val likesLabel = s"${getString(R.string.tab_title_likes)} ($l)"
       vh.foreach { view =>
-        view.getTabAt(0).setText(readsLabel)
-        view.getTabAt(1).setText(likesLabel)
+        view.getTabAt(ReadsTab.pos).setText(s"${getString(R.string.tab_title_read)} ($r)")
+        view.getTabAt(LikesTab.pos).setText(s"${getString(R.string.tab_title_likes)} ($l)")
       }
     }
 
     vh.foreach {
       _.addOnTabSelectedListener(new OnTabSelectedListener {
         override def onTabSelected(tab: TabLayout.Tab): Unit = {
-          tab.getPosition match {
-            case 0 => toggleView(false)
-            case 1 => toggleView(true)
-          }
+          visibleTab ! Tab.tabs.find(_.pos == tab.getPosition).getOrElse(ReadsTab)
         }
 
         override def onTabUnselected(tab: TabLayout.Tab): Unit = {}
@@ -94,37 +156,6 @@ class LikesAndReadsFragment extends FragmentHelper {
       })
     }
   }
-
-  private def toggleView(areLikesSelected: Boolean) = {
-    readsView.foreach(_.setVisible(!areLikesSelected))
-    likesView.foreach(_.setVisible(areLikesSelected))
-  }
-
-  private lazy val likes: Signal[Seq[UserId]] = Signal(zms, screenController.showMessageDetails).flatMap {
-    case (z, Some(msgId)) =>
-      new RefreshingSignal[Seq[UserId], Seq[Liking]](
-        CancellableFuture.lift(z.reactionsStorage.getLikes(msgId).map(_.likers.keys.toSeq)),
-        z.reactionsStorage.onChanged.map(_.filter(_.message == msgId))
-      )
-    case _ => Signal.const(Seq.empty[UserId])
-  }
-
-  private lazy val reads: Signal[Seq[UserId]] = Signal(zms, screenController.showMessageDetails).flatMap {
-    case (z, Some(msgId)) =>
-      zms.flatMap(_.readReceiptsStorage.receipts(msgId).map(_.map(_.user)))
-    case _ => Signal.const(Seq.empty[UserId])
-  }
-
-  private lazy val message = for {
-    z           <- zms
-    Some(msgId) <- screenController.showMessageDetails
-    msg         <- z.messagesStorage.signal(msgId)
-  } yield msg
-
-  private lazy val isOwnMessage = for {
-    selfUserId  <- inject[Signal[UserId]]
-    msg         <- message
-  } yield selfUserId == msg.userId
 
   private var readTimestamps = Map.empty[UserId, RemoteInstant]
 
@@ -144,6 +175,7 @@ class LikesAndReadsFragment extends FragmentHelper {
     closeButton
     readsView
     likesView
+    emptyListView
     tabs
 
    readsView.foreach { rv =>
@@ -159,19 +191,14 @@ class LikesAndReadsFragment extends FragmentHelper {
     Signal(screenController.showMessageDetails, isOwnMessage).head.foreach {
       case (Some(msgId), true) =>
         tabs.foreach(_.setVisible(true))
-        tabs.foreach(_.getTabAt(0).select())
-        toggleView(false)
 
-        if (Option(savedInstanceState).isEmpty) tabs.foreach { view =>
-          val selectTab = getStringArg(ArgPageToOpen) match {
-            case Some(TagLikes) => 1
-            case _              => 0
-          }
-          view.getTabAt(selectTab).select()
-        }
+        if (Option(savedInstanceState).isEmpty)
+          tabs.foreach(_.getTabAt(Tab(getStringArg(ArgPageToOpen)).pos).select())
+        else
+          tabs.foreach(_.getTabAt(0).select())
       case _ =>
         tabs.foreach(_.setVisible(false))
-        toggleView(true)
+        visibleTab ! LikesTab
     }
 
     closeButton.foreach(_.setOnClickListener(new OnClickListener {
@@ -197,17 +224,37 @@ class LikesAndReadsFragment extends FragmentHelper {
 
 object LikesAndReadsFragment {
   val Tag = implicitLogTag
-  val TagLikes: String = s"${classOf[LikesAndReadsFragment].getName}/likes"
+
+  sealed trait Tab {
+    val str: String
+    val pos: Int
+  }
+
+  case object ReadsTab extends Tab {
+    override val str: String = s"${classOf[LikesAndReadsFragment].getName}/reads"
+    override val pos: Int = 0
+  }
+
+  case object LikesTab extends Tab {
+    override val str: String = s"${classOf[LikesAndReadsFragment].getName}/likes"
+    override val pos: Int = 1
+  }
+
+  object Tab {
+    val tabs = List(ReadsTab, LikesTab)
+    def apply(str: Option[String] = None): Tab = str match {
+      case Some(LikesTab.str) => LikesTab
+      case _ => ReadsTab
+    }
+  }
 
   private val ArgPageToOpen: String = "ARG_PAGE_TO_OPEN"
 
-  def newInstance(pageToOpen: Option[String] = None): LikesAndReadsFragment =
+  def newInstance(tabToOpen: Tab = ReadsTab): LikesAndReadsFragment =
     returning(new LikesAndReadsFragment) { f =>
-      pageToOpen.foreach { p =>
-        f.setArguments(returning(new Bundle){
-          _.putString(ArgPageToOpen, p)
-        })
-      }
+      f.setArguments(returning(new Bundle){
+        _.putString(ArgPageToOpen, tabToOpen.str)
+      })
     }
 }
 
