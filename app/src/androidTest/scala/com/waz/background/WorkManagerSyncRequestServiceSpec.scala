@@ -45,6 +45,7 @@ import org.threeten.bp.Clock
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.ref.WeakReference
 
 @RunWith(classOf[AndroidJUnit4])
 class WorkManagerSyncRequestServiceSpec {
@@ -89,11 +90,28 @@ class WorkManagerSyncRequestServiceSpec {
     assert(Await.result(signal.collect { case s if s == 1 => true }.head, 3.seconds))
   }
 
+  @Test(expected = classOf[OutOfMemoryError])
+  def liveDataSignalGarbageCollection(): Unit = {
+    var s = new LiveDataSignal(new MutableLiveData[Int]())
+    val f = s.head
+    val ref = WeakReference(s)
+
+    s = null
+
+    var objs = List[Array[Byte]]()
+    while (ref.underlying.get() != null) {
+      val len = Runtime.getRuntime.freeMemory() / 2
+      objs = new Array[Byte](len.toInt) :: objs
+      System.gc()
+    }
+
+    assert(!f.isCompleted) //we shouldn't get here, but keep a strong reference to f just in case
+  }
+
   @Test
   def awaitRecentlyScheduledSyncJob(): Unit = {
 
     val service = injector[WorkManagerSyncRequestService]()
-    val testDriver = WorkManagerTestInitHelper.getTestDriver
 
     val jobFinishedPromise = Promise[SyncResult]()
     Mockito.when(syncHandler.apply(any(), any())(any())).thenReturn(jobFinishedPromise.future)

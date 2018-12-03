@@ -102,10 +102,12 @@ class WorkManagerSyncRequestService (implicit inj: Injector, cxt: Context, event
   override def await(ids: Set[SyncId]): Future[Set[SyncResult]] =
     Future.sequence(ids.map(await))
 
+  @volatile
+  private var signalRefs = Map.empty[SyncId, Signal[SyncResult]]
   override def await(id: SyncId): Future[SyncResult] = {
     implicit val logTag: LogTag = "WorkManager#await"
-    new LiveDataSignal(wm.getStatusByIdLiveData(UUID.fromString(id.str)))
-      .collect { case status if status.getState.isFinished =>
+    val signal = new LiveDataSignal(wm.getStatusByIdLiveData(UUID.fromString(id.str)))
+      .collect[SyncResult] { case status if status.getState.isFinished =>
         import androidx.work.State._
         status.getState match {
           case SUCCEEDED =>
@@ -116,7 +118,12 @@ class WorkManagerSyncRequestService (implicit inj: Injector, cxt: Context, event
           case CANCELLED => SyncResult.Failure(ErrorResponse.Cancelled)
           case _         => SyncResult.Failure("unexpected failure!")
         }
-      }.head
+      }
+
+    signalRefs += (id -> signal)
+
+    signal.head.onComplete(_ => signalRefs -= id)
+    signal.head
   }
 
   override def syncState(account: UserId, matchers: Seq[SyncCommand]): Signal[SyncState] = {
