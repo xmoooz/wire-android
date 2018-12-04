@@ -42,13 +42,12 @@ import com.waz.zclient.paintcode.WireStyleKit
 import com.waz.zclient.ui.text.{GlyphTextView, LinkTextView, TypefaceTextView}
 import com.waz.zclient.ui.utils.TypefaceUtils
 import com.waz.zclient.utils.ContextUtils.{getString, getStyledColor}
+import com.waz.zclient.utils.ZTimeFormatter.getSeparatorTime
 import com.waz.zclient.utils.{DateConvertUtils, RichTextView}
 import com.waz.zclient.{R, ViewHelper}
-import com.waz.zclient.utils.RichView
-import com.waz.zclient.utils.ZTimeFormatter.getSeparatorTime
 import org.threeten.bp.{Instant, LocalDateTime, ZoneId}
 
-abstract class ReplyPartView(context: Context, attrs: AttributeSet, style: Int) extends LinearLayout(context, attrs, style) with ViewHelper with EphemeralPartView {
+abstract class ReplyPartView(context: Context, attrs: AttributeSet, style: Int) extends LinearLayout(context, attrs, style) with ClickableViewPart with ViewHelper with EphemeralPartView {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null, 0)
 
@@ -61,8 +60,6 @@ abstract class ReplyPartView(context: Context, attrs: AttributeSet, style: Int) 
   protected val timestamp: TextView = findById[TextView](R.id.timestamp)
   private val content   = findById[ViewGroup](R.id.content)
   private val container = findById[ViewGroup](R.id.quote_container)
-
-  val onQuoteClick: SourceStream[Unit] = EventStream[Unit]
 
   val quoteView = tpe match {
     case Reply(Text)       => Some(inflate(R.layout.message_reply_content_text,     addToParent = false))
@@ -109,8 +106,6 @@ abstract class ReplyPartView(context: Context, attrs: AttributeSet, style: Int) 
   quotedMessage.map(!_.editTime.isEpoch).onUi { edited =>
     name.setEndCompoundDrawable(if (edited) Some(WireStyleKit.drawEdit) else None, getStyledColor(R.attr.wirePrimaryTextColor))
   }
-
-  container.onClick(onQuoteClick ! {()})
 
   private def setTimestamp(instant: Instant) = {
     val context = getContext

@@ -254,7 +254,6 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
     }
   })
 
-  controller.editHasFocus ! cursorEditText.hasFocus
   cursorEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
     override def onFocusChange(view: View, hasFocus: Boolean): Unit = controller.editHasFocus ! hasFocus
   })

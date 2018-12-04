@@ -24,9 +24,9 @@ class MessagesListLayoutManager(context: Context, orientation: Int, reverseLayou
 
   private var snapTo = LinearSmoothScroller.SNAP_TO_END
 
-  //setStackFromEnd(true)
+  setStackFromEnd(true)
 
-  override def supportsPredictiveItemAnimations(): Boolean = false
+  override def supportsPredictiveItemAnimations(): Boolean = true
 
   def snapToStart(): Unit = snapTo = LinearSmoothScroller.SNAP_TO_START
 
