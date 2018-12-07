@@ -122,7 +122,7 @@ class ProfileAccountTab(val context: Context, val attrs: AttributeSet, val defSt
   teamAndUser.map {
     case (userData, None) => userData.getDisplayName
     case (userData, Some(team)) => team.name
-  }.onUi { setContentDescription }
+  }.onUi { setContentDescription(_) }
 
   def setAccount(id: UserId) = accountId ! id
 

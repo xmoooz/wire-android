@@ -110,20 +110,20 @@ trait HighlightViewPart extends MessageViewPart with ViewHelper {
 
   private val bgColor = for {
     accent <- accentColorController.accentColor
-    alpha <- animAlpha
+    alpha  <- animAlpha
   } yield
     if (alpha <= 0) Color.TRANSPARENT
     else ColorUtils.injectAlpha(alpha, accent.color)
 
   private val isHighlighted = for {
-    msg <- message
-    focused <- collectionController.focusedItem
-  } yield focused.exists(_.id == msg.id)
+    msg           <- message
+    Some(focused) <- collectionController.focusedItem
+  } yield focused.id == msg.id
 
   bgColor.on(Threading.Ui) { setBackgroundColor }
 
   isHighlighted.on(Threading.Ui) {
-    case true => animator.start()
+    case true  => animator.start()
     case false => animator.end()
   }
 
@@ -221,7 +221,7 @@ class UserPartView(context: Context, attrs: AttributeSet, style: Int) extends Li
 
   userId(chathead.setUserId)
 
-  user.map(u => if (u.isWireBot) u.name else u.getDisplayName).onUi(tvName.setTransformedText)
+  user.map(u => if (u.isWireBot) u.name else u.getDisplayName).onUi(tvName.setTransformedText(_))
   user.map(_.isWireBot).on(Threading.Ui) { isBot.setVisible }
 
   user.map(_.accent).on(Threading.Ui) { a =>

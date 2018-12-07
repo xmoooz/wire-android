@@ -254,6 +254,7 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
     }
   })
 
+  controller.editHasFocus ! cursorEditText.hasFocus
   cursorEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
     override def onFocusChange(view: View, hasFocus: Boolean): Unit = controller.editHasFocus ! hasFocus
   })
@@ -285,7 +286,7 @@ class CursorView(val context: Context, val attrs: AttributeSet, val defStyleAttr
       hintView.setText(getString(R.string.cursor__ephemeral_message))
       AvailabilityView.displayLeftOfText(hintView, av, defaultHintTextColor)
     case (false, av, name) if av != Availability.None =>
-      val transformedName = transformer.transform(name.split(' ')(0)).toString
+      val transformedName = transformer.transform(name.str.split(' ')(0)).toString
       hintView.setText(getString(AvailabilityView.viewData(av).textId, transformedName))
       AvailabilityView.displayLeftOfText(hintView, av, defaultHintTextColor)
     case _ =>

@@ -19,29 +19,36 @@ package com.waz.zclient.messages.parts
 
 import android.content.Context
 import android.graphics.Typeface
+import android.text.format.DateFormat
 import android.util.{AttributeSet, TypedValue}
 import android.view.{View, ViewGroup}
 import android.widget.{LinearLayout, TextView}
 import com.waz.ZLog
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api.Message
-import com.waz.model.{AssetData, MessageData}
-import com.waz.utils.events.{NoAutowiring, Signal, SourceSignal}
+import com.waz.model.{AssetData, MessageContent, MessageData, Name}
+import com.waz.service.messages.MessageAndLikes
+import com.waz.threading.Threading
+import com.waz.utils.events._
 import com.waz.zclient.common.controllers.AssetsController
 import com.waz.zclient.common.views.ImageAssetDrawable
 import com.waz.zclient.common.views.ImageAssetDrawable.{RequestBuilder, ScaleType}
 import com.waz.zclient.common.views.ImageController.{ImageSource, WireImage}
 import com.waz.zclient.conversation.ReplyView.ReplyBackgroundDrawable
+import com.waz.zclient.messages.MessageView.MsgBindOptions
 import com.waz.zclient.messages.MsgPart._
 import com.waz.zclient.messages._
 import com.waz.zclient.paintcode.WireStyleKit
 import com.waz.zclient.ui.text.{GlyphTextView, LinkTextView, TypefaceTextView}
 import com.waz.zclient.ui.utils.TypefaceUtils
 import com.waz.zclient.utils.ContextUtils.{getString, getStyledColor}
-import com.waz.zclient.utils.{DateConvertUtils, RichTextView, ZTimeFormatter}
+import com.waz.zclient.utils.{DateConvertUtils, RichTextView}
 import com.waz.zclient.{R, ViewHelper}
+import com.waz.zclient.utils.RichView
+import com.waz.zclient.utils.ZTimeFormatter.getSeparatorTime
+import org.threeten.bp.{Instant, LocalDateTime, ZoneId}
 
-abstract class ReplyPartView(context: Context, attrs: AttributeSet, style: Int) extends LinearLayout(context, attrs, style) with ClickableViewPart with ViewHelper with EphemeralPartView {
+abstract class ReplyPartView(context: Context, attrs: AttributeSet, style: Int) extends LinearLayout(context, attrs, style) with ViewHelper with EphemeralPartView {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null, 0)
 
@@ -54,6 +61,8 @@ abstract class ReplyPartView(context: Context, attrs: AttributeSet, style: Int) 
   protected val timestamp: TextView = findById[TextView](R.id.timestamp)
   private val content   = findById[ViewGroup](R.id.content)
   private val container = findById[ViewGroup](R.id.quote_container)
+
+  val onQuoteClick: SourceStream[Unit] = EventStream[Unit]
 
   val quoteView = tpe match {
     case Reply(Text)       => Some(inflate(R.layout.message_reply_content_text,     addToParent = false))
@@ -89,19 +98,30 @@ abstract class ReplyPartView(context: Context, attrs: AttributeSet, style: Int) 
   quoteComposer
     .map { _
       .map(u => if (u.isWireBot) u.name else u.getDisplayName)
-      .getOrElse("")
+      .getOrElse(Name.Empty)
     }
-    .onUi(name.setText)
+    .onUi(name.setText(_))
 
   quotedMessage
     .map(_.time.instant)
-    .map(DateConvertUtils.asLocalDateTime)
-    .map(t => ZTimeFormatter.getSingleMessageTime(getContext, t))
-    .map(getString(R.string.quote_timestamp_message, _))
-    .onUi(timestamp.setText)
+    .onUi(setTimestamp)
 
   quotedMessage.map(!_.editTime.isEpoch).onUi { edited =>
     name.setEndCompoundDrawable(if (edited) Some(WireStyleKit.drawEdit) else None, getStyledColor(R.attr.wirePrimaryTextColor))
+  }
+
+  container.onClick(onQuoteClick ! {()})
+
+  private def setTimestamp(instant: Instant) = {
+    val context = getContext
+    val dateStr = getSeparatorTime(context, LocalDateTime.now, DateConvertUtils.asLocalDateTime(instant), DateFormat.is24HourFormat(context), ZoneId.systemDefault, true)
+    timestamp.setText(getString(R.string.quote_timestamp_message, dateStr))
+  }
+
+  override def set(msg: MessageAndLikes, part: Option[MessageContent], opts: Option[MsgBindOptions]): Unit = {
+    super.set(msg, part, opts)
+
+    quotedMessage.map(_.time.instant).head.foreach(setTimestamp)(Threading.Ui)
   }
 }
 

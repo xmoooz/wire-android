@@ -26,7 +26,7 @@ import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
 import com.waz.bitmap.BitmapUtils
 import com.waz.content.UserPreferences
-import com.waz.model.{ConvId, LocalInstant, UserId}
+import com.waz.model.{ConvId, LocalInstant, Name, UserId}
 import com.waz.service.assets.AssetService.BitmapResult.BitmapLoaded
 import com.waz.service.call.CallInfo
 import com.waz.service.call.CallInfo.CallState._
@@ -37,7 +37,7 @@ import com.waz.threading.Threading.Implicits.Background
 import com.waz.ui.MemoryImageCache.BitmapRequest.Regular
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.utils.wrappers.{Context, Intent}
-import com.waz.utils.{LoggedTry, _}
+import com.waz.utils._
 import com.waz.zclient.Intents.{CallIntent, OpenCallingScreen}
 import com.waz.zclient._
 import com.waz.zclient.calling.controllers.CallController
@@ -47,6 +47,7 @@ import com.waz.zclient.utils.ContextUtils.{getString, _}
 import com.waz.zclient.utils.RingtoneUtils
 
 import scala.concurrent.Future
+import scala.util.Try
 import scala.util.control.NonFatal
 
 class CallingNotificationsController(implicit cxt: WireContext, eventContext: EventContext, inj: Injector) extends Injectable {
@@ -77,10 +78,10 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
         zs.find(_.selfUserId == account).fold2(Signal.const(conv -> Option.empty[Bitmap]), z => getBitmapSignal(z, caller).map(conv -> _))
       }: _*).map(_.toMap)
       notInfo <- Signal.sequence(allCallsF.map { case (conv, (caller, account)) =>
-        zs.find(_.selfUserId == account).fold2(Signal.const(Option.empty[CallInfo], "", "", false),
+        zs.find(_.selfUserId == account).fold2(Signal.const(Option.empty[CallInfo], Name.Empty, Name.Empty, false),
           z => Signal(z.calling.joinableCallsNotMuted.map(_.get(conv)),
-            z.usersStorage.optSignal(caller).map(_.map(_.name).getOrElse("")),
-            z.convsStorage.optSignal(conv).map(_.map(_.displayName).getOrElse("")),
+            z.usersStorage.optSignal(caller).map(_.map(_.name).getOrElse(Name.Empty)),
+            z.convsStorage.optSignal(conv).map(_.map(_.displayName).getOrElse(Name.Empty)),
             z.conversations.groupConversation(conv))).map(conv -> _)
       }: _*)
       notificationData = notInfo.collect {
@@ -150,7 +151,7 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
         notificationManager.notify(CallNotificationTag, not.id, builder.build())
       }
 
-      LoggedTry(showNotification()).recover {
+      Try(showNotification()).recover {
         case NonFatal(e) =>
           error(s"Notify failed: try without bitmap", e)
           builder.setLargeIcon(null)
@@ -178,8 +179,8 @@ object CallingNotificationsController {
                               convId:        ConvId,
                               accountId:     UserId,
                               callStartTime: LocalInstant,
-                              caller:        String,
-                              convName:      String,
+                              caller:        Name,
+                              convName:      Name,
                               bitmap:        Option[Bitmap],
                               isMainCall:    Boolean,
                               action:        NotificationAction,
