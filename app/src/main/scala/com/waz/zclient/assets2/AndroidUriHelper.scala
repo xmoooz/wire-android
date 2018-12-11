@@ -17,14 +17,18 @@
  */
 package com.waz.zclient.assets2
 
-import java.io.InputStream
+import java.io.{File, InputStream}
 import java.net.URI
 
-import android.content.Context
+import android.content.{ContentResolver, Context}
+import android.database.Cursor
 import android.net.Uri
 import android.provider.OpenableColumns
 import com.waz.model.Mime
 import com.waz.service.assets2.UriHelper
+import com.waz.ZLog._
+import com.waz.ZLog.ImplicitTag._
+import com.waz.utils.Managed
 
 import scala.util.Try
 
@@ -37,21 +41,43 @@ class AndroidUriHelper(context: Context) extends UriHelper {
   }
 
   override def extractMime(uri: URI): Try[Mime] = Try {
-    val mimeStr = context.getContentResolver.getType(androidUri(uri))
-    Mime(mimeStr)
+    if (uri.getScheme == ContentResolver.SCHEME_FILE) {
+      Mime.fromFileName(uri.getPath)
+    } else {
+      val mimeStr = Option(context.getContentResolver.getType(androidUri(uri))).get
+      Mime(mimeStr)
+    }
   }
 
   override def extractSize(uri: URI): Try[Long] = Try {
-    context.getContentResolver.openAssetFileDescriptor(androidUri(uri), "r").getDeclaredLength
+    debug(s"Extracting size for $uri")
+
+    if (uri.getScheme == ContentResolver.SCHEME_FILE) {
+      val file = new File(uri.getPath)
+      file.length()
+    } else {
+      cursor(uri).acquire { c =>
+        c.moveToFirst()
+        c.getLong(c.getColumnIndex(OpenableColumns.SIZE))
+      }
+    }
   }
 
   override def extractFileName(uri: URI): Try[String] = Try {
-    val cursor = context.getContentResolver.query(androidUri(uri), null, null, null, null)
-    val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-    cursor.moveToFirst()
-    val fileName = cursor.getString(nameIndex)
-    cursor.close()
-    fileName
+    debug(s"Extracting file name for $uri")
+
+    if (uri.getScheme == ContentResolver.SCHEME_FILE) {
+      val file = new File(uri.getPath)
+      file.getName
+    } else {
+      cursor(uri).acquire { c =>
+        c.moveToFirst()
+        c.getString(c.getColumnIndex(OpenableColumns.DISPLAY_NAME))
+      }
+    }
   }
+
+  private def cursor(uri: URI): Managed[Cursor] =
+    Managed.create(context.getContentResolver.query(androidUri(uri), null, null, null, null))(_.close())
 
 }

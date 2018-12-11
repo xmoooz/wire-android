@@ -45,7 +45,7 @@ import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.{Injectable, Injector, R}
 import org.threeten.bp.Instant
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
 class ConversationController(implicit injector: Injector, context: Context, ec: EventContext) extends Injectable {
@@ -120,7 +120,12 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
       lastConvId = convId
       for {
         convsStats   <- convsStats.head
-        convsUi      <- convsUi.head
+        convsUi      <- Future(Await.result(convsUi.head, 20.seconds)).recoverWith {
+          case err =>
+            verbose(s"Can not get convsUi: $err")
+            err.printStackTrace()
+            Future.failed(err)
+        }
         conv         <- getConversation(id)
         _            <- if (conv.exists(_.archived)) convsUi.setConversationArchived(id, archived = false) else Future.successful(Option.empty[ConversationData])
         _            <- convsUi.setConversationArchived(id, archived = false)
