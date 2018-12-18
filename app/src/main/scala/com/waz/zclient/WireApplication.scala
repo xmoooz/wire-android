@@ -29,14 +29,12 @@ import android.renderscript.RenderScript
 import android.support.multidex.MultiDexApplication
 import android.support.v4.app.{FragmentActivity, FragmentManager}
 import android.telephony.TelephonyManager
-import com.evernote.android.job.{JobCreator, JobManager}
 import com.google.android.gms.security.ProviderInstaller
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.verbose
 import com.waz.api.NetworkMode
 import com.waz.background.WorkManagerSyncRequestService
 import com.waz.content._
-import com.waz.jobs.PushTokenCheckJob
 import com.waz.log.{AndroidLogOutput, BufferedLogOutput, InternalLog}
 import com.waz.model._
 import com.waz.permissions.PermissionsService
@@ -68,8 +66,8 @@ import com.waz.zclient.controllers.location.ILocationController
 import com.waz.zclient.controllers.navigation.INavigationController
 import com.waz.zclient.controllers.singleimage.ISingleImageController
 import com.waz.zclient.controllers.userpreferences.IUserPreferencesController
-import com.waz.zclient.conversation.{ConversationController, ReplyController}
 import com.waz.zclient.conversation.creation.CreateConversationController
+import com.waz.zclient.conversation.{ConversationController, ReplyController}
 import com.waz.zclient.conversationlist.ConversationListController
 import com.waz.zclient.cursor.CursorController
 import com.waz.zclient.messages.controllers.{MessageActionsController, NavigationController}
@@ -354,12 +352,6 @@ class WireApplication extends MultiDexApplication with WireContext with Injectab
   }
 
   def ensureInitialized(backend: BackendConfig) = {
-
-    JobManager.create(this).addJobCreator(new JobCreator {
-      override def create(tag: String) =
-        if (tag.contains(PushTokenCheckJob.Tag)) new PushTokenCheckJob
-        else null
-    })
 
     val prefs = GlobalPreferences(this)
     val googleApi = GoogleApiImpl(this, backend, prefs)

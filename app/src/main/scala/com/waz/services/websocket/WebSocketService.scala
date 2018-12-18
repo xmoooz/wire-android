@@ -26,7 +26,6 @@ import android.support.v4.app.NotificationCompat
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._
 import com.waz.content.GlobalPreferences.{PushEnabledKey, WsForegroundKey}
-import com.waz.jobs.PushTokenCheckJob
 import com.waz.service.AccountsService.InForeground
 import com.waz.service.{AccountsService, GlobalModule, ZMessaging}
 import com.waz.threading.Threading
@@ -96,7 +95,7 @@ class OnBootAndUpdateBroadcastReceiver extends BroadcastReceiver {
     verbose(s"onReceive $intent")
 
     accounts.zmsInstances.head.foreach { zs =>
-      zs.map(_.selfUserId).foreach(PushTokenCheckJob(_))
+      zs.map(_.sync.checkPushToken())
     } (Threading.Background)
 
 
