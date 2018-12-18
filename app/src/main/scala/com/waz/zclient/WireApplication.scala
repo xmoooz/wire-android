@@ -338,8 +338,11 @@ class WireApplication extends MultiDexApplication with WireContext with Injectab
   override def onCreate(): Unit = {
     super.onCreate()
 
-    InternalLog.add(new AndroidLogOutput(showSafeOnly = SafeLoggingEnabled))
-    InternalLog.add(new BufferedLogOutput(baseDir = getApplicationContext.getApplicationInfo.dataDir, showSafeOnly = SafeLoggingEnabled))
+    if (!SafeLoggingEnabled) {
+      InternalLog.add(new AndroidLogOutput(showSafeOnly = SafeLoggingEnabled))
+      InternalLog.add(new BufferedLogOutput(baseDir = getApplicationContext.getApplicationInfo.dataDir, showSafeOnly = SafeLoggingEnabled))
+    }
+    
     verbose("onCreate")
 
     enableTLS12OnOldDevices()
