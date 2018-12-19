@@ -33,7 +33,7 @@ import com.waz.threading.Threading
 import com.waz.utils.events.Signal
 import com.waz.utils.returning
 import com.waz.zclient.common.controllers.ScreenController.MessageDetailsParams
-import com.waz.zclient.common.controllers.{ScreenController, UserAccountsController}
+import com.waz.zclient.common.controllers.ScreenController
 import com.waz.zclient.messages.LikesController
 import com.waz.zclient.pages.main.conversation.ConversationManagerFragment
 import com.waz.zclient.paintcode.{GenericStyleKitView, WireStyleKit}
@@ -53,7 +53,7 @@ class LikesAndReadsFragment extends FragmentHelper {
   private lazy val readReceiptsStorage = inject[Signal[ReadReceiptsStorage]]
   private lazy val reactionsStorage    = inject[Signal[ReactionsStorage]]
   private lazy val messagesStorage     = inject[Signal[MessagesStorage]]
-  private lazy val accountsController  = inject[UserAccountsController]
+  private lazy val convController      = inject[ConversationController]
 
   private val visibleTab = Signal[Tab](ReadsTab)
 
@@ -95,7 +95,7 @@ class LikesAndReadsFragment extends FragmentHelper {
 
   private lazy val isLikeable = message.map(LikesController.isLikeable)
 
-  private lazy val detailsCombination = Signal(message, isOwnMessage, accountsController.isTeam).map {
+  private lazy val detailsCombination = Signal(message, isOwnMessage, convController.currentConv.map(_.team.isDefined)).map {
     case (msg, isOwn, isTeam) => LikesAndReadsFragment.detailsCombination(msg, isOwn, isTeam)
   }
 
