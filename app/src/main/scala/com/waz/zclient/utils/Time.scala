@@ -37,7 +37,7 @@ object Time {
 
   case class MinutesAgo(minutes: Int) extends TimeStamp {
     override def string(implicit context: Context): String =
-      getQuantityString(R.plurals.timestamp__x_minutes_ago, minutes, minutes.toString)
+      getQuantityString(R.plurals.timestamp__x_minutes_ago_1, minutes, minutes.toString)
   }
 
   sealed trait DateTimeStamp extends TimeStamp {
