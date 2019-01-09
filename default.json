@@ -1,0 +1,9 @@
+{
+  "maxAccounts": 2,
+  "applicationId": "com.wire",
+  "backendUrl": "https://prod-nginz-https.wire.com",
+  "websocketUrl": "https://prod-nginz-ssl.wire.com/await",
+  "allow_account_creation": true,
+  "supportEmail": "support@wire.com",
+  "firebaseApiKey": "AIzaSyBdYVv2f-Y7JJmHVmDNCKgWvX6Isa8rAGA"
+}

@@ -310,5 +310,5 @@ class ProfileViewController(view: ProfileView)(implicit inj: Injector, ec: Event
 }
 
 object ProfileViewController {
-  val MaxAccountsCount = 2
+  val MaxAccountsCount = BuildConfig.MAX_ACCOUNTS
 }

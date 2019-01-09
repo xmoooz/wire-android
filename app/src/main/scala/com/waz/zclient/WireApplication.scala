@@ -342,7 +342,7 @@ class WireApplication extends MultiDexApplication with WireContext with Injectab
       InternalLog.add(new AndroidLogOutput(showSafeOnly = SafeLoggingEnabled))
       InternalLog.add(new BufferedLogOutput(baseDir = getApplicationContext.getApplicationInfo.dataDir, showSafeOnly = SafeLoggingEnabled))
     }
-    
+
     verbose("onCreate")
 
     enableTLS12OnOldDevices()
