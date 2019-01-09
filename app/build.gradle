@@ -49,39 +49,9 @@ if (project.file('user.gradle').exists()) {
     apply from: "user.gradle"
 }
 
-task copyHDPIIcon(type: Copy) {
-    from file("$customDir/icons/hdpi/ic_launcher_wire.png")
-    into file("$projectDir/src/main/res/drawable-hdpi/")
-}
-
-task copyMDPIIcon(type: Copy) {
-    from file("$customDir/icons/mdpi/ic_launcher_wire.png")
-    into file("$projectDir/src/main/res/drawable-mdpi/")
-}
-
-task copyXHDPIIcon(type: Copy) {
-    from file("$customDir/icons/xhdpi/ic_launcher_wire.png")
-    into file("$projectDir/src/main/res/drawable-xhdpi/")
-}
-
-task copyXXHDPIIcon(type: Copy) {
-    from file("$customDir/icons/xxhdpi/ic_launcher_wire.png")
-    into file("$projectDir/src/main/res/drawable-xxhdpi/")
-}
-
-task copyXXXHDPIIcon(type: Copy) {
-    from file("${customDir}icons/xxxhdpi/ic_launcher_wire.png")
-    into file("$projectDir/src/main/res/drawable-xxxhdpi/")
-}
-
-task copyStrings(type: Copy) {
-    from file("$customDir/strings/strings.xml")
-    into file("$projectDir/src/main/res/values/")
-}
-
 if(customConfig.exists()) {
     project.afterEvaluate {
-        preBuild.dependsOn(copyStrings, copyMDPIIcon, copyHDPIIcon, copyXHDPIIcon, copyXXHDPIIcon, copyXXXHDPIIcon)
+        preBuild.dependsOn(copyStrings, copyIcons)
     }
 }
 
