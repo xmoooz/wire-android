@@ -46,16 +46,16 @@ public class BackendPicker {
         this.context = context;
     }
 
-    public void withBackend(Activity activity, final Callback<BackendConfig> callback) {
+    public void withBackend(Activity activity, final Callback<BackendConfig> callback, BackendConfig prodBackend) {
         if (shouldShowBackendPicker()) {
             showDialog(activity, callback);
         } else {
-            callback.callback(BackendConfig.ProdBackend());
+            callback.callback(prodBackend);
         }
     }
 
-    public void withBackend(final Callback<BackendConfig> callback) {
-        BackendConfig be = getBackendConfig();
+    public void withBackend(final Callback<BackendConfig> callback, BackendConfig prodBackend) {
+        BackendConfig be = getBackendConfig(prodBackend);
         if (be != null) {
             callback.callback(be);
         }
@@ -84,8 +84,8 @@ public class BackendPicker {
     }
 
     @Nullable
-    private BackendConfig getBackendConfig() {
-        return BuildConfig.DEVELOPER_FEATURES_ENABLED ? getCustomBackend() : BackendConfig.ProdBackend();
+    private BackendConfig getBackendConfig(BackendConfig prodBackend) {
+        return BuildConfig.DEVELOPER_FEATURES_ENABLED ? getCustomBackend() : prodBackend;
     }
 
     @SuppressLint("CommitPrefEdits") // lint not seeing commit

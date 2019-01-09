@@ -40,6 +40,7 @@ import com.waz.jobs.PushTokenCheckJob
 import com.waz.log.{AndroidLogOutput, BufferedLogOutput, InternalLog}
 import com.waz.model._
 import com.waz.permissions.PermissionsService
+import com.waz.service.BackendConfig.FirebaseOptions
 import com.waz.service._
 import com.waz.service.call.GlobalCallingService
 import com.waz.service.conversation.{ConversationsService, ConversationsUiService, SelectedConversationService}
@@ -53,7 +54,7 @@ import com.waz.sync.{SyncHandler, SyncRequestService}
 import com.waz.threading.Threading
 import com.waz.utils.SafeBase64
 import com.waz.utils.events.{EventContext, Signal}
-import com.waz.utils.wrappers.GoogleApi
+import com.waz.utils.wrappers.{GoogleApi, URI}
 import com.waz.zclient.appentry.controllers.{CreateTeamController, InvitationsController}
 import com.waz.zclient.calling.controllers.{CallController, CallStartController}
 import com.waz.zclient.camera.controllers.{AndroidCameraFactory, GlobalCameraController}
@@ -100,6 +101,12 @@ object WireApplication {
   type AccountToUsersStorage = (UserId) => Future[Option[UsersStorage]]
   type AccountToConvsStorage = (UserId) => Future[Option[ConversationStorage]]
   type AccountToConvsService = (UserId) => Future[Option[ConversationsService]]
+
+
+  private val firebaseOptions = FirebaseOptions(BuildConfig.FIREBASE_PUSH_SENDER_ID, BuildConfig.FIREBASE_APP_ID, BuildConfig.FIREBASE_API_KEY)
+  private val certBytes = BuildConfig.CERTIFICATE_PIN_BYTES.split(",").map(b => Integer.parseInt(b.trim.drop(2), 16).toByte)
+  private val certPin = CertificatePin(BuildConfig.CERTIFICATE_PIN_DOMAIN, certBytes)
+  val prodBackend: BackendConfig = BackendConfig(URI.parse(BuildConfig.BACKEND_URL), BuildConfig.WEBSOCKET_URL, firebaseOptions, "prod")
 
   lazy val Global = new Module {
 
@@ -354,7 +361,7 @@ class WireApplication extends MultiDexApplication with WireContext with Injectab
 
     new BackendPicker(this).withBackend(new Callback[BackendConfig]() {
       def callback(be: BackendConfig) = ensureInitialized(be)
-    })
+    }, prodBackend)
   }
 
   def ensureInitialized(backend: BackendConfig) = {

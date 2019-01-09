@@ -1,9 +1,14 @@
+import groovy.json.JsonSlurper
+
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'jp.leafytree.android-scala'
 apply plugin: 'hugo'
 apply plugin: 'com.mutualmobile.gradle.plugins.dexinfo'
 apply from: 'config/quality.gradle'
+
+import org.ajoberstar.grgit.Grgit
+import org.ajoberstar.grgit.Credentials
 
 repositories {
     flatDir {
@@ -21,7 +26,7 @@ ext {
     playServicesVersion = '15.0.1'
     audioVersion = System.getenv("AUDIO_VERSION") ?: '1.209.0@aar'
     stethoVersion = '1.5.0'
-    zMessagingDevVersion = "138.2211"
+    zMessagingDevVersion = "138.672-PR"
     paging_version = "1.0.0"
     // Release version number must be like this X.0(.Y)
     zMessagingReleaseVersion = System.getenv("ZMESSAGING_VERSION") ?: '138.0.509@aar'
@@ -42,14 +47,66 @@ if (project.file('user.gradle').exists()) {
     apply from: "user.gradle"
 }
 
+task copyCustomResources(type: Copy) {
+    if (!customConfig.exists() || gradle.startParameter.taskNames.contains("clean")) {
+        return
+    }
+
+    def iconFolder = config.iconFolder
+    def targetResFolder = "$rootDir/app/src/main/res"
+    def iconSubfolders = [
+            'ldpi': 'drawable-ldpi',
+            'mdpi': 'drawable-mdpi',
+            'hdpi': 'drawable-hdpi',
+            'xhdpi': 'drawable-xhdpi',
+            'xxhdpi': 'drawable-xxhdpi',
+            'xxxhdpi': 'drawable-xxxhdpi'
+    ]
+
+    def resources = [
+            "ic_launcher_wire.png" : config.launcherIcon
+    ]
+
+    if (!file(repoDir).exists()) {
+        Grgit.clone(dir: repoDir, uri: config.repositoryUri)
+        project.logger.info("Cloned $repoDir to ${config.repositoryUri}")
+    }
+
+    resources.findAll { targetFileName, sourceFileName -> !sourceFileName.empty }
+            .collectEntries { targetFileName, sourceFileName ->
+                iconSubfolders.collectEntries { sourceSub, targetSub ->
+                    [(repoDir + '/' + iconFolder + '/' + sourceSub + '/' + sourceFileName) : [(targetResFolder + '/' + targetSub),  targetFileName]]
+                }
+            }
+            .each { sourcePath, targetPath ->
+                def source = file(sourcePath)
+                assert source.exists()
+                copy {
+                    from source
+                    rename { String filename -> return targetPath[1] }
+                    into file(targetPath[0])
+                }
+                project.logger.info("Copied $sourcePath to ${targetPath[0]}/${targetPath[1]}")
+            }
+
+    copy {
+        from file(repoDir + '/strings/strings.xml') into file(targetResFolder + '/values')
+    }
+}
+
+
 android {
     //Trigger the licenseFormat task at least once in any compile phase
     applicationVariants.all { variant ->
         variant.javaCompiler.dependsOn(rootProject.licenseFormat)
     }
 
+    preBuild.dependsOn(copyCustomResources)
+
     compileSdkVersion = 27
     buildToolsVersion = '28.0.3'
+
+    String certPinBytes = config.certificatePin.certificate.join()
 
     defaultConfig {
         minSdkVersion rootProject.ext.minSdkVersion
@@ -134,8 +191,17 @@ android {
                                     applicationIcon        : "@drawable/ic_launcher_wire_dev",
                                     sharedUserId           : "",
                                     internal_features      : "true"]
-
-            buildConfigField 'boolean', 'DEVELOPER_FEATURES_ENABLED',    'true'
+            buildConfigField 'boolean', 'DEVELOPER_FEATURES_ENABLED', 'true'
+            buildConfigField 'Integer', 'MAX_ACCOUNTS',               "$config.maxAccounts"
+            buildConfigField 'String',  'BACKEND_URL',                "\"$config.backendUrl\""
+            buildConfigField 'String',  'WEBSOCKET_URL',              "\"$config.websocketUrl\""
+            buildConfigField 'boolean', 'ACCOUNT_CREATION_ENABLED',   "$config.allow_account_creation"
+            buildConfigField 'String',  'SUPPORT_EMAIL',              "\"$config.supportEmail\""
+            buildConfigField 'String',  'FIREBASE_PUSH_SENDER_ID',    "\"$config.pushSenderId\""
+            buildConfigField 'String',  'FIREBASE_APP_ID',            "\"$config.firebaseAppId\""
+            buildConfigField 'String',  'FIREBASE_API_KEY',           "\"$config.firebaseApiKey\""
+            buildConfigField 'String',  'CERTIFICATE_PIN_DOMAIN',     "\"$config.certificatePin.domain\""
+            buildConfigField 'String',  'CERTIFICATE_PIN_BYTES',      "\"$certPinBytes\""
         }
 
         candidate {
@@ -146,17 +212,37 @@ android {
                                     sharedUserId           : "",
                                     internal_features      : "false"]
 
-            buildConfigField 'boolean', 'DEVELOPER_FEATURES_ENABLED',    'true'
+            buildConfigField 'boolean', 'DEVELOPER_FEATURES_ENABLED', 'true'
+            buildConfigField 'Integer', 'MAX_ACCOUNTS',               "$config.maxAccounts"
+            buildConfigField 'String',  'BACKEND_URL',                "\"$config.backendUrl\""
+            buildConfigField 'String',  'WEBSOCKET_URL',              "\"$config.websocketUrl\""
+            buildConfigField 'boolean', 'ACCOUNT_CREATION_ENABLED',   "$config.allow_account_creation"
+            buildConfigField 'String',  'SUPPORT_EMAIL',              "\"$config.supportEmail\""
+            buildConfigField 'String',  'FIREBASE_PUSH_SENDER_ID',    "\"$config.pushSenderId\""
+            buildConfigField 'String',  'FIREBASE_APP_ID',            "\"$config.firebaseAppId\""
+            buildConfigField 'String',  'FIREBASE_API_KEY',           "\"$config.firebaseApiKey\""
+            buildConfigField 'String',  'CERTIFICATE_PIN_DOMAIN',     "\"$config.certificatePin.domain\""
+            buildConfigField 'String',  'CERTIFICATE_PIN_BYTES',      "\"$certPinBytes\""
         }
 
         prod {
-            applicationId "com.wire"
-            manifestPlaceholders = [applicationLabel       : "@string/app_name",
+            applicationId config.applicationId
+            manifestPlaceholders = [applicationLabel       : config.appName,
                                     applicationIcon        : "@drawable/ic_launcher_wire",
-                                    sharedUserId           : "com.waz.userid",
+                                    sharedUserId           : config.userId,
                                     internal_features      : "false"]
 
-            buildConfigField 'boolean', 'DEVELOPER_FEATURES_ENABLED',    'false'
+            buildConfigField 'boolean', 'DEVELOPER_FEATURES_ENABLED', 'false'
+            buildConfigField 'Integer', 'MAX_ACCOUNTS',               "$config.maxAccounts"
+            buildConfigField 'String',  'BACKEND_URL',                "\"$config.backendUrl\""
+            buildConfigField 'String',  'WEBSOCKET_URL',              "\"$config.websocketUrl\""
+            buildConfigField 'boolean', 'ACCOUNT_CREATION_ENABLED',   "$config.allow_account_creation"
+            buildConfigField 'String',  'SUPPORT_EMAIL',              "\"$config.supportEmail\""
+            buildConfigField 'String',  'FIREBASE_PUSH_SENDER_ID',    "\"$config.pushSenderId\""
+            buildConfigField 'String',  'FIREBASE_APP_ID',            "\"$config.firebaseAppId\""
+            buildConfigField 'String',  'FIREBASE_API_KEY',           "\"$config.firebaseApiKey\""
+            buildConfigField 'String',  'CERTIFICATE_PIN_DOMAIN',     "\"$config.certificatePin.domain\""
+            buildConfigField 'String',  'CERTIFICATE_PIN_BYTES',      "\"$certPinBytes\""
         }
 
         internal {
@@ -168,6 +254,16 @@ android {
                                     internal_features: "true"]
 
             buildConfigField 'boolean', 'DEVELOPER_FEATURES_ENABLED',    'true'
+            buildConfigField 'Integer', 'MAX_ACCOUNTS',               "$config.maxAccounts"
+            buildConfigField 'String',  'BACKEND_URL',                "\"$config.backendUrl\""
+            buildConfigField 'String',  'WEBSOCKET_URL',              "\"$config.websocketUrl\""
+            buildConfigField 'boolean', 'ACCOUNT_CREATION_ENABLED',   "$config.allow_account_creation"
+            buildConfigField 'String',  'SUPPORT_EMAIL',              "\"$config.supportEmail\""
+            buildConfigField 'String',  'FIREBASE_PUSH_SENDER_ID',    "\"$config.pushSenderId\""
+            buildConfigField 'String',  'FIREBASE_APP_ID',            "\"$config.firebaseAppId\""
+            buildConfigField 'String',  'FIREBASE_API_KEY',           "\"$config.firebaseApiKey\""
+            buildConfigField 'String',  'CERTIFICATE_PIN_DOMAIN',     "\"$config.certificatePin.domain\""
+            buildConfigField 'String',  'CERTIFICATE_PIN_BYTES',      "\"$certPinBytes\""
         }
 
         experimental {
@@ -178,7 +274,17 @@ android {
                                     sharedUserId           : "",
                                     internal_features      : "true"]
 
-            buildConfigField 'boolean', 'DEVELOPER_FEATURES_ENABLED',    'true'
+            buildConfigField 'boolean', 'DEVELOPER_FEATURES_ENABLED', 'true'
+            buildConfigField 'Integer', 'MAX_ACCOUNTS',               "$config.maxAccounts"
+            buildConfigField 'String',  'BACKEND_URL',                "\"$config.backendUrl\""
+            buildConfigField 'String',  'WEBSOCKET_URL',              "\"$config.websocketUrl\""
+            buildConfigField 'boolean', 'ACCOUNT_CREATION_ENABLED',   "$config.allow_account_creation"
+            buildConfigField 'String',  'SUPPORT_EMAIL',              "\"$config.supportEmail\""
+            buildConfigField 'String',  'FIREBASE_PUSH_SENDER_ID',    "\"$config.pushSenderId\""
+            buildConfigField 'String',  'FIREBASE_APP_ID',            "\"$config.firebaseAppId\""
+            buildConfigField 'String',  'FIREBASE_API_KEY',           "\"$config.firebaseApiKey\""
+            buildConfigField 'String',  'CERTIFICATE_PIN_DOMAIN',     "\"$config.certificatePin.domain\""
+            buildConfigField 'String',  'CERTIFICATE_PIN_BYTES',      "\"$certPinBytes\""
         }
     }
 
@@ -205,6 +311,7 @@ android {
         exclude 'APK_LICENSE.txt'
         exclude 'LICENSE.txt'
     }
+
 }
 
 dexinfo {
