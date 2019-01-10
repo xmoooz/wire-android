@@ -144,7 +144,6 @@ android {
                                     applicationIcon        : "@drawable/ic_launcher_wire_dev",
                                     sharedUserId           : "",
                                     internal_features      : "true"]
-
             buildConfigField 'boolean', 'DEVELOPER_FEATURES_ENABLED', 'true'
             buildConfigField 'Integer', 'MAX_ACCOUNTS',               "$config.maxAccounts"
             buildConfigField 'String',  'BACKEND_URL',                "\"$config.backendUrl\""
