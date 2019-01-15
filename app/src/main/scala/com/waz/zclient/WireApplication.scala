@@ -49,7 +49,7 @@ import com.waz.service.tracking.TrackingService
 import com.waz.services.fcm.FetchJob
 import com.waz.services.gps.GoogleApiImpl
 import com.waz.services.websocket.WebSocketController
-import com.waz.sync.SyncHandler
+import com.waz.sync.{SyncHandler, SyncRequestService}
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.utils.wrappers.GoogleApi
@@ -207,7 +207,7 @@ object WireApplication {
 
     bind [UiStorage] to new UiStorage()
 
-    bind [WorkManagerSyncRequestService]  to new WorkManagerSyncRequestService()
+    bind [SyncRequestService]  to new WorkManagerSyncRequestService()
 
     //notifications
     bind [MessageNotificationsController]  to new MessageNotificationsController()
@@ -373,7 +373,7 @@ class WireApplication extends MultiDexApplication with WireContext with Injectab
       prefs,
       googleApi,
       base64,
-      inject[WorkManagerSyncRequestService],
+      null, //TODO: Use sync engine's version for now
       inject[MessageNotificationsController]
     )
 
