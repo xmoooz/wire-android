@@ -7,6 +7,9 @@ apply plugin: 'hugo'
 apply plugin: 'com.mutualmobile.gradle.plugins.dexinfo'
 apply from: 'config/quality.gradle'
 
+import org.ajoberstar.grgit.Grgit
+import org.ajoberstar.grgit.Credentials
+
 repositories {
     flatDir {
         dirs 'libs'
@@ -38,22 +41,59 @@ ext {
     customAvsInternalVersion = customAvsVersion
     customAvsName = 'avs'
     customAvsGroup = 'com.wearezeta.avs'
-
-    // directory where customization files live
-    customDir = "$rootDir/custom"
-    customConfig = new File("$customDir/custom.json")
-    wireConfig = new File("$rootDir/default.json")
 }
 
 if (project.file('user.gradle').exists()) {
     apply from: "user.gradle"
 }
 
-if(customConfig.exists()) {
-    project.afterEvaluate {
-        preBuild.dependsOn(copyStrings, copyIcons)
+task copyCustomResources(type: Copy) {
+    if (!customConfig.exists() || gradle.startParameter.taskNames.contains("clean")) {
+        return
+    }
+
+    def iconFolder = config.iconFolder
+    def targetResFolder = "$rootDir/app/src/main/res"
+    def iconSubfolders = [
+            'ldpi': 'drawable-ldpi',
+            'mdpi': 'drawable-mdpi',
+            'hdpi': 'drawable-hdpi',
+            'xhdpi': 'drawable-xhdpi',
+            'xxhdpi': 'drawable-xxhdpi',
+            'xxxhdpi': 'drawable-xxxhdpi'
+    ]
+
+    def resources = [
+            "ic_launcher_wire.png" : config.launcherIcon
+    ]
+
+    if (!file(repoDir).exists()) {
+        Grgit.clone(dir: repoDir, uri: config.repositoryUri)
+        project.logger.info("Cloned $repoDir to ${config.repositoryUri}")
+    }
+
+    resources.findAll { targetFileName, sourceFileName -> !sourceFileName.empty }
+            .collectEntries { targetFileName, sourceFileName ->
+                iconSubfolders.collectEntries { sourceSub, targetSub ->
+                    [(repoDir + '/' + iconFolder + '/' + sourceSub + '/' + sourceFileName) : [(targetResFolder + '/' + targetSub),  targetFileName]]
+                }
+            }
+            .each { sourcePath, targetPath ->
+                def source = file(sourcePath)
+                assert source.exists()
+                copy {
+                    from source
+                    rename { String filename -> return targetPath[1] }
+                    into file(targetPath[0])
+                }
+                project.logger.info("Copied $sourcePath to ${targetPath[0]}/${targetPath[1]}")
+            }
+
+    copy {
+        from file(repoDir + '/strings/strings.xml') into file(targetResFolder + '/values')
     }
 }
+
 
 android {
     //Trigger the licenseFormat task at least once in any compile phase
@@ -61,16 +101,10 @@ android {
         variant.javaCompiler.dependsOn(rootProject.licenseFormat)
     }
 
+    preBuild.dependsOn(copyCustomResources)
+
     compileSdkVersion = 27
     buildToolsVersion = '28.0.3'
-
-    def slurper = new JsonSlurper()
-    Object config = null
-    if(customConfig.exists()) {
-        config = slurper.parseText(customConfig.text)
-    } else {
-        config = slurper.parseText(wireConfig.text)
-    }
 
     String certPinBytes = config.certificatePin.certificate.join()
 
@@ -277,6 +311,7 @@ android {
         exclude 'APK_LICENSE.txt'
         exclude 'LICENSE.txt'
     }
+
 }
 
 dexinfo {
