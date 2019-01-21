@@ -31,7 +31,7 @@ import com.waz.api.Verification
 import com.waz.model._
 import com.waz.utils.events._
 import com.waz.utils.returning
-import com.waz.zclient.common.controllers.ThemeController
+import com.waz.zclient.common.controllers.{ThemeController, UserAccountsController}
 import com.waz.zclient.common.controllers.ThemeController.Theme
 import com.waz.zclient.common.views.SingleUserRowView
 import com.waz.zclient.conversation.ConversationController
@@ -42,10 +42,12 @@ import com.waz.zclient.ui.text.{GlyphTextView, TypefaceEditText, TypefaceTextVie
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.{RichView, ViewUtils}
 import com.waz.zclient.{Injectable, Injector, R}
+import com.waz.ZLog.ImplicitTag._
 
 import scala.concurrent.duration._
 import com.waz.content.UsersStorage
 
+//TODO Maybe it will be better to split this adapter in two? One for participants and another for options?
 class ParticipantsAdapter(userIds: Signal[Seq[UserId]],
                           maxParticipants: Option[Int] = None,
                           showPeopleOnly: Boolean = false,
@@ -61,6 +63,7 @@ class ParticipantsAdapter(userIds: Signal[Seq[UserId]],
   private lazy val participantsController = inject[ParticipantsController]
   private lazy val convController         = inject[ConversationController]
   private lazy val themeController        = inject[ThemeController]
+  private lazy val accountsController     = inject[UserAccountsController]
 
   private var items               = List.empty[Either[ParticipantData, Int]]
   private var teamId              = Option.empty[TeamId]
@@ -98,6 +101,7 @@ class ParticipantsAdapter(userIds: Signal[Seq[UserId]],
     convActive  <- convController.currentConv.map(_.isActive)
     guestButton <- shouldShowGuestButton
     areWeAGuest <- participantsController.isCurrentUserGuest
+    canChangeSettings <- accountsController.hasChangeGroupSettingsPermission
   } yield {
     val (bots, people) = users.toList.partition(_.userData.isWireBot)
 
@@ -111,16 +115,16 @@ class ParticipantsAdapter(userIds: Signal[Seq[UserId]],
     }
 
     (if (!showPeopleOnly) List(Right(ConversationName)) else Nil) :::
-    (if (convActive && tId.isDefined && !showPeopleOnly) List(Right(Notifications))
+    (if (convActive && tId.isDefined && !showPeopleOnly && canChangeSettings) List(Right(Notifications))
     else Nil
       ) :::
-    (if (convActive && !areWeAGuest && !showPeopleOnly) List(Right(EphemeralOptions))
+    (if (convActive && !areWeAGuest && !showPeopleOnly && canChangeSettings) List(Right(EphemeralOptions))
       else Nil
         ) :::
-    (if (convActive && isTeam && guestButton && !showPeopleOnly) List(Right(GuestOptions))
+    (if (convActive && isTeam && guestButton && !showPeopleOnly && canChangeSettings) List(Right(GuestOptions))
     else Nil
       ) :::
-    (if (convActive && isTeam && !showPeopleOnly) List(Right(ReadReceipts))
+    (if (convActive && isTeam && !showPeopleOnly && canChangeSettings) List(Right(ReadReceipts))
     else Nil
       ) :::
     (if (people.nonEmpty && !showPeopleOnly) List(Right(PeopleSeparator))
@@ -179,6 +183,7 @@ class ParticipantsAdapter(userIds: Signal[Seq[UserId]],
       val view = LayoutInflater.from(parent.getContext).inflate(R.layout.conversation_name_row, parent, false)
       returning(ConversationNameViewHolder(view, convController)) { vh =>
         convNameViewHolder = Option(vh)
+        accountsController.hasChangeGroupSettingsPermission.currentValue.foreach(vh.setEditingEnabled)
       }
     case Notifications =>
       val view = LayoutInflater.from(parent.getContext).inflate(R.layout.list_options_button_with_value_label, parent, false)
@@ -332,6 +337,12 @@ object ParticipantsAdapter {
     private var convName = Option.empty[String]
 
     private var isBeingEdited = false
+
+    def setEditingEnabled(enabled: Boolean): Unit = {
+      val penVisibility = if (enabled) View.VISIBLE else View.GONE
+      penGlyph.setVisibility(penVisibility)
+      editText.setEnabled(enabled)
+    }
 
     private def stopEditing() = {
       editText.setSelected(false)

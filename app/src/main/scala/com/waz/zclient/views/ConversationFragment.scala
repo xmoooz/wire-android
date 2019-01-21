@@ -212,10 +212,11 @@ class ConversationFragment extends FragmentHelper {
       call                   <- callController.currentCallOpt
       isCallActive           = call.exists(_.convId == convId) && call.exists(_.account == acc)
       isTeam                 <- accountsController.isTeam
+      hasPermission          <- accountsController.hasEstablishGroupVideoCallPermission
     } yield {
       if (isCallActive || !isConvActive || participantsNumber <= 1)
         Option.empty[Int]
-      else if (!isGroup || (isTeam && participantsNumber <= CallingService.VideoCallMaxMembers))
+      else if (!isGroup || (hasPermission && (isTeam && participantsNumber <= CallingService.VideoCallMaxMembers)))
         Some(R.menu.conversation_header_menu_video)
       else
         Some(R.menu.conversation_header_menu_audio)

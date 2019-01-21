@@ -47,7 +47,6 @@ class ParticipantDetailsTab(val context: Context, callback: FooterMenuCallback, 
   private val participantsController = inject[ParticipantsController]
   private val userAccountsController = inject[UserAccountsController]
   private val themeController        = inject[ThemeController]
-  private val convController         = inject[ConversationController]
 
   private val imageView = findById[ChatheadView](R.id.chathead)
 
@@ -113,9 +112,9 @@ class ParticipantDetailsTab(val context: Context, callback: FooterMenuCallback, 
    .onUi(footerMenu.setLeftActionText)
 
   participantsController.isGroupOrBot.flatMap {
-    case false => userAccountsController.hasCreateConvPermission.map {
-      case true => R.string.conversation__action__create_group
-      case _    => R.string.empty_string
+    case false => userAccountsController.hasCreateConvPermission.zip(userAccountsController.isExternalPartner).map {
+      case (true, false) => R.string.conversation__action__create_group
+      case _             => R.string.empty_string
     }
     case _ => Signal.const(R.string.empty_string)
   }.map(getString)
