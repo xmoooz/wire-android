@@ -112,7 +112,7 @@ class ParticipantDetailsTab(val context: Context, callback: FooterMenuCallback, 
    .onUi(footerMenu.setLeftActionText)
 
   participantsController.isGroupOrBot.flatMap {
-    case false => userAccountsController.hasCreateConvPermission.zip(userAccountsController.isExternalPartner).map {
+    case false => userAccountsController.hasCreateConvPermission.zip(userAccountsController.isPartner).map {
       case (true, false) => R.string.conversation__action__create_group
       case _             => R.string.empty_string
     }

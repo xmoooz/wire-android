@@ -69,8 +69,8 @@ class UserAccountsController(implicit injector: Injector, context: Context, ec: 
   lazy val isAdmin: Signal[Boolean] =
     selfPermissions.map(ps => AdminPermissions.subsetOf(ps))
 
-  lazy val isExternalPartner: Signal[Boolean] =
-    selfPermissions.map(ps => ExternalPartnerPermissions.subsetOf(ps)).orElse(Signal.const(false))
+  lazy val isPartner: Signal[Boolean] =
+    selfPermissions.map(ps => PartnerPermissions.subsetOf(ps)).orElse(Signal.const(false))
 
   lazy val hasCreateConvPermission: Signal[Boolean] = teamId.flatMap {
     case Some(_) => selfPermissions.map(_.contains(CreateConversation))
@@ -78,10 +78,10 @@ class UserAccountsController(implicit injector: Injector, context: Context, ec: 
   }
 
   lazy val hasEstablishGroupVideoCallPermission: Signal[Boolean] =
-    isExternalPartner.map(!_)
+    isPartner.map(!_)
 
   lazy val hasChangeGroupSettingsPermission: Signal[Boolean] =
-    isExternalPartner.map(!_)
+    isPartner.map(!_)
 
   def hasAddConversationMemberPermission(convId: ConvId): Signal[Boolean] =
     hasConvPermission(convId, AddConversationMember)
@@ -146,5 +146,5 @@ class UserAccountsController(implicit injector: Injector, context: Context, ec: 
 object UserAccountsController {
   import AccountDataOld.Permission._
   val AdminPermissions: Set[Permission] = Permission.values -- Set(GetBilling, SetBilling, DeleteTeam)
-  val ExternalPartnerPermissions: Set[Permission] = Set(CreateConversation, GetTeamConversations)
+  val PartnerPermissions: Set[Permission] = Set(CreateConversation, GetTeamConversations)
 }
