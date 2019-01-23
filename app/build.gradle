@@ -7,8 +7,6 @@ apply plugin: 'hugo'
 apply plugin: 'com.mutualmobile.gradle.plugins.dexinfo'
 apply from: 'config/quality.gradle'
 
-import org.ajoberstar.grgit.Grgit
-import org.ajoberstar.grgit.Credentials
 
 repositories {
     flatDir {
@@ -66,11 +64,6 @@ task copyCustomResources(type: Copy) {
     def resources = [
             "ic_launcher_wire.png" : config.launcherIcon
     ]
-
-    if (!file(repoDir).exists()) {
-        Grgit.clone(dir: repoDir, uri: config.repositoryUri)
-        project.logger.info("Cloned $repoDir to ${config.repositoryUri}")
-    }
 
     resources.findAll { targetFileName, sourceFileName -> !sourceFileName.empty }
             .collectEntries { targetFileName, sourceFileName ->
