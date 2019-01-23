@@ -77,9 +77,6 @@ class UserAccountsController(implicit injector: Injector, context: Context, ec: 
     case  _ => Signal.const(true)
   }
 
-  lazy val hasEstablishGroupVideoCallPermission: Signal[Boolean] =
-    isPartner.map(!_)
-
   lazy val hasChangeGroupSettingsPermission: Signal[Boolean] =
     isPartner.map(!_)
 
