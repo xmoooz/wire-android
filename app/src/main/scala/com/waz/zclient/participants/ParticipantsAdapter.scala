@@ -42,7 +42,6 @@ import com.waz.zclient.ui.text.{GlyphTextView, TypefaceEditText, TypefaceTextVie
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.{RichView, ViewUtils}
 import com.waz.zclient.{Injectable, Injector, R}
-import com.waz.ZLog.ImplicitTag._
 
 import scala.concurrent.duration._
 import com.waz.content.UsersStorage
@@ -114,7 +113,7 @@ class ParticipantsAdapter(userIds: Signal[Seq[UserId]],
       people.take(mp - 2)
     }
 
-    (if (!showPeopleOnly) List(Right(ConversationName)) else Nil) :::
+    (if (!showPeopleOnly) List(Right(if (canChangeSettings) ConversationName else ConversationNameReadOnly)) else Nil) :::
     (if (convActive && tId.isDefined && !showPeopleOnly && canChangeSettings) List(Right(Notifications))
     else Nil
       ) :::
@@ -183,7 +182,13 @@ class ParticipantsAdapter(userIds: Signal[Seq[UserId]],
       val view = LayoutInflater.from(parent.getContext).inflate(R.layout.conversation_name_row, parent, false)
       returning(ConversationNameViewHolder(view, convController)) { vh =>
         convNameViewHolder = Option(vh)
-        accountsController.hasChangeGroupSettingsPermission.currentValue.foreach(vh.setEditingEnabled)
+        vh.setEditingEnabled(true)
+      }
+    case ConversationNameReadOnly =>
+      val view = LayoutInflater.from(parent.getContext).inflate(R.layout.conversation_name_row, parent, false)
+      returning(ConversationNameViewHolder(view, convController)) { vh =>
+        convNameViewHolder = Option(vh)
+        vh.setEditingEnabled(false)
       }
     case Notifications =>
       val view = LayoutInflater.from(parent.getContext).inflate(R.layout.list_options_button_with_value_label, parent, false)
@@ -208,6 +213,8 @@ class ParticipantsAdapter(userIds: Signal[Seq[UserId]],
     case (Right(ReadReceipts), h: ReadReceiptsViewHolder) =>
       h.bind(readReceiptsEnabled)
     case (Right(ConversationName), h: ConversationNameViewHolder) =>
+      convName.foreach(name => h.bind(name, convVerified, teamId.isDefined))
+    case (Right(ConversationNameReadOnly), h: ConversationNameViewHolder) =>
       convName.foreach(name => h.bind(name, convVerified, teamId.isDefined))
     case (Right(sepType), h: SeparatorViewHolder) if Set(PeopleSeparator, ServicesSeparator).contains(sepType) =>
       val count = if (sepType == PeopleSeparator) peopleCount else botCount
@@ -245,6 +252,7 @@ object ParticipantsAdapter {
   val AllParticipants   = 6
   val Notifications     = 7
   val ReadReceipts      = 8
+  val ConversationNameReadOnly = 9
 
   case class ParticipantData(userData: UserData, isGuest: Boolean)
 
